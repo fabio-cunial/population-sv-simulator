@@ -1,0 +1,7 @@
+{
+  "reference": "/net/eichler/vol26/eee_shared/assemblies/hg38/no_alt/hg38.no_alt.fa",
+  "asm_pattern": "/net/eichler/vol27/projects/hprc/nobackups/assemblies/hifiasm_trio_yr1_genbank/{asm_name}/{hap}.fa.gz",
+  "inv_threads": 8,
+  "inv_threads_lg": 8,
+  "inv_mem" : "8G"
+}
