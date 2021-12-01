@@ -58,9 +58,6 @@ if not os.path.isfile(ENV_FILE):
 # Assembly library and dependency imports
 #
 
-sys.path.append(PIPELINE_DIR)  # pavlib
-sys.path.append(os.path.join(PIPELINE_DIR, 'dep', 'svpop'))  # svpoplib
-sys.path.append(os.path.join(PIPELINE_DIR, 'dep'))  # kanapy
 
 import pavlib
 import svpoplib

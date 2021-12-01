@@ -20,11 +20,6 @@ import shutil
 import tempfile
 import argparse
 
-PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__)).replace('scripts', '')
-sys.path.append(PIPELINE_DIR)  # pavlib
-sys.path.append(os.path.join(PIPELINE_DIR, 'dep', 'svpop'))  # svpoplib
-sys.path.append(os.path.join(PIPELINE_DIR, 'dep'))  # kanapy
-
 from Bio import SeqIO
 import Bio.bgzf
 import argparse

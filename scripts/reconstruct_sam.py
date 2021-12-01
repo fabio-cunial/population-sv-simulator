@@ -14,12 +14,6 @@ import sys
 
 import Bio.Seq
 
-# Add PAV libraries and dependencies
-PIPELINE_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-sys.path.append(PIPELINE_DIR)  # pavlib
-sys.path.append(os.path.join(PIPELINE_DIR, 'dep', 'svpop'))  # svpoplib
-sys.path.append(os.path.join(PIPELINE_DIR, 'dep'))  # kanapy
 
 import pavlib
 
