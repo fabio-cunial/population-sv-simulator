@@ -6,10 +6,10 @@ task tar_asm {
   String threads
   String mem_gb
   command {
-    mkdir -p asm
+    mkdir -p asm/${sample}
     cp ~{ref} asm/ref.fa
-    cp ~{hapOne} asm/${sample}.h1.fa
-    cp ~{hapTwo} asm/${sample}.h2.fa
+    cp ~{hapOne} asm/${sample}/h1.fa.gz
+    cp ~{hapTwo} asm/${sample}/h2.fa.gz
     tar zcvf asm.tgz asm/
   }
   output {

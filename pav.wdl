@@ -12,7 +12,7 @@ workflow pav {
   String sample
   File refFai
   File config
-  File pav_tar,
+  File pav_tar
   Array[Array[String]] chroms = read_tsv(refFai)
 
   call setup.tar_asm {
