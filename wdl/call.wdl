@@ -273,28 +273,3 @@ task call_merge_haplotypes_snv {
   }
 }
 
-task call_final_bed {
-    File invBed
-    File insBed
-    File delBed
-    File snvBed
-    String threads
-    String mem_gb
-    String sample
-  command {
-    snakemake -s pav/Snakefile --cores ${threads} results/${sample}/bed/snv_snv.bed.gz results/${sample}/bed/indel_ins.bed.gz results/${sample}/bed/indel_del.bed.gz results/${sample}/bed/sv_ins.bed.gz results/${sample}/bed/sv_del.bed.gz results/${sample}/bed/sv_inv.bed.gz results/${sample}/bed/fa/indel_ins.fa.gz results/${sample}/bed/fa/indel_del.fa.gz results/${sample}/bed/fa/sv_ins.fa.gz results/${sample}/bed/fa/sv_del.fa.gz results/${sample}/bed/fa/sv_inv.fa.gz
-  }
-  output {
-    File snvBedOut = "results/${sample}/bed/snv_snv.bed.gz"
-    File indelInsBed = "results/${sample}/bed/indel_ins.bed.gz"
-    File indelDelBed = "results/${sample}/bed/indel_del.bed.gz"
-    File svInsBed = "results/${sample}/bed/sv_ins.bed.gz"
-    File svDelBed = "results/${sample}/bed/sv_del.bed.gz"
-    File invBedOut = "results/${sample}/bed/sv_inv.bed.gz"
-    File indelInsFasta = "results/${sample}/bed/fa/indel_ins.fa.gz"
-    File indelDelFasta = "results/${sample}/bed/fa/indel_del.fa.gz"
-    File svInsFasta = "results/${sample}/bed/fa/sv_ins.fa.gz"
-    File svDelFasta = "results/${sample}/bed/fa/sv_del.fa.gz"
-    File invFasta = "results/${sample}/bed/fa/sv_inv.fa.gz"
-  }
-}

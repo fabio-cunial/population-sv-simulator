@@ -1,8 +1,35 @@
 import "wdl/setup.wdl" as setup
 import "wdl/align.wdl" as align
-import "wdl/call_pav.wdl" as call_pav
+import "wdl/call.wdl" as call_pav
 import "wdl/call_inv.wdl" as call_inv
 import "wdl/call_lg.wdl" as call_lg
+
+
+task call_final_bed {
+    File invBed
+    File insBed
+    File delBed
+    File snvBed
+    String threads
+    String mem_gb
+    String sample
+  command {
+    snakemake -s pav/Snakefile --cores ${threads} results/${sample}/bed/snv_snv.bed.gz results/${sample}/bed/indel_ins.bed.gz results/${sample}/bed/indel_del.bed.gz results/${sample}/bed/sv_ins.bed.gz results/${sample}/bed/sv_del.bed.gz results/${sample}/bed/sv_inv.bed.gz results/${sample}/bed/fa/indel_ins.fa.gz results/${sample}/bed/fa/indel_del.fa.gz results/${sample}/bed/fa/sv_ins.fa.gz results/${sample}/bed/fa/sv_del.fa.gz results/${sample}/bed/fa/sv_inv.fa.gz
+  }
+  output {
+    File snvBedOut = "results/${sample}/bed/snv_snv.bed.gz"
+    File indelInsBed = "results/${sample}/bed/indel_ins.bed.gz"
+    File indelDelBed = "results/${sample}/bed/indel_del.bed.gz"
+    File svInsBed = "results/${sample}/bed/sv_ins.bed.gz"
+    File svDelBed = "results/${sample}/bed/sv_del.bed.gz"
+    File invBedOut = "results/${sample}/bed/sv_inv.bed.gz"
+    File indelInsFasta = "results/${sample}/bed/fa/indel_ins.fa.gz"
+    File indelDelFasta = "results/${sample}/bed/fa/indel_del.fa.gz"
+    File svInsFasta = "results/${sample}/bed/fa/sv_ins.fa.gz"
+    File svDelFasta = "results/${sample}/bed/fa/sv_del.fa.gz"
+    File invFasta = "results/${sample}/bed/fa/sv_inv.fa.gz"
+  }
+}
 
 
 workflow pav {
@@ -88,7 +115,7 @@ workflow pav {
       mem_gb = "12",
       sample = sample
   }
-  call align.align.align_get_read_bed_h1 {
+  call align.align_get_read_bed_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -166,7 +193,7 @@ workflow pav {
         sample = sample
      }
   }
-  call call_pav.call_lg_split_h1 {
+  call call_lg.call_lg_split_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -177,7 +204,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_lg_split_h2 {
+  call call_lg.call_lg_split_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -189,7 +216,7 @@ workflow pav {
       sample = sample
   }
   scatter(i in range(10)) {
-     call call_pav.call_lg_discover_h1 {
+     call call_lg.call_lg_discover_h1 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -199,14 +226,14 @@ workflow pav {
         gaps = align.align_ref_anno_n_gap.gaps,
         asmFai = align.align_get_tig_fa_h1.asmFai,
         asmGz = align.align_get_tig_fa_h1.asmGz,
-        batch = call_pav.call_lg_split_h1.batch,
+        batch = call_lg.call_lg_split_h1.batch,
         threads = "8",
         mem_gb = "8",
         sample = sample
      }
   }
   scatter(i in range(10)) {
-     call call_pav.call_lg_discover_h2 {
+     call call_lg.call_lg_discover_h2 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -216,7 +243,7 @@ workflow pav {
         gaps = align.align_ref_anno_n_gap.gaps,
         asmFai = align.align_get_tig_fa_h2.asmFai,
         asmGz = align.align_get_tig_fa_h2.asmGz,
-        batch = call_pav.call_lg_split_h2.batch,
+        batch = call_lg.call_lg_split_h2.batch,
         threads = "8",
         mem_gb = "8",
         sample = sample
@@ -246,7 +273,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_merge_lg_del_h1 {
+  call call_lg.call_merge_lg_del_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -258,7 +285,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_merge_lg_ins_h1 {
+  call call_lg.call_merge_lg_ins_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -270,7 +297,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_merge_lg_inv_h1 {
+  call call_lg.call_merge_lg_inv_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -282,7 +309,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_merge_lg_del_h2 {
+  call call_lg.call_merge_lg_del_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -294,7 +321,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_merge_lg_ins_h2 {
+  call call_lg.call_merge_lg_ins_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -306,7 +333,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_merge_lg_inv_h2 {
+  call call_lg.call_merge_lg_inv_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -579,8 +606,8 @@ workflow pav {
       hap = "h2",
       preInvSvBed = call_pav.call_cigar_merge_h2.insdelBedMerge,
       preInvSnvBed = call_pav.call_cigar_merge_h2.snvBedMerge,
-      delBedIn = call_pav.call_merge_lg_del_h2.mergeBed,
-      insBedIn = call_pav.call_merge_lg_ins_h2.mergeBed,
+      delBedIn = call_lg.call_merge_lg_del_h2.mergeBed,
+      insBedIn = call_lg.call_merge_lg_ins_h2.mergeBed,
       invBedIn = call_lg.call_merge_lg_inv_h2.mergeBed,
       invBatch = call_inv.call_inv_batch_merge_h2.bed,
       threads = "2",
@@ -699,7 +726,7 @@ workflow pav {
       mem_gb = "24",
       sample = sample
   }
-  call call_pav.call_final_bed {
+  call call_final_bed {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -713,16 +740,16 @@ workflow pav {
       sample = sample
   }
   output {
-    File snvBed = call_pav.call_final_bed.snvBedOut
-    File invBed = call_pav.call_final_bed.invBedOut
-    File svInsBed = call_pav.call_final_bed.svInsBed
-    File svDelBed = call_pav.call_final_bed.svDelBed
-    File indelInsBed = call_pav.call_final_bed.indelInsBed
-    File indelDelBed = call_pav.call_final_bed.indelDelBed
-    File invFasta = call_pav.call_final_bed.invFasta
-    File svInsFasta = call_pav.call_final_bed.svInsFasta
-    File svDelFasta = call_pav.call_final_bed.svDelFasta
-    File indelInsFasta = call_pav.call_final_bed.indelInsFasta
-    File indelDelFasta = call_pav.call_final_bed.indelDelFasta
+    File snvBed = call_final_bed.snvBedOut
+    File invBed = call_final_bed.invBedOut
+    File svInsBed = call_final_bed.svInsBed
+    File svDelBed = call_final_bed.svDelBed
+    File indelInsBed = call_final_bed.indelInsBed
+    File indelDelBed = call_final_bed.indelDelBed
+    File invFasta = call_final_bed.invFasta
+    File svInsFasta = call_final_bed.svInsFasta
+    File svDelFasta = call_final_bed.svDelFasta
+    File indelInsFasta = call_final_bed.indelInsFasta
+    File indelDelFasta = call_final_bed.indelDelFasta
   }
 }

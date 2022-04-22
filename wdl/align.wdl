@@ -6,9 +6,9 @@ task align_ref {
     String threads
     String mem_gb
   command {
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
+    cp ${pav_conf} ./
+    tar zxvf ${pav_sw}
+    tar zxvf ${pav_asm}
     snakemake -s pav/Snakefile --cores ${threads} data/ref/ref.fa.gz data/ref/ref.fa.gz.fai
     tar zxvf align_ref.tgz data/ref/ref.fa.gz data/ref/ref.fa.gz.fai
   }
@@ -18,15 +18,18 @@ task align_ref {
 }
 
 task align_get_tig_fa_h1 {
+    File pav_conf
+    File pav_sw
+    File pav_asm
     File asm
     String sample
     String hap
     String threads
     String mem_gb
   command {
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
+    cp ${pav_conf} ./
+    tar zxvf ${pav_sw}
+    tar zxvf ${pav_asm}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/align/contigs_${hap}.fa.gz temp/${sample}/align/contigs_${hap}.fa.gz.fai
     tar zxvf align_get_tig_fa_h1.tgz temp/${sample}/align/contigs_${hap}.fa.gz temp/${sample}/align/contigs_${hap}.fa.gz.fai
   }
@@ -36,15 +39,18 @@ task align_get_tig_fa_h1 {
 }
 
 task align_get_tig_fa_h2 {
-  File asm
-  String hap
-  String sample
-  String threads
-  String mem_gb
+    File pav_conf
+    File pav_sw
+    File pav_asm
+    File asm
+    String hap
+    String sample
+    String threads
+    String mem_gb
   command {
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
+    cp ${pav_conf} ./
+    tar zxvf ${pav_sw}
+    tar zxvf ${pav_asm}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/align/contigs_${hap}.fa.gz temp/${sample}/align/contigs_${hap}.fa.gz.fai
     tar zxvf align_get_tig_fa_h2.tgz temp/${sample}/align/contigs_${hap}.fa.gz temp/${sample}/align/contigs_${hap}.fa.gz.fai
   }
