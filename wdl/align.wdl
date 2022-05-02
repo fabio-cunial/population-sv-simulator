@@ -2,6 +2,7 @@ task align_ref {
     File pav_conf
     File pav_sw
     File pav_asm
+    String sample
     String threads
     String mem_gb
   command {
@@ -20,7 +21,6 @@ task align_get_tig_fa_h1 {
     File pav_conf
     File pav_sw
     File pav_asm
-    File asm
     String sample
     String hap
     String threads
@@ -41,7 +41,6 @@ task align_get_tig_fa_h2 {
     File pav_conf
     File pav_sw
     File pav_asm
-    File asm
     String hap
     String sample
     String threads
@@ -62,7 +61,6 @@ task align_ref_anno_n_gap {
     File pav_conf
     File pav_sw
     File pav_asm
-    File refGz
     String sample
     String threads
     String mem_gb
@@ -84,14 +82,16 @@ task align_map_h1 {
   File pav_asm
   String hap
   String sample
-  File refGz
   File asmGz
+  File refGz
   String threads
   String mem_gb
   command {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
+    tar zxvf ${asmGz}
+    tar zxvf ${refGz}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/align/pre-cut/aligned_tig_${hap}.sam.gz
     tar czvf align_map_${hap}_${sample}.tgz temp/${sample}/align/pre-cut/aligned_tig_${hap}.sam.gz
   }
@@ -101,24 +101,26 @@ task align_map_h1 {
 }
 
 task align_map_h2 {
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    String hap
-    String sample
-    File refGz
-    File asmGz
-    String threads
-    String mem_gb
+  File pav_conf
+  File pav_sw
+  File pav_asm
+  String hap
+  String sample
+  File refGz
+  File asmGz
+  String threads
+  String mem_gb
   command {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
+    tar zxvf ${refGz}
+    tar zxvf ${asmGz}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/align/pre-cut/aligned_tig_${hap}.sam.gz
     tar czvf align_map_${hap}_${sample}.tgz temp/${sample}/align/pre-cut/aligned_tig_${hap}.sam.gz
   }
   output {
-    File  samGz = "align_map_${hap}_${sample}.tgz"
+    File samGz = "align_map_${hap}_${sample}.tgz"
   }
 }
 
@@ -180,6 +182,8 @@ task align_cut_tig_overlap_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
+    tar zxvf ${asmGz}
+    tar zxvf ${bedGz}
     snakemake -s pav/Snakefile --cores ${threads} results/${sample}/align/aligned_tig_${hap}.bed.gz
     tar czvf align_cut_tig_overlap_${hap}_${sample}.tgz results/${sample}/align/aligned_tig_${hap}.bed.gz
   }
@@ -202,6 +206,8 @@ task align_cut_tig_overlap_h2 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
+    tar zxvf ${asmGz}
+    tar zxvf ${bedGz}
     snakemake -s pav/Snakefile --cores ${threads} results/${sample}/align/aligned_tig_${hap}.bed.gz
     tar czvf align_cut_tig_overlap_${hap}_${sample}.tgz results/${sample}/align/aligned_tig_${hap}.bed.gz
   }

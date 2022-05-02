@@ -17,6 +17,13 @@ task call_final_bed {
     String mem_gb
     String sample
   command {
+    cp ${pav_conf} ./
+    tar zxvf ${pav_sw}
+    tar zxvf ${pav_asm}
+    tar zxvf ${invBed}
+    tar zxvf ${snvBed}
+    tar zxvf ${insBed}
+    tar zxvf ${delBed}
     snakemake -s pav/Snakefile --cores ${threads} results/${sample}/bed/snv_snv.bed.gz results/${sample}/bed/indel_ins.bed.gz results/${sample}/bed/indel_del.bed.gz results/${sample}/bed/sv_ins.bed.gz results/${sample}/bed/sv_del.bed.gz results/${sample}/bed/sv_inv.bed.gz results/${sample}/bed/fa/indel_ins.fa.gz results/${sample}/bed/fa/indel_del.fa.gz results/${sample}/bed/fa/sv_ins.fa.gz results/${sample}/bed/fa/sv_del.fa.gz results/${sample}/bed/fa/sv_inv.fa.gz
   }
   output {
@@ -61,13 +68,13 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       threads = "1",
       mem_gb = "8",
+      sample = sample
   }
   call align.align_get_tig_fa_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      asm = hapOne,
       hap = "h1",
       threads = "1",
       mem_gb = "8",
@@ -78,7 +85,6 @@ workflow pav {
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      asm = hapTwo,
       hap = "h2",
       threads = "1",
       mem_gb = "8",
@@ -89,7 +95,6 @@ workflow pav {
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      refGz = align_ref.refGz,
       threads = "1",
       mem_gb = "8",
       sample = sample
@@ -99,9 +104,9 @@ workflow pav {
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      refGz = align_ref.refGz,
       hap = "h1",
-      asmGz = align_get_tig_fa_h2.asmGz,
+      refGz = align_ref.refGz,
+      asmGz = align_get_tig_fa_h1.asmGz,
       threads = "8",
       mem_gb = "12",
       sample = sample
@@ -111,9 +116,9 @@ workflow pav {
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      refGz = align_ref.refGz,
       hap = "h2",
       asmGz = align_get_tig_fa_h2.asmGz,
+      refGz = align_ref.refGz,
       threads = "8",
       mem_gb = "12",
       sample = sample
@@ -123,8 +128,8 @@ workflow pav {
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      refGz = align_ref.refGz,
       hap = "h1",
+      refGz = align_ref.refGz,
       samGz = align_map_h1.samGz,
       threads = "1",
       mem_gb = "32",
@@ -228,7 +233,8 @@ workflow pav {
         trimBed = align_cut_tig_overlap_h1.trimBed,
         gaps = align_ref_anno_n_gap.gaps,
         asmGz = align_get_tig_fa_h1.asmGz,
-        batch = call_lg_split_h1.batch,
+        batchFile = call_lg_split_h1.batch,
+        batch = i,
         threads = "8",
         mem_gb = "8",
         sample = sample
@@ -244,7 +250,8 @@ workflow pav {
         trimBed = align_cut_tig_overlap_h2.trimBed,
         gaps = align_ref_anno_n_gap.gaps,
         asmGz = align_get_tig_fa_h2.asmGz,
-        batch = call_lg_split_h2.batch,
+        batchFile = call_lg_split_h2.batch,
+        batch = i,
         threads = "8",
         mem_gb = "8",
         sample = sample
@@ -256,7 +263,6 @@ workflow pav {
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
-      insdelBatch = call_cigar_h1.insdelBed,
       snvBatch = call_cigar_h1.snvBed,
       threads = "1",
       mem_gb = "8",
@@ -268,7 +274,6 @@ workflow pav {
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
-      insdelBatch = call_cigar_h2.insdelBed,
       snvBatch = call_cigar_h2.snvBed,
       threads = "1",
       mem_gb = "8",
@@ -281,7 +286,7 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       svtype = "del",
-      inbed = call_lg_discover_h1.delBed,
+      inbed = call_lg_discover_h1.allBed,
       threads = "1",
       mem_gb = "8",
       sample = sample
@@ -293,7 +298,7 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       svtype = "ins",
-      inbed = call_lg_discover_h1.insBed,
+      inbed = call_lg_discover_h1.allBed,
       threads = "1",
       mem_gb = "8",
       sample = sample
@@ -305,7 +310,7 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       svtype = "inv",
-      inbed = call_lg_discover_h1.invBed,
+      inbed = call_lg_discover_h1.allBed,
       threads = "1",
       mem_gb = "8",
       sample = sample
@@ -317,7 +322,7 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       svtype = "del",
-      inbed = call_lg_discover_h2.delBed,
+      inbed = call_lg_discover_h2.allBed,
       threads = "1",
       mem_gb = "8",
       sample = sample
@@ -329,7 +334,7 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       svtype = "ins",
-      inbed = call_lg_discover_h2.insBed,
+      inbed = call_lg_discover_h2.allBed,
       threads = "1",
       mem_gb = "8",
       sample = sample
@@ -341,7 +346,7 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       svtype = "inv",
-      inbed = call_lg_discover_h2.invBed,
+      inbed = call_lg_discover_h2.allBed,
       threads = "1",
       mem_gb = "8",
       sample = sample
@@ -588,7 +593,6 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       preInvSvBed = call_cigar_merge_h1.insdelBedMerge,
-      preInvSnvBed = call_cigar_merge_h1.snvBedMerge,
       delBedIn = call_merge_lg_del_h1.mergeBed,
       insBedIn = call_merge_lg_ins_h1.mergeBed,
       invBedIn = call_merge_lg_inv_h1.mergeBed,
@@ -604,7 +608,6 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       preInvSvBed = call_cigar_merge_h2.insdelBedMerge,
-      preInvSnvBed = call_cigar_merge_h2.snvBedMerge,
       delBedIn = call_merge_lg_del_h2.mergeBed,
       insBedIn = call_merge_lg_ins_h2.mergeBed,
       invBedIn = call_merge_lg_inv_h2.mergeBed,
@@ -617,8 +620,8 @@ workflow pav {
      call call_pav.call_merge_haplotypes_chrom_svindel_ins {
       input:
         pav_conf = config,
-      pav_sw = pav_tar,
-      pav_asm = tar_asm.asm_tar,
+        pav_sw = pav_tar,
+        pav_asm = tar_asm.asm_tar,
         svtype = "svindel_ins",
         insBed_h1 = call_integrate_sources_h1.insBed,
         insBed_h2 = call_integrate_sources_h2.insBed,
@@ -634,11 +637,11 @@ workflow pav {
      call call_pav.call_merge_haplotypes_chrom_svindel_del {
       input:
         pav_conf = config,
-      pav_sw = pav_tar,
-      pav_asm = tar_asm.asm_tar,
+        pav_sw = pav_tar,
+        pav_asm = tar_asm.asm_tar,
         svtype = "svindel_del",
-        delBed_h1 = call_integrate_sources_h1.delBed,
-        delBed_h2 = call_integrate_sources_h2.delBed,
+        delBed_h1 = call_integrate_sources_h1.insBed,
+        delBed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom,
@@ -652,10 +655,10 @@ workflow pav {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
-      pav_asm = tar_asm.asm_tar,
+        pav_asm = tar_asm.asm_tar,
         svtype = "sv_inv",
-        invBed_h1 = call_integrate_sources_h1.invBed,
-        invBed_h2 = call_integrate_sources_h2.invBed,
+        invBed_h1 = call_integrate_sources_h1.insBed,
+        invBed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom,
@@ -669,10 +672,10 @@ workflow pav {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
-      pav_asm = tar_asm.asm_tar,
+        pav_asm = tar_asm.asm_tar,
         svtype = "snv_snv",
-        snvBed_h1 = call_integrate_sources_h1.snvBed,
-        snvBed_h2 = call_integrate_sources_h2.snvBed,
+        snvBed_h1 = call_integrate_sources_h1.insBed,
+        snvBed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom,
