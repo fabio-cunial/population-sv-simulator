@@ -352,7 +352,7 @@ task call_inv_batch_merge_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${invBed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " invBed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/sv_inv_${hap}.bed.gz
     tar zcvf call_inv_batch_merge_${hap}_${sample}.tgz temp/${sample}/inv_caller/sv_inv_${hap}.bed.gz
   }
@@ -375,7 +375,7 @@ task call_inv_batch_merge_h2 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${invBed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " invBed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/sv_inv_${hap}.bed.gz
     tar zcvf call_inv_batch_merge_${hap}_${sample}.tgz temp/${sample}/inv_caller/sv_inv_${hap}.bed.gz
   }

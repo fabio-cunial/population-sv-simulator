@@ -66,7 +66,7 @@ task call_cigar_merge_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${snvBatch} | xargs -I '@' tar zxvf @
+    echo ${sep=" " snvBatch} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
     tar zcvf call_cigar_merge_${hap}_${sample}.tgz temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
   }
@@ -88,7 +88,7 @@ task call_cigar_merge_h2 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${snvBatch} | xargs -I '@' tar zxvf @
+    echo ${sep=" " snvBatch} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
     tar zcvf call_cigar_merge_${hap}_${sample}.tgz temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
   }
@@ -342,7 +342,7 @@ task call_merge_haplotypes_inv {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
     tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
   }
@@ -364,7 +364,7 @@ task call_merge_haplotypes_svindel_del {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
     tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
   }
@@ -386,7 +386,7 @@ task call_merge_haplotypes_svindel_ins {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
     tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
   }
@@ -408,7 +408,7 @@ task call_merge_haplotypes_snv {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
     tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
   }

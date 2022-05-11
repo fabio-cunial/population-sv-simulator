@@ -119,7 +119,7 @@ task call_merge_lg_del_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
     tar zcvf call_merge_lg_del_${hap}_${svtype}_${sample}.tgz temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
   }
@@ -142,7 +142,7 @@ task call_merge_lg_ins_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
     tar zcvf call_merge_lg_ins_${hap}_${svtype}_${sample}.tgz temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
   }
@@ -165,7 +165,7 @@ task call_merge_lg_inv_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
     tar zcvf call_merge_lg_inv_${hap}_${svtype}_${sample}.tgz temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
   }
@@ -188,7 +188,7 @@ task call_merge_lg_del_h2 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
     tar zcvf call_merge_lg_del_${hap}_${svtype}_${sample}.tgz temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
   }
@@ -211,7 +211,7 @@ task call_merge_lg_ins_h2 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
     tar zcvf call_merge_lg_ins_${hap}_${svtype}_${sample}.tgz temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
   }
@@ -234,7 +234,7 @@ task call_merge_lg_inv_h2 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${inbed} | xargs -I '@' tar zxvf @
+    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
     tar zcvf call_merge_lg_inv_${hap}_${svtype}_${sample}.tgz temp/${sample}/lg_sv/sv_${svtype}_${hap}.bed.gz
   }
