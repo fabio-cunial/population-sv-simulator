@@ -4,6 +4,7 @@ task call_cigar_h1 {
     File pav_asm
     File trimBed
     File asmGz
+    File refGz
     String batch
     String threads
     String sample
@@ -15,6 +16,7 @@ task call_cigar_h1 {
     tar zxvf ${pav_asm}
     tar zxvf ${trimBed}
     tar zxvf ${asmGz}
+    tar zxvf ${refGz}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/batched/insdel_${hap}_${batch}.bed.gz temp/${sample}/cigar/batched/snv.bed_${hap}_${batch}.gz
     tar zcvf call_cigar_${hap}_${sample}_${batch}.tgz temp/${sample}/cigar/batched/insdel_${hap}_${batch}.bed.gz temp/${sample}/cigar/batched/snv.bed_${hap}_${batch}.gz
   }
@@ -29,6 +31,7 @@ task call_cigar_h2 {
     File pav_asm
     String sample
     File trimBed
+    File refGz
     File asmGz
     String batch
     String threads
@@ -39,6 +42,7 @@ task call_cigar_h2 {
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
     tar zxvf ${trimBed}
+    tar zxvf ${refGz}
     tar zxvf ${asmGz}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/batched/insdel_${hap}_${batch}.bed.gz temp/${sample}/cigar/batched/snv.bed_${hap}_${batch}.gz
     tar zcvf call_cigar_${hap}_${sample}_${batch}.tgz temp/${sample}/cigar/batched/insdel_${hap}_${batch}.bed.gz temp/${sample}/cigar/batched/snv.bed_${hap}_${batch}.gz

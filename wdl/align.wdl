@@ -61,6 +61,7 @@ task align_ref_anno_n_gap {
     File pav_conf
     File pav_sw
     File pav_asm
+    File ref_gz
     String sample
     String threads
     String mem_gb
@@ -68,6 +69,7 @@ task align_ref_anno_n_gap {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
+    tar zxvf ${ref_gz}
     snakemake -s pav/Snakefile --cores ${threads} data/ref/n_gap.bed.gz
     tar zcvf align_ref_anno_n_gap_${sample}.tgz data/ref/n_gap.bed.gz
   }
@@ -129,6 +131,7 @@ task align_get_read_bed_h1 {
     File pav_sw
     File pav_asm
     File refGz
+    File tigFa
     String sample
     File samGz
     String hap
@@ -138,6 +141,9 @@ task align_get_read_bed_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
+    tar zxvf ${refGz}
+    tar zxvf ${samGz}
+    tar zxvf ${tigFa}
     snakemake -s pav/Snakefile --cores ${threads} results/${sample}/align/pre-cut/aligned_tig_${hap}.bed.gz
     tar czvf align_get_read_bed_${hap}_${sample}.tgz results/${sample}/align/pre-cut/aligned_tig_${hap}.bed.gz
   }
@@ -151,6 +157,7 @@ task align_get_read_bed_h2 {
     File pav_sw
     File pav_asm
     File refGz
+    File tigFa
     String sample
     File samGz
     String hap
@@ -159,7 +166,10 @@ task align_get_read_bed_h2 {
   command {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
+    tar zxvf ${refGz}
+    tar zxvf ${tigFa}
     tar zxvf ${pav_asm}
+    tar zxvf ${samGz}
     snakemake -s pav/Snakefile --cores ${threads} results/${sample}/align/pre-cut/aligned_tig_${hap}.bed.gz
     tar czvf align_get_read_bed_${hap}_${sample}.tgz results/${sample}/align/pre-cut/aligned_tig_${hap}.bed.gz
   }

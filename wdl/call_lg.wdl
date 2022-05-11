@@ -50,6 +50,7 @@ task call_lg_discover_h1 {
     File pav_asm
     String batch
     File batchFile
+    File refGz
     File asmGz
     File gaps
     String hap
@@ -59,6 +60,7 @@ task call_lg_discover_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
+    tar zxvf ${refGz}
     tar zxvf ${gaps}
     tar zxvf ${asmGz}
     tar zxvf ${trimBed}
@@ -77,6 +79,7 @@ task call_lg_discover_h2 {
     File pav_asm
     String sample
     File trimBed
+    File refGz
     String batch
     File asmGz
     File batchFile
@@ -88,6 +91,7 @@ task call_lg_discover_h2 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
+    tar zxvf ${refGz}
     tar zxvf ${gaps}
     tar zxvf ${asmGz}
     tar zxvf ${trimBed}
