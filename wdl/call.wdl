@@ -66,7 +66,7 @@ task call_cigar_merge_h1 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${sep=" " snvBatch} | xargs -I '@' tar zxvf @
+    echo ${sep=" " snvBatch} | tr " " "\n" | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
     tar zcvf call_cigar_merge_${hap}_${sample}.tgz temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
   }
@@ -88,7 +88,7 @@ task call_cigar_merge_h2 {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${sep=" " snvBatch} | xargs -I '@' tar zxvf @
+    echo ${sep=" " snvBatch} | tr " " "\n" | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
     tar zcvf call_cigar_merge_${hap}_${sample}.tgz temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
   }
@@ -145,7 +145,8 @@ task call_mappable_bed_h2 {
     tar zxvf ${delBed}
     tar zxvf ${insBed}
     tar zxvf ${invBed}
-    tar zxvf ${trimBed}snakemake -s pav/Snakefile --cores ${threads} results/${sample}/callable/callable_regions_${hap}_500.bed.gz
+    tar zxvf ${trimBed}
+    snakemake -s pav/Snakefile --cores ${threads} results/${sample}/callable/callable_regions_${hap}_500.bed.gz
     tar zcvf call_mappable_bed_${hap}_${sample}.tgz results/${sample}/callable/callable_regions_${hap}_500.bed.gz
   }
   output {
@@ -175,8 +176,8 @@ task call_integrate_sources_h1 {
     tar zxvf ${insBedIn}
     tar zxvf ${invBedIn}
     tar zxvf ${invBatch}    
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_inv.bed.gz
-    tar zcvf call_integrate_sources_${hap}_${sample}.tgz temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_inv.bed.gz
+    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
+    tar zcvf call_integrate_sources_${hap}_${sample}.tgz temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
   }
   output {
     File insBed = "call_integrate_sources_${hap}_${sample}.tgz"
@@ -205,8 +206,8 @@ task call_integrate_sources_h2 {
     tar zxvf ${insBedIn}
     tar zxvf ${invBedIn}
     tar zxvf ${invBatch}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_inv.bed.gz
-    tar zcvf call_integrate_sources_${hap}_${sample}.tgz temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_inv.bed.gz
+    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
+    tar zcvf call_integrate_sources_${hap}_${sample}.tgz temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
   }
   output {
     File insBed = "call_integrate_sources_${hap}_${sample}.tgz"
@@ -335,6 +336,10 @@ task call_merge_haplotypes_inv {
     File pav_conf
     File pav_sw
     File pav_asm
+    File integrated_h1
+    File integrated_h2
+    File callable_h1
+    File callable_h2
     String sample
     String threads
     String mem_gb
@@ -342,7 +347,11 @@ task call_merge_haplotypes_inv {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
+    tar zxvf ${integrated_h1}
+    tar zxvf ${integrated_h2}
+    tar zxvf ${callable_h1}
+    tar zxvf ${callable_h2}
+    echo ${sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
     tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
   }
@@ -357,6 +366,10 @@ task call_merge_haplotypes_svindel_del {
     File pav_conf
     File pav_sw
     File pav_asm
+    File integrated_h1
+    File integrated_h2
+    File callable_h1
+    File callable_h2
     String sample
     String threads
     String mem_gb
@@ -364,7 +377,11 @@ task call_merge_haplotypes_svindel_del {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
+    tar zxvf ${integrated_h1}
+    tar zxvf ${integrated_h2}
+    tar zxvf ${callable_h1}
+    tar zxvf ${callable_h2}
+    echo ${sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
     tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
   }
@@ -379,6 +396,10 @@ task call_merge_haplotypes_svindel_ins {
     File pav_conf
     File pav_sw
     File pav_asm
+    File integrated_h1
+    File integrated_h2
+    File callable_h1
+    File callable_h2
     String sample
     String threads
     String mem_gb
@@ -386,7 +407,11 @@ task call_merge_haplotypes_svindel_ins {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
+    tar zxvf ${integrated_h1}
+    tar zxvf ${integrated_h2}
+    tar zxvf ${callable_h1}
+    tar zxvf ${callable_h2}
+    echo ${sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
     tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
   }
@@ -401,6 +426,10 @@ task call_merge_haplotypes_snv {
     File pav_conf
     File pav_sw
     File pav_asm
+    File integrated_h1
+    File integrated_h2
+    File callable_h1
+    File callable_h2
     Array[File] inbed
     String threads
     String mem_gb
@@ -408,7 +437,11 @@ task call_merge_haplotypes_snv {
     cp ${pav_conf} ./
     tar zxvf ${pav_sw}
     tar zxvf ${pav_asm}
-    echo ${sep=" " inbed} | xargs -I '@' tar zxvf @
+    tar zxvf ${integrated_h1}
+    tar zxvf ${integrated_h2}
+    tar zxvf ${callable_h1}
+    tar zxvf ${callable_h2}
+    echo ${sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
     tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
   }

@@ -8,6 +8,7 @@ task tar_asm {
   command {
     mkdir -p asm/${sample}
     cp ${ref} asm/ref.fa
+    samtools faidx asm/ref.fa
     cp ${hapOne} asm/${sample}/h1.fa.gz
     cp ${hapTwo} asm/${sample}/h2.fa.gz
     tar zcvf asm.tgz asm/

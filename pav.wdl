@@ -382,18 +382,6 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_cluster_sv_h1 {
-    input:
-      pav_conf = config,
-      pav_sw = pav_tar,
-      pav_asm = tar_asm.asm_tar,
-      hap = "h1",
-      vartype="sv",
-      inbed = call_cigar_merge_h1.insdelBedMerge,
-      threads = "4",
-      mem_gb = "16",
-      sample = sample
-  }
   call call_inv.call_inv_cluster_indel_h2 {
     input:
       pav_conf = config,
@@ -416,18 +404,6 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       vartype="snv",
-      inbed = call_cigar_merge_h2.insdelBedMerge,
-      threads = "4",
-      mem_gb = "16",
-      sample = sample
-  }
-  call call_inv.call_inv_cluster_sv_h2 {
-    input:
-      pav_conf = config,
-      pav_sw = pav_tar,
-      pav_asm = tar_asm.asm_tar,
-      hap = "h2",
-      vartype="sv",
       inbed = call_cigar_merge_h2.insdelBedMerge,
       threads = "4",
       mem_gb = "16",
@@ -518,7 +494,6 @@ workflow pav {
       indelFlag = call_inv_flag_insdel_cluster_indel_h1.bed,
       svFlag = call_inv_flag_insdel_cluster_sv_h1.bed,
       snvCluster = call_inv_cluster_snv_h1.bed,
-      svCluster = call_inv_cluster_sv_h1.bed,
       indelCluster = call_inv_cluster_indel_h1.bed,
       threads = "1",
       mem_gb = "8",
@@ -533,7 +508,6 @@ workflow pav {
       indelFlag = call_inv_flag_insdel_cluster_indel_h2.bed,
       svFlag = call_inv_flag_insdel_cluster_sv_h2.bed,
       snvCluster = call_inv_cluster_snv_h2.bed,
-      svCluster = call_inv_cluster_sv_h2.bed,
       indelCluster = call_inv_cluster_indel_h2.bed,
       threads = "1",
       mem_gb = "8",
@@ -550,6 +524,7 @@ workflow pav {
         flag = call_inv_merge_flagged_loci_h1.bed,
         asmGz = align_get_tig_fa_h1.asmGz,
         batch = i,
+        refGz = align_ref.refGz,
         threads = "8",
         mem_gb = "8",
         sample = sample
@@ -566,6 +541,7 @@ workflow pav {
         flag = call_inv_merge_flagged_loci_h2.bed,
         asmGz = align_get_tig_fa_h2.asmGz,
         batch = i,
+        refGz = align_ref.refGz,
         threads = "8",
         mem_gb = "8",
         sample = sample
@@ -634,7 +610,7 @@ workflow pav {
         insBed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
-        chrom = chrom,
+        chrom = chrom[0],
         threads = "8",
         mem_gb = "12",
         sample = sample
@@ -651,7 +627,7 @@ workflow pav {
         delBed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
-        chrom = chrom,
+        chrom = chrom[0],
         threads = "8",
         mem_gb = "12",
         sample = sample
@@ -668,7 +644,7 @@ workflow pav {
         invBed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
-        chrom = chrom,
+        chrom = chrom[0],
         threads = "8",
         mem_gb = "12",
         sample = sample
@@ -685,7 +661,7 @@ workflow pav {
         snvBed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
-        chrom = chrom,
+        chrom = chrom[0],
         threads = "8",
         mem_gb = "12",
         sample = sample
@@ -698,6 +674,10 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       svtype = "snv_snv",
       inbed = call_merge_haplotypes_chrom_snv.bed,
+      callable_h1 = call_mappable_bed_h2.bed,
+      callable_h2 = call_mappable_bed_h1.bed,
+      integrated_h1 = call_integrate_sources_h1.insBed,
+      integrated_h2 = call_integrate_sources_h2.insBed,
       threads = "12",
       mem_gb = "24",
       sample = sample
@@ -709,6 +689,10 @@ workflow pav {
       pav_asm = tar_asm.asm_tar,
       svtype = "sv_inv",
       inbed = call_merge_haplotypes_chrom_svinv.bed,
+      callable_h1 = call_mappable_bed_h2.bed,
+      callable_h2 = call_mappable_bed_h1.bed,
+      integrated_h1 = call_integrate_sources_h1.insBed,
+      integrated_h2 = call_integrate_sources_h2.insBed,
       threads = "12",
       mem_gb = "24",
       sample = sample
@@ -718,7 +702,11 @@ workflow pav {
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      svtype = "sv_indel_ins",
+      integrated_h1 = call_integrate_sources_h1.insBed,
+      integrated_h2 = call_integrate_sources_h2.insBed,
+      callable_h1 = call_mappable_bed_h2.bed,
+      callable_h2 = call_mappable_bed_h1.bed,
+      svtype = "svindel_ins",
       inbed = call_merge_haplotypes_chrom_svindel_ins.bed,
       threads = "12",
       mem_gb = "24",
@@ -729,8 +717,12 @@ workflow pav {
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      svtype = "sv_indel_del",
+      svtype = "svindel_del",
+      callable_h1 = call_mappable_bed_h2.bed,
+      callable_h2 = call_mappable_bed_h1.bed,
       inbed = call_merge_haplotypes_chrom_svindel_del.bed,
+      integrated_h1 = call_integrate_sources_h1.insBed,
+      integrated_h2 = call_integrate_sources_h2.insBed,
       threads = "12",
       mem_gb = "24",
       sample = sample
