@@ -1,3 +1,5 @@
+version 1.0
+
 task call_cigar_h1 {
     File pav_conf
     File pav_sw
@@ -175,7 +177,7 @@ task call_integrate_sources_h1 {
     tar zxvf ${delBedIn}
     tar zxvf ${insBedIn}
     tar zxvf ${invBedIn}
-    tar zxvf ${invBatch}    
+    tar zxvf ${invBatch}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
     tar zcvf call_integrate_sources_${hap}_${sample}.tgz temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
   }
@@ -234,7 +236,7 @@ task call_merge_haplotypes_chrom_svindel_del {
     tar zxvf ${delBed_h1}
     tar zxvf ${delBed_h2}
     tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}   
+    tar zxvf ${callable_h2}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
     tar zcvf call_merge_haplotypes_chrom_svindel_${sample}_${svtype}_${chrom}.tgz temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
   }
@@ -263,7 +265,7 @@ task call_merge_haplotypes_chrom_svindel_ins {
     tar zxvf ${insBed_h1}
     tar zxvf ${insBed_h2}
     tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}   
+    tar zxvf ${callable_h2}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
     tar zcvf call_merge_haplotypes_chrom_svindel_${sample}_${svtype}_${chrom}.tgz temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
   }
@@ -321,7 +323,7 @@ task call_merge_haplotypes_chrom_snv {
     tar zxvf ${snvBed_h1}
     tar zxvf ${snvBed_h2}
     tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}  
+    tar zxvf ${callable_h2}
     snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
     tar zcvf call_merge_haplotypes_chrom_snv_${sample}_${svtype}_${chrom}.tgz temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
   }

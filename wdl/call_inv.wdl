@@ -1,3 +1,5 @@
+version 1.0
+
 task call_inv_flag_insdel_cluster_indel_h1 {
     String sample
     File pav_conf

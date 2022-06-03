@@ -1,3 +1,5 @@
+version 1.0
+
 task call_lg_split_h1 {
     File pav_conf
     File pav_sw

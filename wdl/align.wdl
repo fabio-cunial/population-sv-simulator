@@ -1,3 +1,5 @@
+version 1.0
+
 task align_ref {
     File pav_conf
     File pav_sw
