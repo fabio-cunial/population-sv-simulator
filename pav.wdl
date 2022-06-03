@@ -10,14 +10,18 @@ import "wdl/call_lg.wdl" as call_lg
 workflow pav {
   input {
     File ref
+    File refFai
+
     File hapOne
     File hapTwo
+
     String sample
-    File refFai
+
     File config
     File pav_tar
-    Array[Array[String]] chroms = read_tsv(refFai)
   }
+
+  Array[Array[String]] chroms = read_tsv(refFai)
 
   call setup.tar_asm {
     input:
