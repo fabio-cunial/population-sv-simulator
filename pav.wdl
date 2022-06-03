@@ -249,7 +249,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_del_h1 {
+  call call_lg.call_merge_lg_del_hap as call_merge_lg_del_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -261,7 +261,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_ins_h1 {
+  call call_lg.call_merge_lg_ins_hap as call_merge_lg_ins_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -273,7 +273,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_inv_h1 {
+  call call_lg.call_merge_lg_inv_hap as call_merge_lg_inv_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -285,7 +285,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_del_h2 {
+  call call_lg.call_merge_lg_del_hap as call_merge_lg_del_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -297,7 +297,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_ins_h2 {
+  call call_lg.call_merge_lg_ins_hap as call_merge_lg_ins_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -309,7 +309,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_inv_h2 {
+  call call_lg.call_merge_lg_inv_hap as call_merge_lg_inv_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
