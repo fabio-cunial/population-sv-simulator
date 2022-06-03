@@ -91,7 +91,7 @@ workflow pav {
       mem_gb = "12",
       sample = sample
   }
-  call align.align_get_read_bed_h1 {
+  call align.align_get_read_bed_hap as align_get_read_bed_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -104,7 +104,7 @@ workflow pav {
       mem_gb = "32",
       sample = sample
   }
-  call align.align_get_read_bed_h2 {
+  call align.align_get_read_bed_hap as align_get_read_bed_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
