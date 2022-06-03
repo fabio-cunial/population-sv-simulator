@@ -221,47 +221,13 @@ task call_inv_batch_hap {
   }
 }
 
-task call_inv_batch_merge_h1 {
+task call_inv_batch_merge_hap {
   input {
     String sample
     File pav_conf
     File pav_sw
     File pav_asm
     String hap
-    Array[File] invBed
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    echo ~{sep=" " invBed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/sv_inv_~{hap}.bed.gz
-    tar zcvf call_inv_batch_merge_~{hap}_~{sample}.tgz temp/~{sample}/inv_caller/sv_inv_~{hap}.bed.gz
-  >>>
-  output {
-    File bed = "call_inv_batch_merge_~{hap}_~{sample}.tgz "
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_inv_batch_merge_h2 {
-  input {
-    String sample
-    String hap
-    File pav_conf
-    File pav_sw
-    File pav_asm
     Array[File] invBed
     String threads
     String mem_gb
