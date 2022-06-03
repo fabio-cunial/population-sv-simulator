@@ -73,52 +73,12 @@ task call_cigar_merge_hap {
   }
 }
 
-task call_mappable_bed_h1 {
+task call_mappable_bed_hap {
   input {
     File pav_conf
     File pav_sw
     File pav_asm
     String sample
-    File delBed
-    File insBed
-    File invBed
-    File trimBed
-    String hap
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{delBed}
-    tar zxvf ~{insBed}
-    tar zxvf ~{invBed}
-    tar zxvf ~{trimBed}
-    snakemake -s pav/Snakefile --cores ~{threads} results/~{sample}/callable/callable_regions_~{hap}_500.bed.gz
-    tar zcvf call_mappable_bed_~{hap}_~{sample}.tgz results/~{sample}/callable/callable_regions_~{hap}_500.bed.gz
-  >>>
-  output {
-    File bed = "call_mappable_bed_~{hap}_~{sample}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_mappable_bed_h2 {
-  input {
-    String sample
-    File pav_conf
-    File pav_sw
-    File pav_asm
     File delBed
     File insBed
     File invBed

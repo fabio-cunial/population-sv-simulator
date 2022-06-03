@@ -420,7 +420,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_pav.call_mappable_bed_h1 {
+  call call_pav.call_mappable_bed_hap as call_mappable_bed_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -434,7 +434,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_mappable_bed_h2 {
+  call call_pav.call_mappable_bed_hap as call_mappable_bed_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
