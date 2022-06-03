@@ -1,6 +1,6 @@
 version 1.0
 
-task call_cigar_h1 {
+task call_cigar_hap {
   input {
     File pav_conf
     File pav_sw
@@ -21,45 +21,6 @@ task call_cigar_h1 {
     tar zxvf ~{trimBed}
     tar zxvf ~{asmGz}
     tar zxvf ~{refGz}
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/cigar/batched/insdel_~{hap}_~{batch}.bed.gz temp/~{sample}/cigar/batched/snv.bed_~{hap}_~{batch}.gz
-    tar zcvf call_cigar_~{hap}_~{sample}_~{batch}.tgz temp/~{sample}/cigar/batched/insdel_~{hap}_~{batch}.bed.gz temp/~{sample}/cigar/batched/snv.bed_~{hap}_~{batch}.gz
-  >>>
-  output {
-    File snvBed = "call_cigar_~{hap}_~{sample}_~{batch}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_cigar_h2 {
-  input {
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    String sample
-    File trimBed
-    File refGz
-    File asmGz
-    String batch
-    String threads
-    String mem_gb
-    String hap
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{trimBed}
-    tar zxvf ~{refGz}
-    tar zxvf ~{asmGz}
     snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/cigar/batched/insdel_~{hap}_~{batch}.bed.gz temp/~{sample}/cigar/batched/snv.bed_~{hap}_~{batch}.gz
     tar zcvf call_cigar_~{hap}_~{sample}_~{batch}.tgz temp/~{sample}/cigar/batched/insdel_~{hap}_~{batch}.bed.gz temp/~{sample}/cigar/batched/snv.bed_~{hap}_~{batch}.gz
   >>>

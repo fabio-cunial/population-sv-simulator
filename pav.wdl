@@ -142,7 +142,7 @@ workflow pav {
       sample = sample
   }
   scatter(i in range(10)) {
-     call call_pav.call_cigar_h1 {
+     call call_pav.call_cigar_hap as call_cigar_h1 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -156,9 +156,7 @@ workflow pav {
         mem_gb = "24",
         sample = sample
      }
-  }
-  scatter(i in range(10)) {
-     call call_pav.call_cigar_h2 {
+     call call_pav.call_cigar_hap as call_cigar_h2 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
