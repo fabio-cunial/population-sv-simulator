@@ -26,6 +26,16 @@ task call_cigar_h1 {
   output {
     File snvBed = "call_cigar_~{hap}_~{sample}_~{batch}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_cigar_h2 {
@@ -54,6 +64,16 @@ task call_cigar_h2 {
   output {
     File snvBed = "call_cigar_~{hap}_~{sample}_~{batch}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_cigar_merge_h1 {
@@ -77,6 +97,16 @@ task call_cigar_merge_h1 {
   output {
     File insdelBedMerge = "call_cigar_merge_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_cigar_merge_h2 {
@@ -99,6 +129,16 @@ task call_cigar_merge_h2 {
   >>>
   output {
     File insdelBedMerge = "call_cigar_merge_~{hap}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -129,6 +169,16 @@ task call_mappable_bed_h1 {
   output {
     File bed = "call_mappable_bed_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_mappable_bed_h2 {
@@ -157,6 +207,16 @@ task call_mappable_bed_h2 {
   >>>
   output {
     File bed = "call_mappable_bed_~{hap}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -189,6 +249,16 @@ task call_integrate_sources_h1 {
   output {
     File insBed = "call_integrate_sources_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_integrate_sources_h2 {
@@ -220,6 +290,16 @@ task call_integrate_sources_h2 {
   output {
     File insBed = "call_integrate_sources_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_haplotypes_chrom_svindel_del {
@@ -249,6 +329,16 @@ task call_merge_haplotypes_chrom_svindel_del {
   >>>
   output {
     File bed = "call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -280,6 +370,16 @@ task call_merge_haplotypes_chrom_svindel_ins {
   output {
     File bed = "call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_haplotypes_chrom_svinv {
@@ -310,6 +410,16 @@ task call_merge_haplotypes_chrom_svinv {
   output {
     File bed = "call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_haplotypes_chrom_snv {
@@ -339,6 +449,16 @@ task call_merge_haplotypes_chrom_snv {
   >>>
   output {
     File bed = "call_merge_haplotypes_chrom_snv_~{sample}_~{svtype}_~{chrom}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -371,6 +491,16 @@ task call_merge_haplotypes_inv {
   output {
     File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_haplotypes_svindel_del {
@@ -401,6 +531,16 @@ task call_merge_haplotypes_svindel_del {
   >>>
   output {
     File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -433,6 +573,16 @@ task call_merge_haplotypes_svindel_ins {
   output {
     File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_haplotypes_snv {
@@ -463,5 +613,15 @@ task call_merge_haplotypes_snv {
   >>>
   output {
     File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }

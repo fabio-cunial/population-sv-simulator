@@ -21,6 +21,16 @@ task call_lg_split_h1 {
   output {
     File batch = "call_lg_split_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_lg_split_h2 {
@@ -43,6 +53,16 @@ task call_lg_split_h2 {
   >>>
   output {
     File batch = "call_lg_split_~{hap}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -76,6 +96,16 @@ task call_lg_discover_h1 {
   output {
     File allBed = "call_lg_discover_~{sample}_~{hap}_~{batch}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_lg_discover_h2 {
@@ -108,6 +138,16 @@ task call_lg_discover_h2 {
   output {
     File allBed = "call_lg_discover_~{sample}_~{hap}_~{batch}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_lg_del_h1 {
@@ -131,6 +171,16 @@ task call_merge_lg_del_h1 {
   >>>
   output {
     File mergeBed = "call_merge_lg_del_~{hap}_~{svtype}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -156,6 +206,16 @@ task call_merge_lg_ins_h1 {
   output {
     File mergeBed = "call_merge_lg_ins_~{hap}_~{svtype}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_lg_inv_h1 {
@@ -179,6 +239,16 @@ task call_merge_lg_inv_h1 {
   >>>
   output {
     File mergeBed = "call_merge_lg_inv_~{hap}_~{svtype}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -204,6 +274,16 @@ task call_merge_lg_del_h2 {
   output {
     File mergeBed = "call_merge_lg_del_~{hap}_~{svtype}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_lg_ins_h2 {
@@ -228,6 +308,16 @@ task call_merge_lg_ins_h2 {
   output {
     File mergeBed = "call_merge_lg_ins_~{hap}_~{svtype}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_merge_lg_inv_h2 {
@@ -251,5 +341,15 @@ task call_merge_lg_inv_h2 {
   >>>
   output {
     File mergeBed = "call_merge_lg_inv_~{hap}_~{svtype}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }

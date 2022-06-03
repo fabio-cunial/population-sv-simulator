@@ -18,6 +18,16 @@ task align_ref {
   output {
     File refGz = "align_ref_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task align_get_tig_fa_h1 {
@@ -38,6 +48,16 @@ task align_get_tig_fa_h1 {
   >>>
   output {
     File asmGz = "align_get_tig_fa_~{hap}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -60,6 +80,16 @@ task align_get_tig_fa_h2 {
   output {
     File asmGz = "align_get_tig_fa_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task align_ref_anno_n_gap {
@@ -81,6 +111,16 @@ task align_ref_anno_n_gap {
   >>>
   output {
     File gaps = "align_ref_anno_n_gap_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -107,6 +147,16 @@ task align_map_h1 {
   output {
     File  samGz = "align_map_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task align_map_h2 {
@@ -131,6 +181,16 @@ task align_map_h2 {
   >>>
   output {
     File samGz = "align_map_~{hap}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
 
@@ -159,6 +219,16 @@ task align_get_read_bed_h1 {
   output {
     File bedGz = "align_get_read_bed_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task align_get_read_bed_h2 {
@@ -186,6 +256,16 @@ task align_get_read_bed_h2 {
   output {
     File bedGz = "align_get_read_bed_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task align_cut_tig_overlap_h1 {
@@ -211,6 +291,16 @@ task align_cut_tig_overlap_h1 {
   output {
     File trimBed = "align_cut_tig_overlap_~{hap}_~{sample}.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task align_cut_tig_overlap_h2 {
@@ -235,5 +325,15 @@ task align_cut_tig_overlap_h2 {
   >>>
   output {
     File trimBed = "align_cut_tig_overlap_~{hap}_~{sample}.tgz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }

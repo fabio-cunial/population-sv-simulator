@@ -20,6 +20,16 @@ task tar_asm {
   output {
     File asm_tar = "asm.tgz"
   }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
+  }
 }
 
 task call_final_bed {
@@ -56,5 +66,15 @@ task call_final_bed {
     File svInsFasta = "results/~{sample}/bed/fa/sv_ins.fa.gz"
     File svDelFasta = "results/~{sample}/bed/fa/sv_del.fa.gz"
     File invFasta = "results/~{sample}/bed/fa/sv_inv.fa.gz"
+  }
+  ############################
+  runtime {
+      cpu:            threads
+      memory:         mem_gb + " GiB"
+      disks:          "local-disk " + 1000 + " HDD"
+      bootDiskSizeGb: 50
+      preemptible:    3
+      maxRetries:     1
+      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
   }
 }
