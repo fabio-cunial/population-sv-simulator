@@ -13,7 +13,8 @@ task call_cigar_h1 {
     String sample
     String mem_gb
     String hap
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -51,7 +52,8 @@ task call_cigar_h2 {
     String threads
     String mem_gb
     String hap
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -86,7 +88,8 @@ task call_cigar_merge_h1 {
     Array[File] snvBatch
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -119,7 +122,8 @@ task call_cigar_merge_h2 {
     Array[File] snvBatch
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -155,7 +159,8 @@ task call_mappable_bed_h1 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -194,7 +199,8 @@ task call_mappable_bed_h2 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -234,7 +240,8 @@ task call_integrate_sources_h1 {
     File invBatch
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -275,7 +282,8 @@ task call_integrate_sources_h2 {
     File invBatch
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -316,7 +324,8 @@ task call_merge_haplotypes_chrom_svindel_del {
     String chrom
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -356,7 +365,8 @@ task call_merge_haplotypes_chrom_svindel_ins {
     String chrom
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -396,7 +406,8 @@ task call_merge_haplotypes_chrom_svinv {
     String sample
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -436,7 +447,8 @@ task call_merge_haplotypes_chrom_snv {
     String chrom
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -476,7 +488,8 @@ task call_merge_haplotypes_inv {
     String sample
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -517,7 +530,8 @@ task call_merge_haplotypes_svindel_del {
     String sample
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -558,7 +572,8 @@ task call_merge_haplotypes_svindel_ins {
     String sample
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -599,7 +614,8 @@ task call_merge_haplotypes_snv {
     Array[File] inbed
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}

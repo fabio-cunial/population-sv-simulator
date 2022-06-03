@@ -8,7 +8,8 @@ task align_ref {
     String sample
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -39,7 +40,8 @@ task align_get_tig_fa_h1 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -70,7 +72,8 @@ task align_get_tig_fa_h2 {
     String sample
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -101,7 +104,8 @@ task align_ref_anno_n_gap {
     String sample
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -135,7 +139,8 @@ task align_map_h1 {
     File refGz
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -170,7 +175,8 @@ task align_map_h2 {
     File asmGz
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -206,7 +212,8 @@ task align_get_read_bed_h1 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -243,7 +250,8 @@ task align_get_read_bed_h2 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{refGz}
@@ -279,7 +287,8 @@ task align_cut_tig_overlap_h1 {
     String threads
     String mem_gb
     String sample
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -314,7 +323,8 @@ task align_cut_tig_overlap_h2 {
     String threads
     String mem_gb
     String sample
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}

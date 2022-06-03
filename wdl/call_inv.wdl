@@ -11,7 +11,8 @@ task call_inv_flag_insdel_cluster_indel_h1 {
     String threads
     String mem_gb
     String vartype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -45,7 +46,8 @@ task call_inv_flag_insdel_cluster_sv_h1 {
     String threads
     String mem_gb
     String vartype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{inbed}
@@ -79,7 +81,8 @@ task call_inv_flag_insdel_cluster_indel_h2 {
     String threads
     String mem_gb
     String vartype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{inbed}
@@ -113,7 +116,8 @@ task call_inv_flag_insdel_cluster_sv_h2 {
     String threads
     String mem_gb
     String vartype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{inbed}
@@ -147,7 +151,8 @@ task call_inv_cluster_indel_h1 {
     String mem_gb
     String hap
     String vartype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -181,7 +186,8 @@ task call_inv_cluster_snv_h1 {
     String mem_gb
     String hap
     String vartype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -215,7 +221,8 @@ task call_inv_cluster_indel_h2 {
     String mem_gb
     String hap
     String vartype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -249,7 +256,8 @@ task call_inv_cluster_snv_h2 {
     String mem_gb
     String hap
     String vartype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -285,7 +293,8 @@ task call_inv_merge_flagged_loci_h1 {
     File indelCluster
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -324,7 +333,8 @@ task call_inv_merge_flagged_loci_h2 {
     File indelCluster
     String threads
     String mem_gb
-   } command <<<
+   }
+   command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -364,7 +374,8 @@ task call_inv_batch_h1 {
     String batch
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -404,7 +415,8 @@ task call_inv_batch_h2 {
     String batch
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -440,7 +452,8 @@ task call_inv_batch_merge_h1 {
     Array[File] invBed
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -473,7 +486,8 @@ task call_inv_batch_merge_h2 {
     Array[File] invBed
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}

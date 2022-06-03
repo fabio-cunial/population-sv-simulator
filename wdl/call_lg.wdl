@@ -10,7 +10,8 @@ task call_lg_split_h1 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -43,7 +44,8 @@ task call_lg_split_h2 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_asm}
     tar zxvf ~{pav_sw}
@@ -81,7 +83,8 @@ task call_lg_discover_h1 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -123,7 +126,8 @@ task call_lg_discover_h2 {
     String hap
     String threads
     String mem_gb
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -161,7 +165,8 @@ task call_merge_lg_del_h1 {
     String threads
     String mem_gb
     String svtype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -195,7 +200,8 @@ task call_merge_lg_ins_h1 {
     String threads
     String mem_gb
     String svtype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -229,7 +235,8 @@ task call_merge_lg_inv_h1 {
     String threads
     String mem_gb
     String svtype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -263,7 +270,8 @@ task call_merge_lg_del_h2 {
     String threads
     String mem_gb
     String svtype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -297,7 +305,8 @@ task call_merge_lg_ins_h2 {
     String threads
     String mem_gb
     String svtype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
@@ -331,7 +340,8 @@ task call_merge_lg_inv_h2 {
     String threads
     String mem_gb
     String svtype
-  } command <<<
+  }
+  command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
