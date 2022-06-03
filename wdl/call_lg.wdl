@@ -34,7 +34,7 @@ task call_lg_split_hap {
   }
 }
 
-task call_lg_discover_h1 {
+task call_lg_discover_hap {
   input {
     String sample
     File trimBed
@@ -45,49 +45,6 @@ task call_lg_discover_h1 {
     File batchFile
     File refGz
     File asmGz
-    File gaps
-    String hap
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{refGz}
-    tar zxvf ~{gaps}
-    tar zxvf ~{asmGz}
-    tar zxvf ~{trimBed}
-    tar zxvf ~{batchFile}
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/lg_sv/batch/sv_ins_~{hap}_~{batch}.bed.gz temp/~{sample}/lg_sv/batch/sv_del_~{hap}_~{batch}.bed.gz temp/~{sample}/lg_sv/batch/sv_inv_~{hap}_~{batch}.bed.gz
-    tar zcvf call_lg_discover_~{sample}_~{hap}_~{batch}.tgz temp/~{sample}/lg_sv/batch/sv_ins_~{hap}_~{batch}.bed.gz temp/~{sample}/lg_sv/batch/sv_del_~{hap}_~{batch}.bed.gz temp/~{sample}/lg_sv/batch/sv_inv_~{hap}_~{batch}.bed.gz
-  >>>
-  output {
-    File allBed = "call_lg_discover_~{sample}_~{hap}_~{batch}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_lg_discover_h2 {
-  input {
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    String sample
-    File trimBed
-    File refGz
-    String batch
-    File asmGz
-    File batchFile
     File gaps
     String hap
     String threads
