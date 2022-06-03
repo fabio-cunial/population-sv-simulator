@@ -117,7 +117,7 @@ workflow pav {
       mem_gb = "32",
       sample = sample
   }
-  call align.align_cut_tig_overlap_h1 {
+  call align.align_cut_tig_overlap_hap as align_cut_tig_overlap_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -129,7 +129,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_cut_tig_overlap_h2 {
+  call align.align_cut_tig_overlap_hap as align_cut_tig_overlap_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
