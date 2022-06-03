@@ -12,15 +12,15 @@ task call_inv_flag_insdel_cluster_indel_h1 {
     String mem_gb
     String vartype
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${inbed}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/flag/insdel_${vartype}_${hap}.bed.gz
-    tar zcvf call_inv_flag_insdel_cluster_indel_${sample}_${vartype}_${hap}.tgz temp/${sample}/inv_caller/flag/insdel_${vartype}_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{inbed}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/flag/insdel_~{vartype}_~{hap}.bed.gz
+    tar zcvf call_inv_flag_insdel_cluster_indel_~{sample}_~{vartype}_~{hap}.tgz temp/~{sample}/inv_caller/flag/insdel_~{vartype}_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_flag_insdel_cluster_indel_${sample}_${vartype}_${hap}.tgz"
+    File bed = "call_inv_flag_insdel_cluster_indel_~{sample}_~{vartype}_~{hap}.tgz"
   }
 }
 
@@ -36,15 +36,15 @@ task call_inv_flag_insdel_cluster_sv_h1 {
     String mem_gb
     String vartype
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${inbed}
-    tar zxvf ${pav_asm}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/flag/insdel_${vartype}_${hap}.bed.gz
-    tar zcvf call_inv_flag_insdel_cluster_indel_${sample}_${vartype}_${hap}.tgz temp/${sample}/inv_caller/flag/insdel_${vartype}_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{inbed}
+    tar zxvf ~{pav_asm}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/flag/insdel_~{vartype}_~{hap}.bed.gz
+    tar zcvf call_inv_flag_insdel_cluster_indel_~{sample}_~{vartype}_~{hap}.tgz temp/~{sample}/inv_caller/flag/insdel_~{vartype}_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_flag_insdel_cluster_indel_${sample}_${vartype}_${hap}.tgz"
+    File bed = "call_inv_flag_insdel_cluster_indel_~{sample}_~{vartype}_~{hap}.tgz"
   }
 }
 
@@ -60,15 +60,15 @@ task call_inv_flag_insdel_cluster_indel_h2 {
     String mem_gb
     String vartype
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${inbed}
-    tar zxvf ${pav_asm}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/flag/insdel_${vartype}_${hap}.bed.gz
-    tar zcvf call_inv_flag_insdel_cluster_indel_${sample}_${vartype}_${hap}.tgz temp/${sample}/inv_caller/flag/insdel_${vartype}_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{inbed}
+    tar zxvf ~{pav_asm}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/flag/insdel_~{vartype}_~{hap}.bed.gz
+    tar zcvf call_inv_flag_insdel_cluster_indel_~{sample}_~{vartype}_~{hap}.tgz temp/~{sample}/inv_caller/flag/insdel_~{vartype}_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_flag_insdel_cluster_indel_${sample}_${vartype}_${hap}.tgz"
+    File bed = "call_inv_flag_insdel_cluster_indel_~{sample}_~{vartype}_~{hap}.tgz"
   }
 }
 
@@ -84,15 +84,15 @@ task call_inv_flag_insdel_cluster_sv_h2 {
     String mem_gb
     String vartype
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${inbed}
-    tar zxvf ${pav_asm}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/flag/insdel_${vartype}_${hap}.bed.gz
-    tar zcvf call_inv_flag_insdel_cluster_indel_${sample}_${vartype}_${hap}.tgz temp/${sample}/inv_caller/flag/insdel_${vartype}_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{inbed}
+    tar zxvf ~{pav_asm}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/flag/insdel_~{vartype}_~{hap}.bed.gz
+    tar zcvf call_inv_flag_insdel_cluster_indel_~{sample}_~{vartype}_~{hap}.tgz temp/~{sample}/inv_caller/flag/insdel_~{vartype}_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_flag_insdel_cluster_indel_${sample}_${vartype}_${hap}.tgz"
+    File bed = "call_inv_flag_insdel_cluster_indel_~{sample}_~{vartype}_~{hap}.tgz"
   }
 }
 
@@ -108,15 +108,15 @@ task call_inv_cluster_indel_h1 {
     String hap
     String vartype
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${inbed}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/flag/cluster_${vartype}_${hap}.bed.gz
-    tar zcvf call_inv_cluster_indel_${hap}_${sample}_${vartype}.tgz temp/${sample}/inv_caller/flag/cluster_${vartype}_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{inbed}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/flag/cluster_~{vartype}_~{hap}.bed.gz
+    tar zcvf call_inv_cluster_indel_~{hap}_~{sample}_~{vartype}.tgz temp/~{sample}/inv_caller/flag/cluster_~{vartype}_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_cluster_indel_${hap}_${sample}_${vartype}.tgz"
+    File bed = "call_inv_cluster_indel_~{hap}_~{sample}_~{vartype}.tgz"
   }
 }
 
@@ -132,15 +132,15 @@ task call_inv_cluster_snv_h1 {
     String hap
     String vartype
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${inbed}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/flag/cluster_${vartype}_${hap}.bed.gz
-    tar zcvf call_inv_cluster_snv_${hap}_${sample}_${vartype}.tgz temp/${sample}/inv_caller/flag/cluster_${vartype}_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{inbed}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/flag/cluster_~{vartype}_~{hap}.bed.gz
+    tar zcvf call_inv_cluster_snv_~{hap}_~{sample}_~{vartype}.tgz temp/~{sample}/inv_caller/flag/cluster_~{vartype}_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_cluster_snv_${hap}_${sample}_${vartype}.tgz"
+    File bed = "call_inv_cluster_snv_~{hap}_~{sample}_~{vartype}.tgz"
   }
 }
 
@@ -156,15 +156,15 @@ task call_inv_cluster_indel_h2 {
     String hap
     String vartype
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${inbed}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/flag/cluster_${vartype}_${hap}.bed.gz
-    tar zcvf call_inv_cluster_indel_${hap}_${sample}_${vartype}.tgz temp/${sample}/inv_caller/flag/cluster_${vartype}_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{inbed}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/flag/cluster_~{vartype}_~{hap}.bed.gz
+    tar zcvf call_inv_cluster_indel_~{hap}_~{sample}_~{vartype}.tgz temp/~{sample}/inv_caller/flag/cluster_~{vartype}_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_cluster_indel_${hap}_${sample}_${vartype}.tgz"
+    File bed = "call_inv_cluster_indel_~{hap}_~{sample}_~{vartype}.tgz"
   }
 }
 
@@ -180,15 +180,15 @@ task call_inv_cluster_snv_h2 {
     String hap
     String vartype
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${inbed}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/flag/cluster_${vartype}_${hap}.bed.gz
-    tar zcvf call_inv_cluster_snv_${hap}_${sample}_${vartype}.tgz temp/${sample}/inv_caller/flag/cluster_${vartype}_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{inbed}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/flag/cluster_~{vartype}_~{hap}.bed.gz
+    tar zcvf call_inv_cluster_snv_~{hap}_~{sample}_~{vartype}.tgz temp/~{sample}/inv_caller/flag/cluster_~{vartype}_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_cluster_snv_${hap}_${sample}_${vartype}.tgz"
+    File bed = "call_inv_cluster_snv_~{hap}_~{sample}_~{vartype}.tgz"
   }
 }
 
@@ -206,18 +206,18 @@ task call_inv_merge_flagged_loci_h1 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${indelFlag}
-    tar zxvf ${svFlag}
-    tar zxvf ${snvCluster}
-    tar zxvf ${indelCluster}
-    snakemake -s pav/Snakefile --cores ${threads} results/${sample}/inv_caller/flagged_regions_${hap}.bed.gz
-    tar zcvf call_inv_merge_flagged_loci_${hap}_${sample}.tgz results/${sample}/inv_caller/flagged_regions_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{indelFlag}
+    tar zxvf ~{svFlag}
+    tar zxvf ~{snvCluster}
+    tar zxvf ~{indelCluster}
+    snakemake -s pav/Snakefile --cores ~{threads} results/~{sample}/inv_caller/flagged_regions_~{hap}.bed.gz
+    tar zcvf call_inv_merge_flagged_loci_~{hap}_~{sample}.tgz results/~{sample}/inv_caller/flagged_regions_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_merge_flagged_loci_${hap}_${sample}.tgz"
+    File bed = "call_inv_merge_flagged_loci_~{hap}_~{sample}.tgz"
   }
 }
 
@@ -235,18 +235,18 @@ task call_inv_merge_flagged_loci_h2 {
     String threads
     String mem_gb
    } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${indelFlag}
-    tar zxvf ${svFlag}
-    tar zxvf ${snvCluster}
-    tar zxvf ${indelCluster}
-    snakemake -s pav/Snakefile --cores ${threads} results/${sample}/inv_caller/flagged_regions_${hap}.bed.gz
-    tar zcvf call_inv_merge_flagged_loci_${hap}_${sample}.tgz results/${sample}/inv_caller/flagged_regions_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{indelFlag}
+    tar zxvf ~{svFlag}
+    tar zxvf ~{snvCluster}
+    tar zxvf ~{indelCluster}
+    snakemake -s pav/Snakefile --cores ~{threads} results/~{sample}/inv_caller/flagged_regions_~{hap}.bed.gz
+    tar zcvf call_inv_merge_flagged_loci_~{hap}_~{sample}.tgz results/~{sample}/inv_caller/flagged_regions_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_merge_flagged_loci_${hap}_${sample}.tgz"
+    File bed = "call_inv_merge_flagged_loci_~{hap}_~{sample}.tgz"
   }
 }
 
@@ -265,18 +265,18 @@ task call_inv_batch_h1 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${trimBed}
-    tar zxvf ${flag}
-    tar zxvf ${asmGz}
-    tar zxvf ${refGz}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/batch/${hap}/inv_call_${batch}.bed.gz
-    tar zcvf call_inv_batch_${hap}_${batch}_${sample}.tgz temp/${sample}/inv_caller/batch/${hap}/inv_call_${batch}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{trimBed}
+    tar zxvf ~{flag}
+    tar zxvf ~{asmGz}
+    tar zxvf ~{refGz}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/batch/~{hap}/inv_call_~{batch}.bed.gz
+    tar zcvf call_inv_batch_~{hap}_~{batch}_~{sample}.tgz temp/~{sample}/inv_caller/batch/~{hap}/inv_call_~{batch}.bed.gz
   >>>
   output {
-    File bed = "call_inv_batch_${hap}_${batch}_${sample}.tgz"
+    File bed = "call_inv_batch_~{hap}_~{batch}_~{sample}.tgz"
   }
 }
 
@@ -295,18 +295,18 @@ task call_inv_batch_h2 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${trimBed}
-    tar zxvf ${flag}
-    tar zxvf ${asmGz}
-    tar zxvf ${refGz}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/batch/${hap}/inv_call_${batch}.bed.gz
-    tar zcvf call_inv_batch_${hap}_${batch}_${sample}.tgz temp/${sample}/inv_caller/batch/${hap}/inv_call_${batch}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{trimBed}
+    tar zxvf ~{flag}
+    tar zxvf ~{asmGz}
+    tar zxvf ~{refGz}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/batch/~{hap}/inv_call_~{batch}.bed.gz
+    tar zcvf call_inv_batch_~{hap}_~{batch}_~{sample}.tgz temp/~{sample}/inv_caller/batch/~{hap}/inv_call_~{batch}.bed.gz
   >>>
   output {
-    File bed = "call_inv_batch_${hap}_${batch}_${sample}.tgz"
+    File bed = "call_inv_batch_~{hap}_~{batch}_~{sample}.tgz"
   }
 }
 
@@ -321,15 +321,15 @@ task call_inv_batch_merge_h1 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    echo ${sep=" " invBed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/sv_inv_${hap}.bed.gz
-    tar zcvf call_inv_batch_merge_${hap}_${sample}.tgz temp/${sample}/inv_caller/sv_inv_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    echo ~{sep=" " invBed} | tr " " "\n" | xargs -I '@' tar zxvf @
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/sv_inv_~{hap}.bed.gz
+    tar zcvf call_inv_batch_merge_~{hap}_~{sample}.tgz temp/~{sample}/inv_caller/sv_inv_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_batch_merge_${hap}_${sample}.tgz "
+    File bed = "call_inv_batch_merge_~{hap}_~{sample}.tgz "
   }
 }
 
@@ -344,14 +344,14 @@ task call_inv_batch_merge_h2 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    echo ${sep=" " invBed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/inv_caller/sv_inv_${hap}.bed.gz
-    tar zcvf call_inv_batch_merge_${hap}_${sample}.tgz temp/${sample}/inv_caller/sv_inv_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    echo ~{sep=" " invBed} | tr " " "\n" | xargs -I '@' tar zxvf @
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/sv_inv_~{hap}.bed.gz
+    tar zcvf call_inv_batch_merge_~{hap}_~{sample}.tgz temp/~{sample}/inv_caller/sv_inv_~{hap}.bed.gz
   >>>
   output {
-    File bed = "call_inv_batch_merge_${hap}_${sample}.tgz "
+    File bed = "call_inv_batch_merge_~{hap}_~{sample}.tgz "
   }
 }

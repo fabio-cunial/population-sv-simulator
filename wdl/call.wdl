@@ -14,17 +14,17 @@ task call_cigar_h1 {
     String mem_gb
     String hap
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${trimBed}
-    tar zxvf ${asmGz}
-    tar zxvf ${refGz}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/batched/insdel_${hap}_${batch}.bed.gz temp/${sample}/cigar/batched/snv.bed_${hap}_${batch}.gz
-    tar zcvf call_cigar_${hap}_${sample}_${batch}.tgz temp/${sample}/cigar/batched/insdel_${hap}_${batch}.bed.gz temp/${sample}/cigar/batched/snv.bed_${hap}_${batch}.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{trimBed}
+    tar zxvf ~{asmGz}
+    tar zxvf ~{refGz}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/cigar/batched/insdel_~{hap}_~{batch}.bed.gz temp/~{sample}/cigar/batched/snv.bed_~{hap}_~{batch}.gz
+    tar zcvf call_cigar_~{hap}_~{sample}_~{batch}.tgz temp/~{sample}/cigar/batched/insdel_~{hap}_~{batch}.bed.gz temp/~{sample}/cigar/batched/snv.bed_~{hap}_~{batch}.gz
   >>>
   output {
-    File snvBed = "call_cigar_${hap}_${sample}_${batch}.tgz"
+    File snvBed = "call_cigar_~{hap}_~{sample}_~{batch}.tgz"
   }
 }
 
@@ -42,17 +42,17 @@ task call_cigar_h2 {
     String mem_gb
     String hap
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${trimBed}
-    tar zxvf ${refGz}
-    tar zxvf ${asmGz}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/batched/insdel_${hap}_${batch}.bed.gz temp/${sample}/cigar/batched/snv.bed_${hap}_${batch}.gz
-    tar zcvf call_cigar_${hap}_${sample}_${batch}.tgz temp/${sample}/cigar/batched/insdel_${hap}_${batch}.bed.gz temp/${sample}/cigar/batched/snv.bed_${hap}_${batch}.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{trimBed}
+    tar zxvf ~{refGz}
+    tar zxvf ~{asmGz}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/cigar/batched/insdel_~{hap}_~{batch}.bed.gz temp/~{sample}/cigar/batched/snv.bed_~{hap}_~{batch}.gz
+    tar zcvf call_cigar_~{hap}_~{sample}_~{batch}.tgz temp/~{sample}/cigar/batched/insdel_~{hap}_~{batch}.bed.gz temp/~{sample}/cigar/batched/snv.bed_~{hap}_~{batch}.gz
   >>>
   output {
-    File snvBed = "call_cigar_${hap}_${sample}_${batch}.tgz"
+    File snvBed = "call_cigar_~{hap}_~{sample}_~{batch}.tgz"
   }
 }
 
@@ -67,15 +67,15 @@ task call_cigar_merge_h1 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    echo ${sep=" " snvBatch} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
-    tar zcvf call_cigar_merge_${hap}_${sample}.tgz temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    echo ~{sep=" " snvBatch} | tr " " "\n" | xargs -I '@' tar zxvf @
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/cigar/pre_inv/svindel_insdel_~{hap}.bed.gz temp/~{sample}/cigar/pre_inv/snv_snv_~{hap}.bed.gz
+    tar zcvf call_cigar_merge_~{hap}_~{sample}.tgz temp/~{sample}/cigar/pre_inv/svindel_insdel_~{hap}.bed.gz temp/~{sample}/cigar/pre_inv/snv_snv_~{hap}.bed.gz
   >>>
   output {
-    File insdelBedMerge = "call_cigar_merge_${hap}_${sample}.tgz"
+    File insdelBedMerge = "call_cigar_merge_~{hap}_~{sample}.tgz"
   }
 }
 
@@ -90,15 +90,15 @@ task call_cigar_merge_h2 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    echo ${sep=" " snvBatch} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
-    tar zcvf call_cigar_merge_${hap}_${sample}.tgz temp/${sample}/cigar/pre_inv/svindel_insdel_${hap}.bed.gz temp/${sample}/cigar/pre_inv/snv_snv_${hap}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    echo ~{sep=" " snvBatch} | tr " " "\n" | xargs -I '@' tar zxvf @
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/cigar/pre_inv/svindel_insdel_~{hap}.bed.gz temp/~{sample}/cigar/pre_inv/snv_snv_~{hap}.bed.gz
+    tar zcvf call_cigar_merge_~{hap}_~{sample}.tgz temp/~{sample}/cigar/pre_inv/svindel_insdel_~{hap}.bed.gz temp/~{sample}/cigar/pre_inv/snv_snv_~{hap}.bed.gz
   >>>
   output {
-    File insdelBedMerge = "call_cigar_merge_${hap}_${sample}.tgz"
+    File insdelBedMerge = "call_cigar_merge_~{hap}_~{sample}.tgz"
   }
 }
 
@@ -116,18 +116,18 @@ task call_mappable_bed_h1 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${delBed}
-    tar zxvf ${insBed}
-    tar zxvf ${invBed}
-    tar zxvf ${trimBed}
-    snakemake -s pav/Snakefile --cores ${threads} results/${sample}/callable/callable_regions_${hap}_500.bed.gz
-    tar zcvf call_mappable_bed_${hap}_${sample}.tgz results/${sample}/callable/callable_regions_${hap}_500.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{delBed}
+    tar zxvf ~{insBed}
+    tar zxvf ~{invBed}
+    tar zxvf ~{trimBed}
+    snakemake -s pav/Snakefile --cores ~{threads} results/~{sample}/callable/callable_regions_~{hap}_500.bed.gz
+    tar zcvf call_mappable_bed_~{hap}_~{sample}.tgz results/~{sample}/callable/callable_regions_~{hap}_500.bed.gz
   >>>
   output {
-    File bed = "call_mappable_bed_${hap}_${sample}.tgz"
+    File bed = "call_mappable_bed_~{hap}_~{sample}.tgz"
   }
 }
 
@@ -145,18 +145,18 @@ task call_mappable_bed_h2 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${delBed}
-    tar zxvf ${insBed}
-    tar zxvf ${invBed}
-    tar zxvf ${trimBed}
-    snakemake -s pav/Snakefile --cores ${threads} results/${sample}/callable/callable_regions_${hap}_500.bed.gz
-    tar zcvf call_mappable_bed_${hap}_${sample}.tgz results/${sample}/callable/callable_regions_${hap}_500.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{delBed}
+    tar zxvf ~{insBed}
+    tar zxvf ~{invBed}
+    tar zxvf ~{trimBed}
+    snakemake -s pav/Snakefile --cores ~{threads} results/~{sample}/callable/callable_regions_~{hap}_500.bed.gz
+    tar zcvf call_mappable_bed_~{hap}_~{sample}.tgz results/~{sample}/callable/callable_regions_~{hap}_500.bed.gz
   >>>
   output {
-    File bed = "call_mappable_bed_${hap}_${sample}.tgz"
+    File bed = "call_mappable_bed_~{hap}_~{sample}.tgz"
   }
 }
 
@@ -175,19 +175,19 @@ task call_integrate_sources_h1 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${preInvSvBed}
-    tar zxvf ${delBedIn}
-    tar zxvf ${insBedIn}
-    tar zxvf ${invBedIn}
-    tar zxvf ${invBatch}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
-    tar zcvf call_integrate_sources_${hap}_${sample}.tgz temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{preInvSvBed}
+    tar zxvf ~{delBedIn}
+    tar zxvf ~{insBedIn}
+    tar zxvf ~{invBedIn}
+    tar zxvf ~{invBatch}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/integrated/~{hap}/svindel_ins.bed.gz temp/~{sample}/bed/integrated/~{hap}/svindel_del.bed.gz temp/~{sample}/bed/integrated/~{hap}/snv_snv.bed.gz temp/~{sample}/bed/integrated/~{hap}/sv_inv.bed.gz
+    tar zcvf call_integrate_sources_~{hap}_~{sample}.tgz temp/~{sample}/bed/integrated/~{hap}/svindel_ins.bed.gz temp/~{sample}/bed/integrated/~{hap}/svindel_del.bed.gz temp/~{sample}/bed/integrated/~{hap}/snv_snv.bed.gz temp/~{sample}/bed/integrated/~{hap}/sv_inv.bed.gz
   >>>
   output {
-    File insBed = "call_integrate_sources_${hap}_${sample}.tgz"
+    File insBed = "call_integrate_sources_~{hap}_~{sample}.tgz"
   }
 }
 
@@ -206,19 +206,19 @@ task call_integrate_sources_h2 {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${preInvSvBed}
-    tar zxvf ${delBedIn}
-    tar zxvf ${insBedIn}
-    tar zxvf ${invBedIn}
-    tar zxvf ${invBatch}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
-    tar zcvf call_integrate_sources_${hap}_${sample}.tgz temp/${sample}/bed/integrated/${hap}/svindel_ins.bed.gz temp/${sample}/bed/integrated/${hap}/svindel_del.bed.gz temp/${sample}/bed/integrated/${hap}/snv_snv.bed.gz temp/${sample}/bed/integrated/${hap}/sv_inv.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{preInvSvBed}
+    tar zxvf ~{delBedIn}
+    tar zxvf ~{insBedIn}
+    tar zxvf ~{invBedIn}
+    tar zxvf ~{invBatch}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/integrated/~{hap}/svindel_ins.bed.gz temp/~{sample}/bed/integrated/~{hap}/svindel_del.bed.gz temp/~{sample}/bed/integrated/~{hap}/snv_snv.bed.gz temp/~{sample}/bed/integrated/~{hap}/sv_inv.bed.gz
+    tar zcvf call_integrate_sources_~{hap}_~{sample}.tgz temp/~{sample}/bed/integrated/~{hap}/svindel_ins.bed.gz temp/~{sample}/bed/integrated/~{hap}/svindel_del.bed.gz temp/~{sample}/bed/integrated/~{hap}/snv_snv.bed.gz temp/~{sample}/bed/integrated/~{hap}/sv_inv.bed.gz
   >>>
   output {
-    File insBed = "call_integrate_sources_${hap}_${sample}.tgz"
+    File insBed = "call_integrate_sources_~{hap}_~{sample}.tgz"
   }
 }
 
@@ -237,18 +237,18 @@ task call_merge_haplotypes_chrom_svindel_del {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${delBed_h1}
-    tar zxvf ${delBed_h2}
-    tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
-    tar zcvf call_merge_haplotypes_chrom_svindel_${sample}_${svtype}_${chrom}.tgz temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{delBed_h1}
+    tar zxvf ~{delBed_h2}
+    tar zxvf ~{callable_h1}
+    tar zxvf ~{callable_h2}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
+    tar zcvf call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
   >>>
   output {
-    File bed = "call_merge_haplotypes_chrom_svindel_${sample}_${svtype}_${chrom}.tgz"
+    File bed = "call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz"
   }
 }
 
@@ -267,18 +267,18 @@ task call_merge_haplotypes_chrom_svindel_ins {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${insBed_h1}
-    tar zxvf ${insBed_h2}
-    tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
-    tar zcvf call_merge_haplotypes_chrom_svindel_${sample}_${svtype}_${chrom}.tgz temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{insBed_h1}
+    tar zxvf ~{insBed_h2}
+    tar zxvf ~{callable_h1}
+    tar zxvf ~{callable_h2}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
+    tar zcvf call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
   >>>
   output {
-    File bed = "call_merge_haplotypes_chrom_svindel_${sample}_${svtype}_${chrom}.tgz"
+    File bed = "call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz"
   }
 }
 
@@ -297,18 +297,18 @@ task call_merge_haplotypes_chrom_svinv {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${invBed_h1}
-    tar zxvf ${invBed_h2}
-    tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
-    tar zcvf call_merge_haplotypes_chrom_svindel_${sample}_${svtype}_${chrom}.tgz temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{invBed_h1}
+    tar zxvf ~{invBed_h2}
+    tar zxvf ~{callable_h1}
+    tar zxvf ~{callable_h2}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
+    tar zcvf call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
   >>>
   output {
-    File bed = "call_merge_haplotypes_chrom_svindel_${sample}_${svtype}_${chrom}.tgz"
+    File bed = "call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz"
   }
 }
 
@@ -327,18 +327,18 @@ task call_merge_haplotypes_chrom_snv {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${snvBed_h1}
-    tar zxvf ${snvBed_h2}
-    tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
-    tar zcvf call_merge_haplotypes_chrom_snv_${sample}_${svtype}_${chrom}.tgz temp/${sample}/bed/bychrom/${svtype}/${chrom}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{snvBed_h1}
+    tar zxvf ~{snvBed_h2}
+    tar zxvf ~{callable_h1}
+    tar zxvf ~{callable_h2}
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
+    tar zcvf call_merge_haplotypes_chrom_snv_~{sample}_~{svtype}_~{chrom}.tgz temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
   >>>
   output {
-    File bed = "call_merge_haplotypes_chrom_snv_${sample}_${svtype}_${chrom}.tgz"
+    File bed = "call_merge_haplotypes_chrom_snv_~{sample}_~{svtype}_~{chrom}.tgz"
   }
 }
 
@@ -357,19 +357,19 @@ task call_merge_haplotypes_inv {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${integrated_h1}
-    tar zxvf ${integrated_h2}
-    tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}
-    echo ${sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
-    tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{integrated_h1}
+    tar zxvf ~{integrated_h2}
+    tar zxvf ~{callable_h1}
+    tar zxvf ~{callable_h2}
+    echo ~{sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/merged/~{svtype}.bed.gz
+    tar zcvf call_merge_haplotypes_~{svtype}_~{sample}.tgz temp/~{sample}/bed/merged/~{svtype}.bed.gz
   >>>
   output {
-    File bed = "call_merge_haplotypes_${svtype}_${sample}.tgz"
+    File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
   }
 }
 
@@ -388,19 +388,19 @@ task call_merge_haplotypes_svindel_del {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${integrated_h1}
-    tar zxvf ${integrated_h2}
-    tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}
-    echo ${sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
-    tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{integrated_h1}
+    tar zxvf ~{integrated_h2}
+    tar zxvf ~{callable_h1}
+    tar zxvf ~{callable_h2}
+    echo ~{sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/merged/~{svtype}.bed.gz
+    tar zcvf call_merge_haplotypes_~{svtype}_~{sample}.tgz temp/~{sample}/bed/merged/~{svtype}.bed.gz
   >>>
   output {
-    File bed = "call_merge_haplotypes_${svtype}_${sample}.tgz"
+    File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
   }
 }
 
@@ -419,19 +419,19 @@ task call_merge_haplotypes_svindel_ins {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${integrated_h1}
-    tar zxvf ${integrated_h2}
-    tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}
-    echo ${sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
-    tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{integrated_h1}
+    tar zxvf ~{integrated_h2}
+    tar zxvf ~{callable_h1}
+    tar zxvf ~{callable_h2}
+    echo ~{sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/merged/~{svtype}.bed.gz
+    tar zcvf call_merge_haplotypes_~{svtype}_~{sample}.tgz temp/~{sample}/bed/merged/~{svtype}.bed.gz
   >>>
   output {
-    File bed = "call_merge_haplotypes_${svtype}_${sample}.tgz"
+    File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
   }
 }
 
@@ -450,18 +450,18 @@ task call_merge_haplotypes_snv {
     String threads
     String mem_gb
   } command <<<
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${integrated_h1}
-    tar zxvf ${integrated_h2}
-    tar zxvf ${callable_h1}
-    tar zxvf ${callable_h2}
-    echo ${sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ${threads} temp/${sample}/bed/merged/${svtype}.bed.gz
-    tar zcvf call_merge_haplotypes_${svtype}_${sample}.tgz temp/${sample}/bed/merged/${svtype}.bed.gz
+    cp ~{pav_conf} ./
+    tar zxvf ~{pav_sw}
+    tar zxvf ~{pav_asm}
+    tar zxvf ~{integrated_h1}
+    tar zxvf ~{integrated_h2}
+    tar zxvf ~{callable_h1}
+    tar zxvf ~{callable_h2}
+    echo ~{sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
+    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/merged/~{svtype}.bed.gz
+    tar zcvf call_merge_haplotypes_~{svtype}_~{sample}.tgz temp/~{sample}/bed/merged/~{svtype}.bed.gz
   >>>
   output {
-    File bed = "call_merge_haplotypes_${svtype}_${sample}.tgz"
+    File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
   }
 }
