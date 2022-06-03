@@ -477,7 +477,7 @@ workflow pav {
       sample = sample
   }
   scatter(i in range(60)) {
-     call call_inv.call_inv_batch_h1 {
+     call call_inv.call_inv_batch_hap as call_inv_batch_h1 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -492,9 +492,7 @@ workflow pav {
         mem_gb = "8",
         sample = sample
      }
-  }
-  scatter(i in range(60)) {
-     call call_inv.call_inv_batch_h2 {
+     call call_inv.call_inv_batch_hap as call_inv_batch_h2 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,

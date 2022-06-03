@@ -180,7 +180,7 @@ task call_inv_merge_flagged_loci_hap {
   }
 }
 
-task call_inv_batch_h1 {
+task call_inv_batch_hap {
   input {
     String sample
     File pav_conf
@@ -189,47 +189,6 @@ task call_inv_batch_h1 {
     String hap
     File trimBed
     File flag
-    File asmGz
-    File refGz
-    String batch
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{trimBed}
-    tar zxvf ~{flag}
-    tar zxvf ~{asmGz}
-    tar zxvf ~{refGz}
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/inv_caller/batch/~{hap}/inv_call_~{batch}.bed.gz
-    tar zcvf call_inv_batch_~{hap}_~{batch}_~{sample}.tgz temp/~{sample}/inv_caller/batch/~{hap}/inv_call_~{batch}.bed.gz
-  >>>
-  output {
-    File bed = "call_inv_batch_~{hap}_~{batch}_~{sample}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_inv_batch_h2 {
-  input {
-    String sample
-    String hap
-    File trimBed
-    File flag
-    File pav_conf
-    File pav_sw
-    File pav_asm
     File asmGz
     File refGz
     String batch
