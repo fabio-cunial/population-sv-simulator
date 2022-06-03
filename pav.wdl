@@ -37,7 +37,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_get_tig_fa_hap as align_get_tig_fa_h1{
+  call align.align_get_tig_fa_hap as align_get_tig_fa_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -67,7 +67,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_map_h1 {
+  call align.align_map_hap as align_map_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -79,14 +79,14 @@ workflow pav {
       mem_gb = "12",
       sample = sample
   }
-  call align.align_map_h2 {
+  call align.align_map_hap as align_map_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
-      asmGz = align_get_tig_fa_h2.asmGz,
       refGz = align_ref.refGz,
+      asmGz = align_get_tig_fa_h2.asmGz,
       threads = "8",
       mem_gb = "12",
       sample = sample
