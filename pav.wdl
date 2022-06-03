@@ -37,7 +37,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_get_tig_fa_h1 {
+  call align.align_get_tig_fa_hap as align_get_tig_fa_h1{
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -47,7 +47,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_get_tig_fa_h2 {
+  call align.align_get_tig_fa_hap as align_get_tig_fa_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
