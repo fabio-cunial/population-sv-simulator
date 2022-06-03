@@ -173,7 +173,7 @@ workflow pav {
         sample = sample
      }
   }
-  call call_lg.call_lg_split_h1 {
+  call call_lg.call_lg_split_hap as call_lg_split_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -184,7 +184,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_lg_split_h2 {
+  call call_lg.call_lg_split_hap as call_lg_split_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,

@@ -1,6 +1,6 @@
 version 1.0
 
-task call_lg_split_h1 {
+task call_lg_split_hap {
   input {
     File pav_conf
     File pav_sw
@@ -15,40 +15,6 @@ task call_lg_split_h1 {
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
-    tar zxvf ~{trimBed}
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/lg_sv/batch_~{hap}.tsv.gz
-    tar zcvf call_lg_split_~{hap}_~{sample}.tgz temp/~{sample}/lg_sv/batch_~{hap}.tsv.gz
-  >>>
-  output {
-    File batch = "call_lg_split_~{hap}_~{sample}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_lg_split_h2 {
-  input {
-    String sample
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    File trimBed
-    String hap
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{pav_sw}
     tar zxvf ~{trimBed}
     snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/lg_sv/batch_~{hap}.tsv.gz
     tar zcvf call_lg_split_~{hap}_~{sample}.tgz temp/~{sample}/lg_sv/batch_~{hap}.tsv.gz
