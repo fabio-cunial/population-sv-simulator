@@ -372,7 +372,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_flag_insdel_cluster_indel_h1 {
+  call call_inv.call_inv_flag_insdel_cluster_indel_hap as call_inv_flag_insdel_cluster_indel_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -384,7 +384,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_flag_insdel_cluster_indel_h2 {
+  call call_inv.call_inv_flag_insdel_cluster_indel_hap as call_inv_flag_insdel_cluster_indel_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -396,7 +396,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_flag_insdel_cluster_sv_h1 {
+  call call_inv.call_inv_flag_insdel_cluster_sv_hap as call_inv_flag_insdel_cluster_sv_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -408,7 +408,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_flag_insdel_cluster_sv_h2 {
+  call call_inv.call_inv_flag_insdel_cluster_sv_hap as call_inv_flag_insdel_cluster_sv_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
