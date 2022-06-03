@@ -96,7 +96,6 @@ task call_inv_flag_insdel_cluster_sv_h2 {
   }
 }
 
-
 task call_inv_cluster_indel_h1 {
   input {
     String sample
@@ -145,8 +144,6 @@ task call_inv_cluster_snv_h1 {
   }
 }
 
-
-
 task call_inv_cluster_indel_h2 {
   input {
     String sample
@@ -194,8 +191,6 @@ task call_inv_cluster_snv_h2 {
     File bed = "call_inv_cluster_snv_${hap}_${sample}_${vartype}.tgz"
   }
 }
-
-
 
 task call_inv_merge_flagged_loci_h1 {
   input {
@@ -337,7 +332,6 @@ task call_inv_batch_merge_h1 {
     File bed = "call_inv_batch_merge_${hap}_${sample}.tgz "
   }
 }
-
 
 task call_inv_batch_merge_h2 {
   input {

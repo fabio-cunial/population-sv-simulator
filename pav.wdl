@@ -707,6 +707,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
+
   output {
     File snvBed = call_final_bed.snvBedOut
     File invBed = call_final_bed.invBedOut

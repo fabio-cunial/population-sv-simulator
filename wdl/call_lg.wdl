@@ -110,7 +110,6 @@ task call_lg_discover_h2 {
   }
 }
 
-
 task call_merge_lg_del_h1 {
   input {
     File pav_conf

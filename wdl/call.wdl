@@ -56,7 +56,6 @@ task call_cigar_h2 {
   }
 }
 
-
 task call_cigar_merge_h1 {
   input {
     File pav_conf
@@ -102,7 +101,6 @@ task call_cigar_merge_h2 {
     File insdelBedMerge = "call_cigar_merge_${hap}_${sample}.tgz"
   }
 }
-
 
 task call_mappable_bed_h1 {
   input {
@@ -467,4 +465,3 @@ task call_merge_haplotypes_snv {
     File bed = "call_merge_haplotypes_${svtype}_${sample}.tgz"
   }
 }
-
