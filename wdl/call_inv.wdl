@@ -140,7 +140,7 @@ task call_inv_cluster_snv_hap {
   }
 }
 
-task call_inv_merge_flagged_loci_h1 {
+task call_inv_merge_flagged_loci_hap {
   input {
     String sample
     String hap
@@ -155,46 +155,6 @@ task call_inv_merge_flagged_loci_h1 {
     String mem_gb
   }
   command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{indelFlag}
-    tar zxvf ~{svFlag}
-    tar zxvf ~{snvCluster}
-    tar zxvf ~{indelCluster}
-    snakemake -s pav/Snakefile --cores ~{threads} results/~{sample}/inv_caller/flagged_regions_~{hap}.bed.gz
-    tar zcvf call_inv_merge_flagged_loci_~{hap}_~{sample}.tgz results/~{sample}/inv_caller/flagged_regions_~{hap}.bed.gz
-  >>>
-  output {
-    File bed = "call_inv_merge_flagged_loci_~{hap}_~{sample}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_inv_merge_flagged_loci_h2 {
-  input {
-    String sample
-    String hap
-    File indelFlag
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    File svFlag
-    File snvCluster
-    File indelCluster
-    String threads
-    String mem_gb
-   }
-   command <<<
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
