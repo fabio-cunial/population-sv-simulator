@@ -141,7 +141,7 @@ task call_integrate_sources_hap {
     tar zcvf call_integrate_sources_~{hap}_~{sample}.tgz temp/~{sample}/bed/integrated/~{hap}/svindel_ins.bed.gz temp/~{sample}/bed/integrated/~{hap}/svindel_del.bed.gz temp/~{sample}/bed/integrated/~{hap}/snv_snv.bed.gz temp/~{sample}/bed/integrated/~{hap}/sv_inv.bed.gz
   >>>
   output {
-    File insBed = "call_integrate_sources_~{hap}_~{sample}.tgz"
+    File all_vars_bed = "call_integrate_sources_~{hap}_~{sample}.tgz"
   }
   ############################
   runtime {
