@@ -565,14 +565,14 @@ workflow pav {
       sample = sample
   }
   scatter(chrom in chroms) {
-     call call_pav.call_merge_haplotypes_chrom_svindel_ins {
+     call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svindel_ins {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "svindel_ins",
-        insBed_h1 = call_integrate_sources_h1.insBed,
-        insBed_h2 = call_integrate_sources_h2.insBed,
+        svindel_bed_h1 = call_integrate_sources_h1.insBed,
+        svindel_bed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom[0],
@@ -580,16 +580,14 @@ workflow pav {
         mem_gb = "12",
         sample = sample
      }
-  }
-  scatter(chrom in chroms) {
-     call call_pav.call_merge_haplotypes_chrom_svindel_del {
+     call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svindel_del {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "svindel_del",
-        delBed_h1 = call_integrate_sources_h1.insBed,
-        delBed_h2 = call_integrate_sources_h2.insBed,
+        svindel_bed_h1 = call_integrate_sources_h1.insBed,
+        svindel_bed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom[0],
@@ -597,16 +595,14 @@ workflow pav {
         mem_gb = "12",
         sample = sample
      }
-  }
-  scatter(chrom in chroms) {
-     call call_pav.call_merge_haplotypes_chrom_svinv {
+     call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svinv {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "sv_inv",
-        invBed_h1 = call_integrate_sources_h1.insBed,
-        invBed_h2 = call_integrate_sources_h2.insBed,
+        svindel_bed_h1 = call_integrate_sources_h1.insBed,
+        svindel_bed_h2 = call_integrate_sources_h2.insBed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom[0],

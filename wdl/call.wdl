@@ -155,15 +155,15 @@ task call_integrate_sources_hap {
   }
 }
 
-task call_merge_haplotypes_chrom_svindel_del {
+task call_merge_haplotypes_chrom_svindel {
   input {
     String svtype
     File pav_conf
     File pav_sw
     File pav_asm
-    File delBed_h1
     String sample
-    File delBed_h2
+    File svindel_bed_h1
+    File svindel_bed_h2
     File callable_h1
     File callable_h2
     String chrom
@@ -174,90 +174,8 @@ task call_merge_haplotypes_chrom_svindel_del {
     cp ~{pav_conf} ./
     tar zxvf ~{pav_sw}
     tar zxvf ~{pav_asm}
-    tar zxvf ~{delBed_h1}
-    tar zxvf ~{delBed_h2}
-    tar zxvf ~{callable_h1}
-    tar zxvf ~{callable_h2}
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
-    tar zcvf call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
-  >>>
-  output {
-    File bed = "call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_merge_haplotypes_chrom_svindel_ins {
-  input {
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    String svtype
-    File insBed_h1
-    File insBed_h2
-    File callable_h1
-    String sample
-    File callable_h2
-    String chrom
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{insBed_h1}
-    tar zxvf ~{insBed_h2}
-    tar zxvf ~{callable_h1}
-    tar zxvf ~{callable_h2}
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
-    tar zcvf call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
-  >>>
-  output {
-    File bed = "call_merge_haplotypes_chrom_svindel_~{sample}_~{svtype}_~{chrom}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_merge_haplotypes_chrom_svinv {
-  input {
-    String svtype
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    File invBed_h1
-    File invBed_h2
-    File callable_h1
-    File callable_h2
-    String chrom
-    String sample
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{invBed_h1}
-    tar zxvf ~{invBed_h2}
+    tar zxvf ~{svindel_bed_h1}
+    tar zxvf ~{svindel_bed_h2}
     tar zxvf ~{callable_h1}
     tar zxvf ~{callable_h2}
     snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/bychrom/~{svtype}/~{chrom}.bed.gz
