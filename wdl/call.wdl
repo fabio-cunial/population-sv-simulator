@@ -237,7 +237,7 @@ task call_merge_haplotypes_chrom_snv {
   }
 }
 
-task call_merge_haplotypes_inv {
+task call_merge_haplotypes {
   input {
     String svtype
     Array[File] inbed
@@ -249,132 +249,6 @@ task call_merge_haplotypes_inv {
     File callable_h1
     File callable_h2
     String sample
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{integrated_h1}
-    tar zxvf ~{integrated_h2}
-    tar zxvf ~{callable_h1}
-    tar zxvf ~{callable_h2}
-    echo ~{sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/merged/~{svtype}.bed.gz
-    tar zcvf call_merge_haplotypes_~{svtype}_~{sample}.tgz temp/~{sample}/bed/merged/~{svtype}.bed.gz
-  >>>
-  output {
-    File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_merge_haplotypes_svindel_del {
-  input {
-    String svtype
-    Array[File] inbed
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    File integrated_h1
-    File integrated_h2
-    File callable_h1
-    File callable_h2
-    String sample
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{integrated_h1}
-    tar zxvf ~{integrated_h2}
-    tar zxvf ~{callable_h1}
-    tar zxvf ~{callable_h2}
-    echo ~{sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/merged/~{svtype}.bed.gz
-    tar zcvf call_merge_haplotypes_~{svtype}_~{sample}.tgz temp/~{sample}/bed/merged/~{svtype}.bed.gz
-  >>>
-  output {
-    File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_merge_haplotypes_svindel_ins {
-  input {
-    String svtype
-    Array[File] inbed
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    File integrated_h1
-    File integrated_h2
-    File callable_h1
-    File callable_h2
-    String sample
-    String threads
-    String mem_gb
-  }
-  command <<<
-    cp ~{pav_conf} ./
-    tar zxvf ~{pav_sw}
-    tar zxvf ~{pav_asm}
-    tar zxvf ~{integrated_h1}
-    tar zxvf ~{integrated_h2}
-    tar zxvf ~{callable_h1}
-    tar zxvf ~{callable_h2}
-    echo ~{sep=" " inbed} | tr " " "\n" | xargs -I '@' tar zxvf @
-    snakemake -s pav/Snakefile --cores ~{threads} temp/~{sample}/bed/merged/~{svtype}.bed.gz
-    tar zcvf call_merge_haplotypes_~{svtype}_~{sample}.tgz temp/~{sample}/bed/merged/~{svtype}.bed.gz
-  >>>
-  output {
-    File bed = "call_merge_haplotypes_~{svtype}_~{sample}.tgz"
-  }
-  ############################
-  runtime {
-      cpu:            threads
-      memory:         mem_gb + " GiB"
-      disks:          "local-disk " + 1000 + " HDD"
-      bootDiskSizeGb: 50
-      preemptible:    3
-      maxRetries:     1
-      docker:         "us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
-  }
-}
-
-task call_merge_haplotypes_snv {
-  input {
-    String svtype
-    String sample
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    File integrated_h1
-    File integrated_h2
-    File callable_h1
-    File callable_h2
-    Array[File] inbed
     String threads
     String mem_gb
   }

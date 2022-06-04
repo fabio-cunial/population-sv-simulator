@@ -628,7 +628,7 @@ workflow pav {
         sample = sample
      }
   }
-  call call_pav.call_merge_haplotypes_snv {
+  call call_pav.call_merge_haplotypes as call_merge_haplotypes_snv {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -643,7 +643,7 @@ workflow pav {
       mem_gb = "24",
       sample = sample
   }
-  call call_pav.call_merge_haplotypes_inv {
+  call call_pav.call_merge_haplotypes as call_merge_haplotypes_inv {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -658,7 +658,7 @@ workflow pav {
       mem_gb = "24",
       sample = sample
   }
-  call call_pav.call_merge_haplotypes_svindel_ins {
+  call call_pav.call_merge_haplotypes as call_merge_haplotypes_svindel_ins {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -673,7 +673,7 @@ workflow pav {
       mem_gb = "24",
       sample = sample
   }
-  call call_pav.call_merge_haplotypes_svindel_del {
+  call call_pav.call_merge_haplotypes as call_merge_haplotypes_svindel_del {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
