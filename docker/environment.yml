@@ -1,0 +1,13 @@
+name: lr-pav
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - BioPython
+  - intervaltree
+  - matplotlib
+  - numpy
+  - pandas
+  - pysam
+  - scipy

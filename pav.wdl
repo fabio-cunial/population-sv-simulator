@@ -1,55 +1,26 @@
-import "wdl/setup.wdl" as setup
+version 1.0
+
+import "wdl/setup_wrapup.wdl" as setup
 import "wdl/align.wdl" as align
 import "wdl/call.wdl" as call_pav
 import "wdl/call_inv.wdl" as call_inv
 import "wdl/call_lg.wdl" as call_lg
 
 
-task call_final_bed {
-    File pav_conf
-    File pav_sw
-    File pav_asm
-    File invBed
-    File insBed
-    File delBed
-    File snvBed
-    String threads
-    String mem_gb
-    String sample
-  command {
-    cp ${pav_conf} ./
-    tar zxvf ${pav_sw}
-    tar zxvf ${pav_asm}
-    tar zxvf ${invBed}
-    tar zxvf ${snvBed}
-    tar zxvf ${insBed}
-    tar zxvf ${delBed}
-    snakemake -s pav/Snakefile --cores ${threads} results/${sample}/bed/snv_snv.bed.gz results/${sample}/bed/indel_ins.bed.gz results/${sample}/bed/indel_del.bed.gz results/${sample}/bed/sv_ins.bed.gz results/${sample}/bed/sv_del.bed.gz results/${sample}/bed/sv_inv.bed.gz results/${sample}/bed/fa/indel_ins.fa.gz results/${sample}/bed/fa/indel_del.fa.gz results/${sample}/bed/fa/sv_ins.fa.gz results/${sample}/bed/fa/sv_del.fa.gz results/${sample}/bed/fa/sv_inv.fa.gz
-  }
-  output {
-    File snvBedOut = "results/${sample}/bed/snv_snv.bed.gz"
-    File indelInsBed = "results/${sample}/bed/indel_ins.bed.gz"
-    File indelDelBed = "results/${sample}/bed/indel_del.bed.gz"
-    File svInsBed = "results/${sample}/bed/sv_ins.bed.gz"
-    File svDelBed = "results/${sample}/bed/sv_del.bed.gz"
-    File invBedOut = "results/${sample}/bed/sv_inv.bed.gz"
-    File indelInsFasta = "results/${sample}/bed/fa/indel_ins.fa.gz"
-    File indelDelFasta = "results/${sample}/bed/fa/indel_del.fa.gz"
-    File svInsFasta = "results/${sample}/bed/fa/sv_ins.fa.gz"
-    File svDelFasta = "results/${sample}/bed/fa/sv_del.fa.gz"
-    File invFasta = "results/${sample}/bed/fa/sv_inv.fa.gz"
-  }
-}
-
-
 workflow pav {
-  File ref
-  File hapOne
-  File hapTwo
-  String sample
-  File refFai
-  File config
-  File pav_tar
+  input {
+    File ref
+    File refFai
+
+    File hapOne
+    File hapTwo
+
+    String sample
+
+    File config
+    File pav_tar
+  }
+
   Array[Array[String]] chroms = read_tsv(refFai)
 
   call setup.tar_asm {
@@ -70,7 +41,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_get_tig_fa_h1 {
+  call align.align_get_tig_fa_hap as align_get_tig_fa_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -80,7 +51,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_get_tig_fa_h2 {
+  call align.align_get_tig_fa_hap as align_get_tig_fa_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -100,7 +71,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_map_h1 {
+  call align.align_map_hap as align_map_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -112,19 +83,19 @@ workflow pav {
       mem_gb = "12",
       sample = sample
   }
-  call align.align_map_h2 {
+  call align.align_map_hap as align_map_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
-      asmGz = align_get_tig_fa_h2.asmGz,
       refGz = align_ref.refGz,
+      asmGz = align_get_tig_fa_h2.asmGz,
       threads = "8",
       mem_gb = "12",
       sample = sample
   }
-  call align.align_get_read_bed_h1 {
+  call align.align_get_read_bed_hap as align_get_read_bed_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -137,7 +108,7 @@ workflow pav {
       mem_gb = "32",
       sample = sample
   }
-  call align.align_get_read_bed_h2 {
+  call align.align_get_read_bed_hap as align_get_read_bed_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -150,7 +121,7 @@ workflow pav {
       mem_gb = "32",
       sample = sample
   }
-  call align.align_cut_tig_overlap_h1 {
+  call align.align_cut_tig_overlap_hap as align_cut_tig_overlap_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -162,7 +133,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call align.align_cut_tig_overlap_h2 {
+  call align.align_cut_tig_overlap_hap as align_cut_tig_overlap_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -175,7 +146,7 @@ workflow pav {
       sample = sample
   }
   scatter(i in range(10)) {
-     call call_pav.call_cigar_h1 {
+     call call_pav.call_cigar_hap as call_cigar_h1 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -189,9 +160,7 @@ workflow pav {
         mem_gb = "24",
         sample = sample
      }
-  }
-  scatter(i in range(10)) {
-     call call_pav.call_cigar_h2 {
+     call call_pav.call_cigar_hap as call_cigar_h2 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -206,7 +175,7 @@ workflow pav {
         sample = sample
      }
   }
-  call call_lg.call_lg_split_h1 {
+  call call_lg.call_lg_split_hap as call_lg_split_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -217,7 +186,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_lg_split_h2 {
+  call call_lg.call_lg_split_hap as call_lg_split_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -229,7 +198,7 @@ workflow pav {
       sample = sample
   }
   scatter(i in range(10)) {
-     call call_lg.call_lg_discover_h1 {
+     call call_lg.call_lg_discover_hap as call_lg_discover_h1 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -245,9 +214,7 @@ workflow pav {
         mem_gb = "8",
         sample = sample
      }
-  }
-  scatter(i in range(10)) {
-     call call_lg.call_lg_discover_h2 {
+     call call_lg.call_lg_discover_hap as call_lg_discover_h2 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -264,7 +231,7 @@ workflow pav {
         sample = sample
      }
   }
-  call call_pav.call_cigar_merge_h1 {
+  call call_pav.call_cigar_merge_hap as call_cigar_merge_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -275,7 +242,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_cigar_merge_h2 {
+  call call_pav.call_cigar_merge_hap as call_cigar_merge_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -286,7 +253,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_del_h1 {
+  call call_lg.call_merge_lg_del_hap as call_merge_lg_del_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -298,7 +265,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_ins_h1 {
+  call call_lg.call_merge_lg_ins_hap as call_merge_lg_ins_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -310,7 +277,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_inv_h1 {
+  call call_lg.call_merge_lg_inv_hap as call_merge_lg_inv_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -322,7 +289,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_del_h2 {
+  call call_lg.call_merge_lg_del_hap as call_merge_lg_del_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -334,7 +301,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_ins_h2 {
+  call call_lg.call_merge_lg_ins_hap as call_merge_lg_ins_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -346,7 +313,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_lg.call_merge_lg_inv_h2 {
+  call call_lg.call_merge_lg_inv_hap as call_merge_lg_inv_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -358,7 +325,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_inv.call_inv_cluster_indel_h1 {
+  call call_inv.call_inv_cluster_indel_hap as call_inv_cluster_indel_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -370,7 +337,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_cluster_snv_h1 {
+  call call_inv.call_inv_cluster_snv_hap as call_inv_cluster_snv_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -382,7 +349,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_cluster_indel_h2 {
+  call call_inv.call_inv_cluster_indel_hap as call_inv_cluster_indel_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -397,7 +364,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_cluster_snv_h2 {
+  call call_inv.call_inv_cluster_snv_hap as call_inv_cluster_snv_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -409,7 +376,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_flag_insdel_cluster_indel_h1 {
+  call call_inv.call_inv_flag_insdel_cluster_indel_hap as call_inv_flag_insdel_cluster_indel_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -421,7 +388,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_flag_insdel_cluster_indel_h2 {
+  call call_inv.call_inv_flag_insdel_cluster_indel_hap as call_inv_flag_insdel_cluster_indel_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -433,7 +400,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_flag_insdel_cluster_sv_h1 {
+  call call_inv.call_inv_flag_insdel_cluster_sv_hap as call_inv_flag_insdel_cluster_sv_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -445,7 +412,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_inv.call_inv_flag_insdel_cluster_sv_h2 {
+  call call_inv.call_inv_flag_insdel_cluster_sv_hap as call_inv_flag_insdel_cluster_sv_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -457,7 +424,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
-  call call_pav.call_mappable_bed_h1 {
+  call call_pav.call_mappable_bed_hap as call_mappable_bed_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -471,7 +438,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_mappable_bed_h2 {
+  call call_pav.call_mappable_bed_hap as call_mappable_bed_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -485,7 +452,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_inv.call_inv_merge_flagged_loci_h1 {
+  call call_inv.call_inv_merge_flagged_loci_hap as call_inv_merge_flagged_loci_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -499,7 +466,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_inv.call_inv_merge_flagged_loci_h2 {
+  call call_inv.call_inv_merge_flagged_loci_hap as call_inv_merge_flagged_loci_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -514,7 +481,7 @@ workflow pav {
       sample = sample
   }
   scatter(i in range(60)) {
-     call call_inv.call_inv_batch_h1 {
+     call call_inv.call_inv_batch_hap as call_inv_batch_h1 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -529,9 +496,7 @@ workflow pav {
         mem_gb = "8",
         sample = sample
      }
-  }
-  scatter(i in range(60)) {
-     call call_inv.call_inv_batch_h2 {
+     call call_inv.call_inv_batch_hap as call_inv_batch_h2 {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
@@ -547,7 +512,7 @@ workflow pav {
         sample = sample
      }
   }
-  call call_inv.call_inv_batch_merge_h1 {
+  call call_inv.call_inv_batch_merge_hap as call_inv_batch_merge_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -558,7 +523,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_inv.call_inv_batch_merge_h2 {
+  call call_inv.call_inv_batch_merge_hap as call_inv_batch_merge_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -569,7 +534,7 @@ workflow pav {
       mem_gb = "8",
       sample = sample
   }
-  call call_pav.call_integrate_sources_h1 {
+  call call_pav.call_integrate_sources_hap as call_integrate_sources_h1 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -584,7 +549,7 @@ workflow pav {
       mem_gb = "32",
       sample = sample
   }
-  call call_pav.call_integrate_sources_h2 {
+  call call_pav.call_integrate_sources_hap as call_integrate_sources_h2 {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -600,14 +565,14 @@ workflow pav {
       sample = sample
   }
   scatter(chrom in chroms) {
-     call call_pav.call_merge_haplotypes_chrom_svindel_ins {
+     call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svindel_ins {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "svindel_ins",
-        insBed_h1 = call_integrate_sources_h1.insBed,
-        insBed_h2 = call_integrate_sources_h2.insBed,
+        svindel_bed_h1 = call_integrate_sources_h1.all_vars_bed,
+        svindel_bed_h2 = call_integrate_sources_h2.all_vars_bed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom[0],
@@ -615,16 +580,14 @@ workflow pav {
         mem_gb = "12",
         sample = sample
      }
-  }
-  scatter(chrom in chroms) {
-     call call_pav.call_merge_haplotypes_chrom_svindel_del {
+     call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svindel_del {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "svindel_del",
-        delBed_h1 = call_integrate_sources_h1.insBed,
-        delBed_h2 = call_integrate_sources_h2.insBed,
+        svindel_bed_h1 = call_integrate_sources_h1.all_vars_bed,
+        svindel_bed_h2 = call_integrate_sources_h2.all_vars_bed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom[0],
@@ -632,16 +595,14 @@ workflow pav {
         mem_gb = "12",
         sample = sample
      }
-  }
-  scatter(chrom in chroms) {
-     call call_pav.call_merge_haplotypes_chrom_svinv {
+     call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svinv {
       input:
         pav_conf = config,
         pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "sv_inv",
-        invBed_h1 = call_integrate_sources_h1.insBed,
-        invBed_h2 = call_integrate_sources_h2.insBed,
+        svindel_bed_h1 = call_integrate_sources_h1.all_vars_bed,
+        svindel_bed_h2 = call_integrate_sources_h2.all_vars_bed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom[0],
@@ -657,8 +618,8 @@ workflow pav {
         pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "snv_snv",
-        snvBed_h1 = call_integrate_sources_h1.insBed,
-        snvBed_h2 = call_integrate_sources_h2.insBed,
+        snvBed_h1 = call_integrate_sources_h1.all_vars_bed,
+        snvBed_h2 = call_integrate_sources_h2.all_vars_bed,
         callable_h1 = call_mappable_bed_h2.bed,
         callable_h2 = call_mappable_bed_h1.bed,
         chrom = chrom[0],
@@ -667,7 +628,7 @@ workflow pav {
         sample = sample
      }
   }
-  call call_pav.call_merge_haplotypes_snv {
+  call call_pav.call_merge_haplotypes as call_merge_haplotypes_snv {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -676,13 +637,13 @@ workflow pav {
       inbed = call_merge_haplotypes_chrom_snv.bed,
       callable_h1 = call_mappable_bed_h2.bed,
       callable_h2 = call_mappable_bed_h1.bed,
-      integrated_h1 = call_integrate_sources_h1.insBed,
-      integrated_h2 = call_integrate_sources_h2.insBed,
+      integrated_h1 = call_integrate_sources_h1.all_vars_bed,
+      integrated_h2 = call_integrate_sources_h2.all_vars_bed,
       threads = "12",
       mem_gb = "24",
       sample = sample
   }
-  call call_pav.call_merge_haplotypes_inv {
+  call call_pav.call_merge_haplotypes as call_merge_haplotypes_inv {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -691,19 +652,19 @@ workflow pav {
       inbed = call_merge_haplotypes_chrom_svinv.bed,
       callable_h1 = call_mappable_bed_h2.bed,
       callable_h2 = call_mappable_bed_h1.bed,
-      integrated_h1 = call_integrate_sources_h1.insBed,
-      integrated_h2 = call_integrate_sources_h2.insBed,
+      integrated_h1 = call_integrate_sources_h1.all_vars_bed,
+      integrated_h2 = call_integrate_sources_h2.all_vars_bed,
       threads = "12",
       mem_gb = "24",
       sample = sample
   }
-  call call_pav.call_merge_haplotypes_svindel_ins {
+  call call_pav.call_merge_haplotypes as call_merge_haplotypes_svindel_ins {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
-      integrated_h1 = call_integrate_sources_h1.insBed,
-      integrated_h2 = call_integrate_sources_h2.insBed,
+      integrated_h1 = call_integrate_sources_h1.all_vars_bed,
+      integrated_h2 = call_integrate_sources_h2.all_vars_bed,
       callable_h1 = call_mappable_bed_h2.bed,
       callable_h2 = call_mappable_bed_h1.bed,
       svtype = "svindel_ins",
@@ -712,7 +673,7 @@ workflow pav {
       mem_gb = "24",
       sample = sample
   }
-  call call_pav.call_merge_haplotypes_svindel_del {
+  call call_pav.call_merge_haplotypes as call_merge_haplotypes_svindel_del {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -721,13 +682,13 @@ workflow pav {
       callable_h1 = call_mappable_bed_h2.bed,
       callable_h2 = call_mappable_bed_h1.bed,
       inbed = call_merge_haplotypes_chrom_svindel_del.bed,
-      integrated_h1 = call_integrate_sources_h1.insBed,
-      integrated_h2 = call_integrate_sources_h2.insBed,
+      integrated_h1 = call_integrate_sources_h1.all_vars_bed,
+      integrated_h2 = call_integrate_sources_h2.all_vars_bed,
       threads = "12",
       mem_gb = "24",
       sample = sample
   }
-  call call_final_bed {
+  call setup.call_final_bed {
     input:
       pav_conf = config,
       pav_sw = pav_tar,
@@ -740,6 +701,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
+
   output {
     File snvBed = call_final_bed.snvBedOut
     File invBed = call_final_bed.invBedOut
