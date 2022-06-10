@@ -2,7 +2,7 @@ VERSION = 1.2.1
 TAG1 = us.gcr.io/broad-dsp-lrma/lr-pav:$(VERSION)
 TAG2 = us.gcr.io/broad-dsp-lrma/lr-pav:latest
 
-all: build
+all: build push
 
 build:
 	docker build -t $(TAG1) -t $(TAG2) .
