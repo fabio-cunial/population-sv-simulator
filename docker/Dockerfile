@@ -51,6 +51,10 @@ RUN apt-get -qqy update --fix-missing && \
     samtools --help && \
     bcftools --help
 
+RUN apt-get -qqy update --fix-missing && \
+    apt-get -qqy dist-upgrade && \
+    apt-get -qqy install --no-install-recommends tree
+
 ARG PAV_VERSION=1.2.1
-RUN mkdir -p /cromwell_root && \
-    git clone -b ${PAV_VERSION} --single-branch --recursive https://github.com/EichlerLab/pav.git /cromwell_root/pav
+RUN mkdir -p /opt/ && \
+    git clone -b ${PAV_VERSION} --single-branch --recursive https://github.com/EichlerLab/pav.git /opt/pav

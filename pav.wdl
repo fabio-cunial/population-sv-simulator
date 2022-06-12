@@ -18,7 +18,6 @@ workflow pav {
     String sample
 
     File config
-    File pav_tar
   }
 
   Array[Array[String]] chroms = read_tsv(refFai)
@@ -35,7 +34,6 @@ workflow pav {
   call align.align_ref {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       threads = "1",
       mem_gb = "8",
@@ -44,7 +42,6 @@ workflow pav {
   call align.align_get_tig_fa_hap as align_get_tig_fa_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       threads = "1",
@@ -54,7 +51,6 @@ workflow pav {
   call align.align_get_tig_fa_hap as align_get_tig_fa_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       threads = "1",
@@ -64,7 +60,6 @@ workflow pav {
   call align.align_ref_anno_n_gap {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       ref_gz = align_ref.refGz,
       threads = "1",
@@ -74,74 +69,68 @@ workflow pav {
   call align.align_map_hap as align_map_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       refGz = align_ref.refGz,
       asmGz = align_get_tig_fa_h1.asmGz,
       threads = "8",
-      mem_gb = "12",
+      mem_gb = "24",
       sample = sample
   }
   call align.align_map_hap as align_map_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       refGz = align_ref.refGz,
       asmGz = align_get_tig_fa_h2.asmGz,
       threads = "8",
-      mem_gb = "12",
+      mem_gb = "24",
       sample = sample
   }
   call align.align_get_read_bed_hap as align_get_read_bed_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       refGz = align_ref.refGz,
       tigFa = align_get_tig_fa_h1.asmGz,
       samGz = align_map_h1.samGz,
-      threads = "1",
+      threads = "6",
       mem_gb = "32",
       sample = sample
   }
   call align.align_get_read_bed_hap as align_get_read_bed_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       refGz = align_ref.refGz,
       hap = "h2",
       tigFa = align_get_tig_fa_h2.asmGz,
       samGz = align_map_h2.samGz,
-      threads = "1",
+      threads = "6",
       mem_gb = "32",
       sample = sample
   }
   call align.align_cut_tig_overlap_hap as align_cut_tig_overlap_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       bedGz = align_get_read_bed_h1.bedGz,
       asmGz = align_get_tig_fa_h1.asmGz,
-      threads = "1",
+      threads = "2",
       mem_gb = "8",
       sample = sample
   }
   call align.align_cut_tig_overlap_hap as align_cut_tig_overlap_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       bedGz = align_get_read_bed_h2.bedGz,
       asmGz = align_get_tig_fa_h2.asmGz,
-      threads = "1",
+      threads = "2",
       mem_gb = "8",
       sample = sample
   }
@@ -149,7 +138,6 @@ workflow pav {
      call call_pav.call_cigar_hap as call_cigar_h1 {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         refGz = align_ref.refGz,
         hap = "h1",
@@ -163,7 +151,6 @@ workflow pav {
      call call_pav.call_cigar_hap as call_cigar_h2 {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         refGz = align_ref.refGz,
         pav_asm = tar_asm.asm_tar,
         hap = "h2",
@@ -178,7 +165,6 @@ workflow pav {
   call call_lg.call_lg_split_hap as call_lg_split_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       trimBed = align_cut_tig_overlap_h1.trimBed,
@@ -189,7 +175,6 @@ workflow pav {
   call call_lg.call_lg_split_hap as call_lg_split_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       trimBed = align_cut_tig_overlap_h2.trimBed,
@@ -201,7 +186,6 @@ workflow pav {
      call call_lg.call_lg_discover_hap as call_lg_discover_h1 {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         refGz = align_ref.refGz,
         hap = "h1",
@@ -217,7 +201,6 @@ workflow pav {
      call call_lg.call_lg_discover_hap as call_lg_discover_h2 {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         refGz = align_ref.refGz,
         hap = "h2",
@@ -234,7 +217,6 @@ workflow pav {
   call call_pav.call_cigar_merge_hap as call_cigar_merge_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       snvBatch = call_cigar_h1.snvBed,
@@ -245,7 +227,6 @@ workflow pav {
   call call_pav.call_cigar_merge_hap as call_cigar_merge_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       snvBatch = call_cigar_h2.snvBed,
@@ -256,7 +237,6 @@ workflow pav {
   call call_lg.call_merge_lg_del_hap as call_merge_lg_del_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       svtype = "del",
@@ -268,7 +248,6 @@ workflow pav {
   call call_lg.call_merge_lg_ins_hap as call_merge_lg_ins_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       svtype = "ins",
@@ -280,7 +259,6 @@ workflow pav {
   call call_lg.call_merge_lg_inv_hap as call_merge_lg_inv_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       svtype = "inv",
@@ -292,7 +270,6 @@ workflow pav {
   call call_lg.call_merge_lg_del_hap as call_merge_lg_del_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       svtype = "del",
@@ -304,7 +281,6 @@ workflow pav {
   call call_lg.call_merge_lg_ins_hap as call_merge_lg_ins_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       svtype = "ins",
@@ -316,7 +292,6 @@ workflow pav {
   call call_lg.call_merge_lg_inv_hap as call_merge_lg_inv_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       svtype = "inv",
@@ -328,7 +303,6 @@ workflow pav {
   call call_inv.call_inv_cluster_indel_hap as call_inv_cluster_indel_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       vartype="indel",
@@ -340,7 +314,6 @@ workflow pav {
   call call_inv.call_inv_cluster_snv_hap as call_inv_cluster_snv_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       vartype="snv",
@@ -352,10 +325,6 @@ workflow pav {
   call call_inv.call_inv_cluster_indel_hap as call_inv_cluster_indel_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
-      pav_asm = tar_asm.asm_tar,
-      pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       vartype="indel",
@@ -367,7 +336,6 @@ workflow pav {
   call call_inv.call_inv_cluster_snv_hap as call_inv_cluster_snv_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       vartype="snv",
@@ -379,7 +347,6 @@ workflow pav {
   call call_inv.call_inv_flag_insdel_cluster_indel_hap as call_inv_flag_insdel_cluster_indel_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       vartype="indel",
@@ -391,7 +358,6 @@ workflow pav {
   call call_inv.call_inv_flag_insdel_cluster_indel_hap as call_inv_flag_insdel_cluster_indel_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       vartype="indel",
@@ -403,7 +369,6 @@ workflow pav {
   call call_inv.call_inv_flag_insdel_cluster_sv_hap as call_inv_flag_insdel_cluster_sv_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       vartype="sv",
@@ -415,7 +380,6 @@ workflow pav {
   call call_inv.call_inv_flag_insdel_cluster_sv_hap as call_inv_flag_insdel_cluster_sv_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       vartype="sv",
@@ -427,7 +391,6 @@ workflow pav {
   call call_pav.call_mappable_bed_hap as call_mappable_bed_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       trimBed = align_cut_tig_overlap_h1.trimBed,
@@ -441,7 +404,6 @@ workflow pav {
   call call_pav.call_mappable_bed_hap as call_mappable_bed_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       trimBed = align_cut_tig_overlap_h2.trimBed,
@@ -455,7 +417,6 @@ workflow pav {
   call call_inv.call_inv_merge_flagged_loci_hap as call_inv_merge_flagged_loci_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       indelFlag = call_inv_flag_insdel_cluster_indel_h1.bed,
@@ -469,7 +430,6 @@ workflow pav {
   call call_inv.call_inv_merge_flagged_loci_hap as call_inv_merge_flagged_loci_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       indelFlag = call_inv_flag_insdel_cluster_indel_h2.bed,
@@ -484,7 +444,6 @@ workflow pav {
      call call_inv.call_inv_batch_hap as call_inv_batch_h1 {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         hap = "h1",
         trimBed = align_cut_tig_overlap_h1.trimBed,
@@ -499,7 +458,6 @@ workflow pav {
      call call_inv.call_inv_batch_hap as call_inv_batch_h2 {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         hap = "h2",
         trimBed = align_cut_tig_overlap_h2.trimBed,
@@ -515,7 +473,6 @@ workflow pav {
   call call_inv.call_inv_batch_merge_hap as call_inv_batch_merge_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       invBed = call_inv_batch_h1.bed,
@@ -526,7 +483,6 @@ workflow pav {
   call call_inv.call_inv_batch_merge_hap as call_inv_batch_merge_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       invBed = call_inv_batch_h2.bed,
@@ -537,7 +493,6 @@ workflow pav {
   call call_pav.call_integrate_sources_hap as call_integrate_sources_h1 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h1",
       preInvSvBed = call_cigar_merge_h1.insdelBedMerge,
@@ -552,7 +507,6 @@ workflow pav {
   call call_pav.call_integrate_sources_hap as call_integrate_sources_h2 {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       hap = "h2",
       preInvSvBed = call_cigar_merge_h2.insdelBedMerge,
@@ -568,7 +522,6 @@ workflow pav {
      call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svindel_ins {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "svindel_ins",
         svindel_bed_h1 = call_integrate_sources_h1.all_vars_bed,
@@ -583,7 +536,6 @@ workflow pav {
      call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svindel_del {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "svindel_del",
         svindel_bed_h1 = call_integrate_sources_h1.all_vars_bed,
@@ -598,7 +550,6 @@ workflow pav {
      call call_pav.call_merge_haplotypes_chrom_svindel as call_merge_haplotypes_chrom_svinv {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "sv_inv",
         svindel_bed_h1 = call_integrate_sources_h1.all_vars_bed,
@@ -615,7 +566,6 @@ workflow pav {
      call call_pav.call_merge_haplotypes_chrom_snv {
       input:
         pav_conf = config,
-        pav_sw = pav_tar,
         pav_asm = tar_asm.asm_tar,
         svtype = "snv_snv",
         snvBed_h1 = call_integrate_sources_h1.all_vars_bed,
@@ -631,7 +581,6 @@ workflow pav {
   call call_pav.call_merge_haplotypes as call_merge_haplotypes_snv {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       svtype = "snv_snv",
       inbed = call_merge_haplotypes_chrom_snv.bed,
@@ -646,7 +595,6 @@ workflow pav {
   call call_pav.call_merge_haplotypes as call_merge_haplotypes_inv {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       svtype = "sv_inv",
       inbed = call_merge_haplotypes_chrom_svinv.bed,
@@ -661,7 +609,6 @@ workflow pav {
   call call_pav.call_merge_haplotypes as call_merge_haplotypes_svindel_ins {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       integrated_h1 = call_integrate_sources_h1.all_vars_bed,
       integrated_h2 = call_integrate_sources_h2.all_vars_bed,
@@ -676,7 +623,6 @@ workflow pav {
   call call_pav.call_merge_haplotypes as call_merge_haplotypes_svindel_del {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       svtype = "svindel_del",
       callable_h1 = call_mappable_bed_h2.bed,
@@ -691,7 +637,6 @@ workflow pav {
   call setup.call_final_bed {
     input:
       pav_conf = config,
-      pav_sw = pav_tar,
       pav_asm = tar_asm.asm_tar,
       invBed = call_merge_haplotypes_inv.bed,
       insBed = call_merge_haplotypes_svindel_ins.bed,

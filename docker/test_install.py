@@ -17,7 +17,7 @@ import tempfile
 from Bio import SeqIO
 import Bio.bgzf
 
-PIPELINE_DIR='/cromwell_root/pav/'
+PIPELINE_DIR='/opt/pav/'
 
 sys.path.append(PIPELINE_DIR)
 sys.path.append(os.path.join(PIPELINE_DIR, 'dep', 'svpop'))
