@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3
+FROM continuumio/miniconda3:4.11.0
 
 # copy other resources
 COPY ./environment.yml /
@@ -7,9 +7,14 @@ COPY ./environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
 ENV PATH=/opt/conda/envs/lr-pav/bin/:${PATH}
 
+# test installation is correct
+COPY test_install.py /tmp/
+SHELL ["conda", "run", "-n", "lr-pav", "/bin/bash", "-c"]
+RUN python /tmp/test_install.py
+
 ARG DEBIAN_FRONTEND=noninteractive
-ARG SAMTOOLS_VERSION=1.13
-ARG BCFTOOLS_VERSION=1.13
+ARG SAMTOOLS_VERSION=1.15.1
+ARG BCFTOOLS_VERSION=1.15.1
 RUN apt-get -qqy update --fix-missing && \
     apt-get -qqy dist-upgrade && \
     apt-get -qqy install --no-install-recommends \
@@ -23,9 +28,10 @@ RUN apt-get -qqy update --fix-missing && \
                  bzip2 \
                  gcc \
                  make \
+                 minimap2 \
+                 tree \
                  wget \
-                 zlib1g-dev \
-                 minimap2 && \
+                 zlib1g-dev && \
     wget https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2 && \
     tar xjf samtools-${SAMTOOLS_VERSION}.tar.bz2 && \
     cd samtools-${SAMTOOLS_VERSION} && ./configure --without-curses --enable-libcurl && make -s all all-htslib && make install install-htslib && cd - && \
@@ -45,4 +51,10 @@ RUN apt-get -qqy update --fix-missing && \
     samtools --help && \
     bcftools --help
 
-RUN git clone --recursive https://github.com/EichlerLab/pav.git
+RUN apt-get -qqy update --fix-missing && \
+    apt-get -qqy dist-upgrade && \
+    apt-get -qqy install --no-install-recommends tree
+
+ARG PAV_VERSION=1.2.1
+RUN mkdir -p /opt/ && \
+    git clone -b ${PAV_VERSION} --single-branch --recursive https://github.com/EichlerLab/pav.git /opt/pav
