@@ -646,18 +646,26 @@ workflow pav {
       mem_gb = "16",
       sample = sample
   }
+  call setup.data_ref_contig_table {
+    input:
+      pav_conf = config,
+      pav_asm = tar_asm.asm_tar,
+      threads = "1",
+      mem_gb = "4",
+      sample = sample
+  }
+  call setup.write_vcf {
+    input:
+      pav_conf = config,
+      pav_asm = tar_asm.asm_tar,
+      threads = "1",
+      mem_gb = "16",
+      sample = sample,
+      contigInfo = data_ref_contig_table.contigInfo,
+      bed = call_final_bed.bed
+  }
 
   output {
-    File snvBed = call_final_bed.snvBedOut
-    File invBed = call_final_bed.invBedOut
-    File svInsBed = call_final_bed.svInsBed
-    File svDelBed = call_final_bed.svDelBed
-    File indelInsBed = call_final_bed.indelInsBed
-    File indelDelBed = call_final_bed.indelDelBed
-    File invFasta = call_final_bed.invFasta
-    File svInsFasta = call_final_bed.svInsFasta
-    File svDelFasta = call_final_bed.svDelFasta
-    File indelInsFasta = call_final_bed.indelInsFasta
-    File indelDelFasta = call_final_bed.indelDelFasta
+    File vcf = write_vcf.vcf
   }
 }
