@@ -662,7 +662,7 @@ workflow pav {
       mem_gb = "16",
       sample = sample,
       contigInfo = data_ref_contig_table.contigInfo,
-      bed = call_final_bed.bed
+      finalBedOut = call_final_bed.bed
   }
 
   output {
