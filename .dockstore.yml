@@ -2,5 +2,6 @@ version: 1.2
 workflows:
 - name: PopulationSVSimulator
   subclass: wdl
+  publish: True
   primaryDescriptorPath: /wdl/SimulatePopulation.wdl
   testParameterFiles:
