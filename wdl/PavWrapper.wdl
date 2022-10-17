@@ -1,6 +1,6 @@
 version 1.0
 
-import "pav.wdl"
+import "../pav-wdl/pav.wdl"
 
 
 # Calls the existing PAV WDL for every triplet (diploid individual, length,
