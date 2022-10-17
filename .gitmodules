@@ -4,3 +4,6 @@
 [submodule "dep/kanapy"]
 	path = dep/kanapy
 	url = https://github.com/paudano/kanapy.git
+[submodule "pav-wdl"]
+	path = pav-wdl
+	url = https://github.com/broadinstitute/pav-wdl.git
