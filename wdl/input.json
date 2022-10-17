@@ -1,0 +1,22 @@
+{
+    "reference_fa": "gs://cunial-bucket-1/simulation-root/GRCh37_chr1.fa",
+    "reference_fai": "gs://cunial-bucket-1/simulation-root/GRCh37_chr1.fa.fai",
+    "reference_mmi": "gs://cunial-bucket-1/simulation-root/GRCh37_chr1.fa.mmi",
+    "reference_tandem_repeats": "gs://cunial-bucket-1/simulation-root/hg19.chr1.trf.bed",
+    "n_haplotypes": "8",
+    "haplotype2variants_file": "gs://cunial-bucket-1/simulation-root/chromosome2variants.txt",
+    "variants_file": "gs://cunial-bucket-1/simulation-root/variants.txt",
+    "coverages": [4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30],
+    "length_min": 5000,
+    "length_max": 25000,
+    "length_stdev": 2000,
+    "length_means": [10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000],
+    "bucket_address": "gs://cunial-bucket-1/simulation-root/run",
+    "n_nodes": 4,
+    "n_cpus_single_sample": 1,
+    "n_cpus_joint": 1,
+    "use_pbsv": 1,
+    "use_sniffles1": 1,
+    "use_sniffles2": 1,
+    "use_pav": 0
+}
