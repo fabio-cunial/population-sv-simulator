@@ -29,7 +29,7 @@ workflow SimulatePopulation {
         Int use_pbsv
         Int use_sniffles1
         Int use_sniffles2
-        Boolean use_pav
+        Int use_pav
     }
     parameter_meta {
         reference_fa: "A version of GRCh37 that contains just chr1 and whose header is '>chr1'."
@@ -86,9 +86,8 @@ workflow SimulatePopulation {
             n_cpus = n_cpus_joint,
             use_pbsv = use_pbsv,
             use_sniffles2 = use_sniffles2
-        }
     }
-    if (use_pav) {
+    if (use_pav == 1) {
         call PavWrapper.PavWrapper {
             input:
                 bucket_address = bucket_address,
