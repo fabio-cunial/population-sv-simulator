@@ -57,7 +57,7 @@ workflow SimulatePopulation {
         call ProcessChunkOfHaplotypes {
             input:
                  id_from = i,
-                 id_to = i + GetHaplotypeChunks.chunk_size - 1,
+                 chunk_size = GetHaplotypeChunks.chunk_size,
                  reference_fa = reference_fa,
                  reference_mmi = reference_mmi,
                  reference_tandem_repeats = reference_tandem_repeats,
@@ -99,10 +99,10 @@ workflow SimulatePopulation {
     output {
         Array[File] log_stdout_ProcessChunkOfHaplotypes = ProcessChunkOfHaplotypes.log_stdout
         Array[File] log_stderr_ProcessChunkOfHaplotypes = ProcessChunkOfHaplotypes.log_stderr
-        Array[File] log_stdout_JointCalling = JointCalling.JointCalling.log_stdout
-        Array[File] log_stderr_JointCalling = JointCalling.JointCalling.log_stderr
-        Array[File] log_stdout_PavWrapper = PavWrapper.PavWrapper.log_stdout
-        Array[File] log_stderr_PavWrapper = PavWrapper.PavWrapper.log_stderr
+        Array[File] log_stdout_JointCalling = JointCalling.logs_stdout
+        Array[File] log_stderr_JointCalling = JointCalling.logs_stderr
+        File? log_stdout_PavWrapper = PavWrapper.log_stdout
+        File? log_stderr_PavWrapper = PavWrapper.log_stderr
     }
 }
 
@@ -155,7 +155,7 @@ task GetHaplotypeChunks {
 task ProcessChunkOfHaplotypes {
     input {
         Int id_from
-        Int id_to
+        Int chunk_size
         File reference_fa
         File reference_mmi
         File reference_tandem_repeats
@@ -175,7 +175,6 @@ task ProcessChunkOfHaplotypes {
     }
     parameter_meta {
         id_from: "First simulated haplotype to process (zero-based, inclusive)."
-        id_to: "Last simulated haplotype to process (zero-based, inclusive)."
         reference_fa: "A version of GRCh37 that contains just chr1 and whose header is '>chr1'."
         reference_mmi: "The minimap2 index of <reference_fa>."
         reference_tandem_repeats: "A version that contains just chr1 of <hg19.trf.bed> (downloadable from <https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.trf.bed.gz>)."
@@ -188,7 +187,8 @@ task ProcessChunkOfHaplotypes {
     }
     
     Int min_coverage = coverages[0]
-    Int max_coverage = coverages[length(coverages)-1]
+    Int last = length(coverages) - 1
+    Int max_coverage = coverages[last]
     Int ram_size_gb = ceil((size(reference_fa, "GB")*max_coverage*2) * 3)  # *3 because of hifiasm
     Int disk_size_image = 20
     Int disk_size_tools = 5
@@ -197,8 +197,9 @@ task ProcessChunkOfHaplotypes {
     
     command <<<
         set -euxo pipefail
+        ID_TO=$(( ~{id_from} + ~{chunk_size} - 1 ))
         
-        CHECKPOINT_FILE = "checkpoint_i~{id_from}_i~{id_to}.txt"
+        CHECKPOINT_FILE = "checkpoint_i~{id_from}_i${ID_TO}.txt"
         gsutil -q stat ~{bucket_address}/checkpoints/${CHECKPOINT_FILE}
         if [ $? -eq 0 ]; then
             gsutil cp ~{bucket_address}/checkpoints/${CHECKPOINT_FILE} .
@@ -207,28 +208,28 @@ task ProcessChunkOfHaplotypes {
         fi
         COVERAGES=~{sep='-' coverages}
         LENGTHS=~{sep=' ' lengths}
-    	for ID1 in $(seq ~{id_from} 2 ~{id_to}); do
+        for ID1 in $(seq ~{id_from} 2 ${ID_TO}); do
             CHECKPOINT_INDIVIDUAL=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $1 }')
             if [ ${ID1} -lt ${CHECKPOINT_INDIVIDUAL} ]; then
                 continue
             fi
-    		ID2=$(( ${ID1} + 1 ))
-    		java -cp ~{work_dir} -Xmx10g PrintChromosomes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
+            ID2=$(( ${ID1} + 1 ))
+            java -cp ~{work_dir} -Xmx10g PrintChromosomes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
             for LENGTH in ${LENGTHS}; do
                 CHECKPOINT_LENGTH=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $2 }')
                 if [ ${LENGTH} -lt ${CHECKPOINT_LENGTH} ]; then
                     continue
                 fi
                 LOG_FILE="haplotype2reads_i${ID1}_i${ID2}_l${LENGTH}.log"
-    		    haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_address} &> ${LOG_FILE}
+                haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_address} &> ${LOG_FILE}
                 gsutil cp ${LOG_FILE} ~{bucket_address}/logs/
                 LOG_FILE="reads2svs_i${ID1}_i${ID2}_l${LENGTH}.log"
                 READS_FILE="reads_i${ID1}_i${ID2}_l${LENGTH}_c~{max_coverage}.fa"
-    		    reads2svs.sh ${READS_FILE} ${ID1} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_address} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} &> ${LOG_FILE}
+                reads2svs.sh ${READS_FILE} ${ID1} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_address} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} &> ${LOG_FILE}
                 gsutil cp ${LOG_FILE} ~{bucket_address}/logs/
                 gsutil rm -f ~{bucket_address}/reads/${READS_FILE}
             done
-    	done
+        done
     >>>
     
     output {

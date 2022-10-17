@@ -19,8 +19,8 @@ workflow PavWrapper {
     }
     call CreateWorkpackages {
         input:
-            n_haplotypes = n_haplotypes
-            coverages = coverages
+            n_haplotypes = n_haplotypes,
+            coverages = coverages,
             lengths = lengths
     }
     scatter(description in CreateWorkpackages.tasks) {
@@ -28,7 +28,8 @@ workflow PavWrapper {
             input:
                 bucket_address = bucket_address,
                 filename = description,
-                haplotype_size = size(reference_fa, "GB")
+                haplotype_size = size(reference_fa, "GB"),
+                reference_fa = reference_fa
         }
         call pav.pav {
             input:
@@ -36,18 +37,22 @@ workflow PavWrapper {
                 refFai = reference_fai,
                 hapOne = RetrieveAssembly.h1,
                 hapTwo = RetrieveAssembly.h2,
-                sample = "assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + "_h1.fa"
+                sample = "assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + "_h1.fa",
                 config = RetrieveAssembly.config
         }
         call ArchiveVCF {
             input:
-                vcfs = pav.pav.vcf
-                bucket_address = bucket_address
-                id1 = RetrieveAssembly.id1
-                id2 = RetrieveAssembly.id2
-                length = RetrieveAssembly.length
+                vcf = pav.vcf,
+                bucket_address = bucket_address,
+                id1 = RetrieveAssembly.id1,
+                id2 = RetrieveAssembly.id2,
+                length = RetrieveAssembly.length,
                 coverage = RetrieveAssembly.coverage
         }
+    }
+    output {
+        File? log_stdout = stdout()
+        File? log_stderr = stderr()
     }
 }
 
@@ -81,6 +86,7 @@ task RetrieveAssembly {
         String bucket_address
         String filename
         Float haplotype_size
+        String reference_fa
     }
     parameter_meta {
         filename: "TAR archive containing the two haplotypes. Includes the <.tar> suffix."
