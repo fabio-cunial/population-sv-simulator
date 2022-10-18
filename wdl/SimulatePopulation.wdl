@@ -208,7 +208,8 @@ task ProcessChunkOfHaplotypes {
         ID_TO=$(( ~{id_from} + ~{chunk_size} - 1 ))
         
         CHECKPOINT_FILE="checkpoint_i~{id_from}_i${ID_TO}.txt"
-        if [ $(gsutil -q stat ~{bucket_address}/checkpoints/${CHECKPOINT_FILE}) -eq 0 ]; then
+        TEST=$(gsutil -q stat ~{bucket_address}/checkpoints/${CHECKPOINT_FILE} || echo 1)
+        if [ ${TEST} -ne 1 ]; then
             gsutil cp ~{bucket_address}/checkpoints/${CHECKPOINT_FILE} .
         else
             echo "0 0 0" > ${CHECKPOINT_FILE}
