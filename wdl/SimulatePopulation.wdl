@@ -235,7 +235,8 @@ task ProcessChunkOfHaplotypes {
                 gsutil cp ${LOG_FILE} ~{bucket_address}/logs/
                 LOG_FILE="reads2svs_i${ID1}_i${ID2}_l${LENGTH}.log"
                 READS_FILE="reads_i${ID1}_i${ID2}_l${LENGTH}_c~{max_coverage}.fa"
-                bash ~{work_dir}/reads2svs.sh ${READS_FILE} ${ID1} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_address} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} &> ${LOG_FILE}
+                bash ~{work_dir}/reads2svs.sh ${READS_FILE} ${ID1} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_address} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} 
+                #&> ${LOG_FILE}
                 gsutil cp ${LOG_FILE} ~{bucket_address}/logs/
                 gsutil rm -f ~{bucket_address}/reads/${READS_FILE}
             done
