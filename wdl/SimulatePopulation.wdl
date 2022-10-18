@@ -114,6 +114,11 @@ task DeleteBucketDir {
     command <<<
         gsutil rm -rf ~{bucket_address}
     >>>
+    output {
+    }
+    runtime {
+        docker: "ubuntu:latest"
+    }
 }
 
 
@@ -131,6 +136,9 @@ task GetHaplotypeChunks {
     output {
         Array[String] chunks = read_lines("out.txt")
         Int chunk_size = size
+    }
+    runtime {
+        docker: "ubuntu:latest"
     }
 }
 

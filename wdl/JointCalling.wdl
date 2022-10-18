@@ -69,6 +69,9 @@ task CreateWorkpackages {
     output {
         Array[String] tasks = read_lines(stdout())
     }
+    runtime {
+        docker: "ubuntu:latest"
+    }
 }
 
 

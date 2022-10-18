@@ -75,6 +75,9 @@ task CreateWorkpackages {
     output {
         Array[String] tasks = read_lines(stdout())
     }
+    runtime {
+        docker: "ubuntu:latest"
+    }
 }
 
 
@@ -117,6 +120,7 @@ task RetrieveAssembly {
         File config = "config.json"
     }
     runtime {
+        docker: "ubuntu:latest"
         disks: "local-disk " + (ceil(haplotype_size*4) + 4) + " HDD"
         preemptible: 3
     }
@@ -138,7 +142,10 @@ task ArchiveVCF {
         cp ~{vcf} ${FILENAME}
         gsutil cp ${FILENAME} ~{bucket_address}/vcfs/
     >>>
+    output {
+    }
     runtime {
+        docker: "ubuntu:latest"
         disks: "local-disk " + (ceil(size(vcf, "GB"))*2) + " HDD"
     }
 }
