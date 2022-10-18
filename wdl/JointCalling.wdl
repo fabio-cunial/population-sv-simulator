@@ -108,9 +108,9 @@ task JointCallingImpl {
         lscpu
         cat /proc/meminfo
         
-        CALLER=$(echo ~{task_description} | awk '{ print $1 }'
-        LENGTH=$(echo ~{task_description} | awk '{ print $2 }'
-        COVERAGE=$(echo ~{task_description} | awk '{ print $3 }'
+        CALLER=$(echo ~{task_description} | awk '{ print $1 }')
+        LENGTH=$(echo ~{task_description} | awk '{ print $2 }')
+        COVERAGE=$(echo ~{task_description} | awk '{ print $3 }')
         if [ ${CALLER} -eq 1 ]; then
             # PBSV
             ${TIME_COMMAND} gsutil cp "~{bucket_address}/signatures/pbsv_*_*_l${LENGTH}_c${COVERAGE}.svsig.gz" .
