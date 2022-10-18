@@ -207,7 +207,7 @@ task ProcessChunkOfHaplotypes {
         set -euxo pipefail
         ID_TO=$(( ~{id_from} + ~{chunk_size} - 1 ))
         
-        CHECKPOINT_FILE = "checkpoint_i~{id_from}_i${ID_TO}.txt"
+        CHECKPOINT_FILE="checkpoint_i~{id_from}_i${ID_TO}.txt"
         gsutil -q stat ~{bucket_address}/checkpoints/${CHECKPOINT_FILE}
         if [ $? -eq 0 ]; then
             gsutil cp ~{bucket_address}/checkpoints/${CHECKPOINT_FILE} .
