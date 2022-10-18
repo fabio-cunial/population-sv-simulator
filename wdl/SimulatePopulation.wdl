@@ -101,8 +101,6 @@ workflow SimulatePopulation {
         Array[File] log_stderr_ProcessChunkOfHaplotypes = ProcessChunkOfHaplotypes.log_stderr
         Array[File] log_stdout_JointCalling = JointCalling.logs_stdout
         Array[File] log_stderr_JointCalling = JointCalling.logs_stderr
-        File? log_stdout_PavWrapper = PavWrapper.log_stdout
-        File? log_stderr_PavWrapper = PavWrapper.log_stderr
     }
 }
 

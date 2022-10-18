@@ -51,8 +51,6 @@ workflow PavWrapper {
         }
     }
     output {
-        File? log_stdout = stdout()
-        File? log_stderr = stderr()
     }
 }
 
