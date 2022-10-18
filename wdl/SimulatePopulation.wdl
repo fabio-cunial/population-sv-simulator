@@ -92,6 +92,8 @@ workflow SimulatePopulation {
             input:
                 bucket_address = bucket_address,
                 n_haplotypes = n_haplotypes,
+                coverages = coverages,
+                lengths = lengths,
                 reference_fa = reference_fa,
                 reference_fai = reference_fai
         }
