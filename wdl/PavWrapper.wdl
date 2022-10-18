@@ -63,10 +63,14 @@ task CreateWorkpackages {
     }
     command <<<
         set -euxo pipefail
+        COVERAGES=~{sep='-' coverages}
+        COVERAGES=$(echo ${COVERAGES} | tr '-' ' ')
+        LENGTHS=~{sep='-' lengths}
+        LENGTHS=$(echo ${LENGTHS} | tr '-' ' ')
         for ID1 in $(seq 0 2 $(( ~{n_haplotypes} - 1 ))); do
             ID2=$(( ${ID1} + 1 ))
-            for LENGTH in ~{sep=' ' lengths}; do
-                for COVERAGE in ~{sep=' ' coverages}; do
+            for LENGTH in ${LENGTHS}; do
+                for COVERAGE in ${COVERAGES}; do
                     echo "assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}.tar"
                 done
             done

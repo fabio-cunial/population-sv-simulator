@@ -215,7 +215,8 @@ task ProcessChunkOfHaplotypes {
             echo "0 0 0" > ${CHECKPOINT_FILE}
         fi
         COVERAGES=~{sep='-' coverages}
-        LENGTHS=~{sep=' ' lengths}
+        LENGTHS=~{sep='-' lengths}
+        LENGTHS=$(echo ${LENGTHS} | tr '-' ' ')
         for ID1 in $(seq ~{id_from} 2 ${ID_TO}); do
             CHECKPOINT_INDIVIDUAL=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $1 }')
             if [ ${ID1} -lt ${CHECKPOINT_INDIVIDUAL} ]; then
