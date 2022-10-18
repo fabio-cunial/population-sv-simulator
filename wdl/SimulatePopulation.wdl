@@ -93,7 +93,7 @@ workflow SimulatePopulation {
                 bucket_address = bucket_address,
                 n_haplotypes = n_haplotypes,
                 coverages = coverages,
-                lengths = lengths,
+                lengths = length_means,
                 reference_fa = reference_fa,
                 reference_fai = reference_fai
         }
