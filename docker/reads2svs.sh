@@ -10,18 +10,19 @@
 #
 READS_FILE=$1
 SAMPLE_ID=$2  # SM field in the .sam file (needed later for joint calling)
-MIN_COVERAGE=$3
-MAX_COVERAGE=$4
-COVERAGES=$5  # String, separated by "-".
-REFERENCE_FA=$6
-REFERENCE_MMI=$7
-REFERENCE_TANDEM_REPEATS=$8
-CHECKPOINT_FILE=$9
-BUCKET_ADDRESS=${10}  # Root dir of the simulation in the bucket
-USE_PBSV=${11}
-USE_SNIFFLES1=${12}
-USE_SNIFFLES2=${13}
-USE_HIFIASM=${14}
+LENGTH=$3
+MIN_COVERAGE=$4
+MAX_COVERAGE=$5
+COVERAGES=$6  # String, separated by "-".
+REFERENCE_FA=$7
+REFERENCE_MMI=$8
+REFERENCE_TANDEM_REPEATS=$9
+CHECKPOINT_FILE=${10}
+BUCKET_ADDRESS=${11}  # Root dir of the simulation in the bucket
+USE_PBSV=${12}
+USE_SNIFFLES1=${13}
+USE_SNIFFLES2=${14}
+USE_HIFIASM=${15}
 
 TIME_COMMAND="/usr/bin/time --verbose"
 COVERAGES=$(echo ${COVERAGES} | tr '-' ' ')
@@ -30,6 +31,8 @@ N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
 N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
 MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
 READ_GROUP="@RG\tID:movie\tSM:${SAMPLE_ID}"
+ID1=${SAMPLE_ID}
+ID2=$((${SAMPLE_ID} + 1))
 
 set -euxo pipefail
 echo "Running <reads2svs.sh> on ${N_THREADS} cores on the following node:"
@@ -43,7 +46,7 @@ N_ROWS_1X=$(( ( ${N_ROWS} / (4*${MAX_COVERAGE}) ) * 2 ))
 rm -f chunk-*
 split -d -l ${N_ROWS_1X} ${READS_FILE} chunk-
 rm -f ${READS_FILE}
-for CHUNK in $(find . -maxdepth 1 "chunk-*"); do
+for CHUNK in $(find . -maxdepth 1 'chunk-*'); do
 	mv ${CHUNK} ${CHUNK}.fa
 done
 ALIGNMENTS_FILE="alignments_i${ID1}_i${ID2}_l${LENGTH}_c${MAX_COVERAGE}.tar"
@@ -53,7 +56,7 @@ if [ ${TEST} -ne 1 ]; then
     tar -xf ${ALIGNMENTS_FILE}
     rm -f ${ALIGNMENTS_FILE}
 else
-    for CHUNK in $(find . -maxdepth 1 "chunk-*"); do
+    for CHUNK in $(find . -maxdepth 1 'chunk-*'); do
     	${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_MMI} ${CHUNK}.fa > ${CHUNK}.sam
     	${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b ${CHUNK}.sam ${REFERENCE_FA} > ${CHUNK}.1.bam
     	rm -f ${CHUNK}.sam
@@ -101,7 +104,7 @@ for COVERAGE in ${COVERAGES}; do
     
 	# PBSV
     if [ ${USE_PBSV} -eq 1 ]; then
-        PREFIX="pbsv_i${SAMPLE_ID}_i$((${SAMPLE_ID} + 1))_l${LENGTH}_c${COVERAGE}"
+        PREFIX="pbsv_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST=$(gsutil -q stat ${BUCKET_ADDRESS}/signatures/${PREFIX}.svsig.gz || echo 1)
         if [ ${TEST} -ne 1 ]; then
             ${TIME_COMMAND} gsutil cp ${BUCKET_ADDRESS}/signatures/${PREFIX}.svsig.gz .
@@ -120,7 +123,7 @@ for COVERAGE in ${COVERAGES}; do
 	
 	# SNIFFLES 1
     if [ ${USE_SNIFFLES1} -eq 1 ]; then 
-        PREFIX="sniffles1_i${SAMPLE_ID}_i$((${SAMPLE_ID} + 1))_l${LENGTH}_c${COVERAGE}"
+        PREFIX="sniffles1_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST=$(gsutil -q stat ${BUCKET_ADDRESS}/vcfs/${PREFIX}.vcf || echo 1)
         if [ ${TEST} -eq 1 ]; then
             ${TIME_COMMAND} sniffles1 -t ${N_THREADS} -m coverage_${COVERAGE}.bam -v ${PREFIX}.vcf
@@ -131,7 +134,7 @@ for COVERAGE in ${COVERAGES}; do
     
     # SNIFFLES 2
     if [ ${USE_SNIFFLES2} -eq 1 ]; then 
-        PREFIX="sniffles2_i${SAMPLE_ID}_i$((${SAMPLE_ID} + 1))_l${LENGTH}_c${COVERAGE}"
+        PREFIX="sniffles2_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST=$(gsutil -q stat ${BUCKET_ADDRESS}/signatures/${PREFIX}.vcf || echo 1)
         if [ ${TEST} -eq 1 ]; then
     	    ${TIME_COMMAND} sniffles --threads ${N_THREADS} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} --reference ${REFERENCE_FA} --sample-id ${SAMPLE_ID} --input coverage_${COVERAGE}.bam --vcf ${PREFIX}.vcf --snf ${PREFIX}.snf
@@ -143,7 +146,7 @@ for COVERAGE in ${COVERAGES}; do
     
     # HIFIASM
     if [ ${USE_HIFIASM} -eq 1 ]; then 
-        PREFIX="assembly_i${SAMPLE_ID}_i$((${SAMPLE_ID} + 1))_l${LENGTH}_c${COVERAGE}"
+        PREFIX="assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST=$(gsutil -q stat ${BUCKET_ADDRESS}/assemblies/${PREFIX}.tar || echo 1)
         if [ ${TEST} -eq 1 ]; then
             ${TIME_COMMAND} hifiasm --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm -t ${N_THREADS} coverage_${COVERAGE}.fa
