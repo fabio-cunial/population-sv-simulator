@@ -117,7 +117,7 @@ task DeleteBucketDir {
     output {
     }
     runtime {
-        docker: "ubuntu:latest"
+        docker: "fcunial/simulation"
     }
 }
 

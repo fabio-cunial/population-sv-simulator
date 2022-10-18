@@ -120,7 +120,7 @@ task RetrieveAssembly {
         File config = "config.json"
     }
     runtime {
-        docker: "ubuntu:latest"
+        docker: "fcunial/simulation"
         disks: "local-disk " + (ceil(haplotype_size*4) + 4) + " HDD"
         preemptible: 3
     }
@@ -145,7 +145,7 @@ task ArchiveVCF {
     output {
     }
     runtime {
-        docker: "ubuntu:latest"
+        docker: "fcunial/simulation"
         disks: "local-disk " + (ceil(size(vcf, "GB"))*2) + " HDD"
     }
 }
