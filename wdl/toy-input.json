@@ -4,7 +4,7 @@
     "SimulatePopulation.reference_mmi": "gs://cunial-bucket-1/simulation-root/GRCh37_chr1.fa.mmi",
     "SimulatePopulation.reference_tandem_repeats": "gs://cunial-bucket-1/simulation-root/hg19.chr1.trf.bed",
     "SimulatePopulation.n_haplotypes": 8,
-    "SimulatePopulation.haplotype2variants_file": "gs://cunial-bucket-1/simulation-root/chromosome2variants.txt",
+    "SimulatePopulation.haplotype2variants_file": "gs://cunial-bucket-1/simulation-root/haplotype2variants.txt",
     "SimulatePopulation.variants_file": "gs://cunial-bucket-1/simulation-root/variants.txt",
     "SimulatePopulation.coverages": [4, 8, 16, 30],
     "SimulatePopulation.length_min": 5000,

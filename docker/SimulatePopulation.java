@@ -53,17 +53,17 @@ public class SimulatePopulation {
 	private static int lastVariant, nVariants_frequent, nVariants_rare;
 	
 	/**
-	 * For every chromosome (rows), the sorted list of variants it contains.
+	 * For every haplotype (rows), the sorted list of variants it contains.
 	 */
-	private static int N_CHROMOSOMES;
-	private static int[][] chromosome2variants;
-	private static int[] chromosome2variants_last;
+	private static int N_HAPLOTYPES;
+	private static int[][] haplotype2variants;
+	private static int[] haplotype2variants_last;
 	
 	/**
-	 * Inverted version of $chromosome2variants$.
+	 * Inverted version of $haplotype2variants$.
 	 */
-	private static int[][] variant2chromosomes;
-	private static int[] variant2chromosomes_last;
+	private static int[][] variant2haplotypes;
+	private static int[] variant2haplotypes_last;
 	
 	/**
 	 * Used throughout the code
@@ -99,7 +99,7 @@ public class SimulatePopulation {
 		System.err.println("DONE  Total variants="+(lastVariant+1)+". Frequent="+nVariants_frequent+" ("+((100.0*nVariants_frequent)/(lastVariant+1))+"%). Rare="+nVariants_rare+" ("+((100.0*nVariants_rare)/(lastVariant+1))+"%).");
 		System.err.println("Distributing variants to the population...");
 		buildPopulation(N_INDIVIDUALS,ALLELE_FREQUENCY_THRESHOLD,OUTPUT_DIR);
-		buildVariant2chromosomes();
+		buildVariant2haplotypes();
 		System.err.println("Loading insertion strings...");
 		loadInsertions(INSERTION_STRINGS_FILE,N_INSERTION_STRINGS,BuildModel.SV_LENGTH_QUANTUM);
 		System.err.println("Assigning insertion strings to variants...");
@@ -108,7 +108,7 @@ public class SimulatePopulation {
 		annotateVariantsWithRepeats(MAX_DISTANCE_TO_REPEAT_INTERVAL);
 		buildVCF(OUTPUT_DIR);
 		System.err.println("Saving population to disk...");
-		serialize(OUTPUT_DIR+"/chromosome2variants.txt",OUTPUT_DIR+"/variants.txt");
+		serialize(OUTPUT_DIR+"/haplotype2variants.txt",OUTPUT_DIR+"/variants.txt");
 	}
 	
 	
@@ -574,27 +574,27 @@ public class SimulatePopulation {
 	
 	
 	/**
-	 * Builds global variable $chromosome2variants$ by assigning the sampled 
-	 * variants to chromosomes at random, and by fixing collisions inside a 
-	 * chromosome using a simple heuristic for maximum independent set. Variants
-	 * that do not appear in any chromosome after the procedure completes are 
+	 * Builds global variable $haplotype2variants$ by assigning the sampled 
+	 * variants to haplotypes at random, and by fixing collisions inside a 
+	 * haplotype using a simple heuristic for maximum independent set. Variants
+	 * that do not appear in any haplotype after the procedure completes are 
 	 * marked in their $isActive$ field, and counts $nVariants_{frequent,rare}$ 
 	 * are updated.
 	 *
 	 * Remark: variants can overlap in the population (but of course not on a
-	 * single chromosome).
+	 * single haplotype).
 	 *
 	 * Remark: there is no notion of "individual" in this procedure.
 	 *
 	 * Remark: $variants$ is assumed to be sorted by position in the reference.
 	 */
 	private static final void buildPopulation(int nIndividuals, double alleleFrequencyThreshold, String outputDir) throws IOException {
-		N_CHROMOSOMES=nIndividuals<<1;
+		N_HAPLOTYPES=nIndividuals<<1;
 		final int COLLISION_DISTANCE = 5;  // Arbitrary, bps.
 		final int HISTOGRAM_MAX_LENGTH = 4000;  // Arbitrary
 		int i, j, k, h;
-		int nActive, nEdges, lastPosition, nChromosomesWithCollision;
-		int chromosome2variantsLast, variantJ, variantK, neighbor;
+		int nActive, nEdges, lastPosition, nHaplotypesWithCollision;
+		int haplotype2variantsLast, variantJ, variantK, neighbor;
 		QueueElement element;
 		int[] lastNeighbor, histogram;
 		QueueElement[] queueElements;
@@ -602,41 +602,41 @@ public class SimulatePopulation {
 		PriorityQueue<QueueElement> queue;
 		BufferedWriter bw;
 		
-		System.err.println("Assigning each variant to chromosomes in isolation...");
-		chromosome2variants = new int[N_CHROMOSOMES][1000];  // Arbitrary
-		chromosome2variants_last = new int[N_CHROMOSOMES];
-		Arrays.fill(chromosome2variants_last,-1);
+		System.err.println("Assigning each variant to haplotypes in isolation...");
+		haplotype2variants = new int[N_HAPLOTYPES][1000];  // Arbitrary
+		haplotype2variants_last = new int[N_HAPLOTYPES];
+		Arrays.fill(haplotype2variants_last,-1);
 		for (j=0; j<=lastVariant; j++) {
 			if (j%10000==0) System.err.println("Processed "+j+" variants");
-			for (i=0; i<N_CHROMOSOMES; i++) {
+			for (i=0; i<N_HAPLOTYPES; i++) {
 				if (random.nextDouble()<=variants[j].alleleFrequency) {
-					chromosome2variants_last[i]++;
-					if (chromosome2variants_last[i]==chromosome2variants[i].length) {
-						int[] newArray = new int[chromosome2variants[i].length<<1];
-						System.arraycopy(chromosome2variants[i],0,newArray,0,chromosome2variants[i].length);
-						chromosome2variants[i]=newArray;
+					haplotype2variants_last[i]++;
+					if (haplotype2variants_last[i]==haplotype2variants[i].length) {
+						int[] newArray = new int[haplotype2variants[i].length<<1];
+						System.arraycopy(haplotype2variants[i],0,newArray,0,haplotype2variants[i].length);
+						haplotype2variants[i]=newArray;
 					}
-					chromosome2variants[i][chromosome2variants_last[i]]=j;
+					haplotype2variants[i][haplotype2variants_last[i]]=j;
 				}
 			}
 		}
 		
-		System.err.println("Fixing collisions inside each chromosome...");
+		System.err.println("Fixing collisions inside each haplotype...");
 		neighbors = new int[lastVariant+1][2];  // Arbitrary
 		lastNeighbor = new int[lastVariant+1];
 		queue = new PriorityQueue<QueueElement>(lastVariant+1);
 		queueElements = new QueueElement[lastVariant+1];
 		for (i=0; i<=lastVariant; i++) queueElements[i] = new QueueElement(i);
-		nChromosomesWithCollision=0;
-		for (i=0; i<N_CHROMOSOMES; i++) {
-			if (i%1000==0) System.err.println("Processed "+i+" chromosomes");
+		nHaplotypesWithCollision=0;
+		for (i=0; i<N_HAPLOTYPES; i++) {
+			if (i%1000==0) System.err.println("Processed "+i+" haplotypes");
 			Arrays.fill(lastNeighbor,-1);
-			nEdges=0; chromosome2variantsLast=chromosome2variants_last[i];
-			for (j=0; j<=chromosome2variantsLast; j++) {
-				variantJ=chromosome2variants[i][j];
+			nEdges=0; haplotype2variantsLast=haplotype2variants_last[i];
+			for (j=0; j<=haplotype2variantsLast; j++) {
+				variantJ=haplotype2variants[i][j];
 				lastPosition=variants[variantJ].position+(variants[variantJ].svType==2?0:variants[variantJ].length-1);
-				for (k=j+1; k<=chromosome2variantsLast; k++) {
-					variantK=chromosome2variants[i][k];
+				for (k=j+1; k<=haplotype2variantsLast; k++) {
+					variantK=haplotype2variants[i][k];
 					if (variants[variantK].position>lastPosition+COLLISION_DISTANCE) break;
 					if (variants[variantK].collidesWith(variants[variantJ],COLLISION_DISTANCE)) {
 						addEdge(variantJ,variantK,neighbors,lastNeighbor);
@@ -645,10 +645,10 @@ public class SimulatePopulation {
 				}
 			}
 			if (nEdges==0) continue;
-			nChromosomesWithCollision++;
+			nHaplotypesWithCollision++;
 			queue.clear();
-			for (j=0; j<=chromosome2variantsLast; j++) {
-				variantJ=chromosome2variants[i][j];
+			for (j=0; j<=haplotype2variantsLast; j++) {
+				variantJ=haplotype2variants[i][j];
 				queueElements[variantJ].degree=lastNeighbor[variantJ]+1;
 				queueElements[variantJ].removed=false;
 				queue.add(queueElements[variantJ]);
@@ -670,18 +670,18 @@ public class SimulatePopulation {
 				}
 			}
 			k=-1;
-			for (j=0; j<=chromosome2variantsLast; j++) {
-				variantJ=chromosome2variants[i][j];
-				if (!queueElements[variantJ].removed) chromosome2variants[i][++k]=variantJ;
+			for (j=0; j<=haplotype2variantsLast; j++) {
+				variantJ=haplotype2variants[i][j];
+				if (!queueElements[variantJ].removed) haplotype2variants[i][++k]=variantJ;
 			}
-			chromosome2variants_last[i]=k;
+			haplotype2variants_last[i]=k;
 		}
-		System.err.println("Fixed "+nChromosomesWithCollision+" chromosomes with collisions ("+((100.0*nChromosomesWithCollision)/N_CHROMOSOMES)+"%)");
+		System.err.println("Fixed "+nHaplotypesWithCollision+" haplotypes with collisions ("+((100.0*nHaplotypesWithCollision)/N_HAPLOTYPES)+"%)");
 		
 		// Marking unused variants
 		for (i=0; i<=lastVariant; i++) variants[i].isActive=false;
-		for (i=0; i<N_CHROMOSOMES; i++) {
-			for (j=0; j<=chromosome2variants_last[i]; j++) variants[chromosome2variants[i][j]].isActive=true;
+		for (i=0; i<N_HAPLOTYPES; i++) {
+			for (j=0; j<=haplotype2variants_last[i]; j++) variants[haplotype2variants[i][j]].isActive=true;
 		}
 		nVariants_frequent=0; nVariants_rare=0;
 		for (i=0; i<=lastVariant; i++) {
@@ -695,12 +695,12 @@ public class SimulatePopulation {
 		// Printing histogram of nVariants per individual
 		histogram = new int[HISTOGRAM_MAX_LENGTH+1];
 		Arrays.fill(histogram,0);
-		for (i=0; i<N_CHROMOSOMES; i++) {
-			j=chromosome2variants_last[i]+1;
+		for (i=0; i<N_HAPLOTYPES; i++) {
+			j=haplotype2variants_last[i]+1;
 			if (j>HISTOGRAM_MAX_LENGTH) j=HISTOGRAM_MAX_LENGTH;
 			histogram[j]++;
 		}
-		bw = new BufferedWriter(new FileWriter(outputDir+"/histogram_nVariantsPerChromosome.txt"));
+		bw = new BufferedWriter(new FileWriter(outputDir+"/histogram_nVariantsPerHaplotype.txt"));
 		for (i=0; i<=HISTOGRAM_MAX_LENGTH; i++) bw.write(i+","+histogram[i]+"\n");
 		bw.close();
 	}
@@ -897,12 +897,12 @@ public class SimulatePopulation {
 	 * strictly after the entire reference.
 	 *
 	 * Remark: the procedure is sequential just for simplicity. In the future, 
-	 * we should build a chunk of chromosomes in parallel in a memory buffer,
+	 * we should build a chunk of haplotypes in parallel in a memory buffer,
 	 * and flush it periodically to disk.
 	 *
 	 * @param buffer temporary space.
 	 */
-	public static final void buildChromosomes(int firstChromosome, int lastChromosome, String outDir, StringBuilder buffer) throws IOException {
+	public static final void buildHaplotypes(int firstHaplotype, int lastHaplotype, String outDir, StringBuilder buffer) throws IOException {
 		int i, j, k;
 		int bin, firstInReference;
 		StringBuilder out;
@@ -910,12 +910,12 @@ public class SimulatePopulation {
 		Variant variant;
 		
 		out = new StringBuilder(referenceLength);
-		for (i=firstChromosome; i<=lastChromosome; i++) {
+		for (i=firstHaplotype; i<=lastHaplotype; i++) {
 			out.delete(0,out.length());
 			firstInReference=0;
-			System.err.println("Building chromosome "+i+" with "+(chromosome2variants_last[i]+1)+" variants...");
-			for (j=0; j<=chromosome2variants_last[i]; j++) {
-				variant=variants[chromosome2variants[i][j]];
+			System.err.println("Building haplotype "+i+" with "+(haplotype2variants_last[i]+1)+" variants...");
+			for (j=0; j<=haplotype2variants_last[i]; j++) {
+				variant=variants[haplotype2variants[i][j]];
 				out.append(reference,firstInReference,variant.position);
 				if (variant.svType==0) {  // DEL
 					firstInReference=variant.position+variant.length;
@@ -939,7 +939,7 @@ public class SimulatePopulation {
 				}
 			}
 			if (firstInReference<referenceLength) out.append(reference,firstInReference,referenceLength);
-			bw = new BufferedWriter(new FileWriter(outDir+"/chromosome_"+i+".fa"));
+			bw = new BufferedWriter(new FileWriter(outDir+"/haplotype_"+i+".fa"));
 			bw.write(">GRCh37_chr1_"+i); bw.newLine();
 			bw.write(out.toString()); bw.newLine();
 			bw.close();
@@ -950,28 +950,28 @@ public class SimulatePopulation {
 	
 	/**
 	 * Remark: the procedure updates variant frequencies with their empirical
-	 * values in the simulated chromosomes.
+	 * values in the simulated haplotypes.
 	 */
-	private static final void buildVariant2chromosomes() {
+	private static final void buildVariant2haplotypes() {
 		int i, j;
 		int variantID;
 		
-		variant2chromosomes = new int[lastVariant+1][10];  // Arbitrary
-		variant2chromosomes_last = new int[lastVariant+1];
-		Arrays.fill(variant2chromosomes_last,-1);
-		for (i=0; i<N_CHROMOSOMES; i++) {
-			for (j=0; j<=chromosome2variants_last[i]; j++) {
-				variantID=chromosome2variants[i][j];
-				variant2chromosomes_last[variantID]++;
-				if (variant2chromosomes_last[variantID]==variant2chromosomes[variantID].length) {
-					int[] newArray = new int[variant2chromosomes[variantID].length<<1];
-					System.arraycopy(variant2chromosomes[variantID],0,newArray,0,variant2chromosomes[variantID].length);
-					variant2chromosomes[variantID]=newArray;
+		variant2haplotypes = new int[lastVariant+1][10];  // Arbitrary
+		variant2haplotypes_last = new int[lastVariant+1];
+		Arrays.fill(variant2haplotypes_last,-1);
+		for (i=0; i<N_HAPLOTYPES; i++) {
+			for (j=0; j<=haplotype2variants_last[i]; j++) {
+				variantID=haplotype2variants[i][j];
+				variant2haplotypes_last[variantID]++;
+				if (variant2haplotypes_last[variantID]==variant2haplotypes[variantID].length) {
+					int[] newArray = new int[variant2haplotypes[variantID].length<<1];
+					System.arraycopy(variant2haplotypes[variantID],0,newArray,0,variant2haplotypes[variantID].length);
+					variant2haplotypes[variantID]=newArray;
 				}
-				variant2chromosomes[variantID][variant2chromosomes_last[variantID]]=i;
+				variant2haplotypes[variantID][variant2haplotypes_last[variantID]]=i;
 			}
 		}
-		for (i=0; i<=lastVariant; i++) variants[i].alleleFrequency=(variant2chromosomes_last[i]+1.0)/N_CHROMOSOMES;
+		for (i=0; i<=lastVariant; i++) variants[i].alleleFrequency=(variant2haplotypes_last[i]+1.0)/N_HAPLOTYPES;
 	}
 	
 	
@@ -988,13 +988,13 @@ public class SimulatePopulation {
 	/**
 	 * Prints a joint VCF that contains the sorted set of distinct variants, and
 	 * a VCF for each individual, where an individual consists of two 
-	 * consecutive chromosomes in the list of all chromosomes.
+	 * consecutive haplotypes in the list of all haplotypes.
 	 *
 	 * Remark: the procedure does not print the header (could be copied from the
 	 * gnomAD-SV file).
 	 */
 	private static final void buildVCF(String outDir) throws IOException {
-		final String SUPPORT_STR = INFO_SEPARATOR+"CHROMOSOMES=";
+		final String SUPPORT_STR = INFO_SEPARATOR+"HAPLOTYPES=";
 		int i, j, k;
 		int variant, last1, last2;
 		BufferedWriter bw;
@@ -1008,47 +1008,47 @@ public class SimulatePopulation {
 			if (!variants[i].isActive) continue;
 			variants[i].writeVCF(i,formatter,bw);
 			bw.write(SUPPORT_STR);
-			for (j=0; j<variant2chromosomes_last[i]; j++) bw.write(variant2chromosomes[i][j]+",");
-			bw.write(variant2chromosomes[i][variant2chromosomes_last[i]]+"");
+			for (j=0; j<variant2haplotypes_last[i]; j++) bw.write(variant2haplotypes[i][j]+",");
+			bw.write(variant2haplotypes[i][variant2haplotypes_last[i]]+"");
 			bw.newLine();
 		}
 		bw.close();
 		
 		// Individuals VCFs
-		for (i=0; i<N_CHROMOSOMES; i+=2) {
+		for (i=0; i<N_HAPLOTYPES; i+=2) {
 			bw = new BufferedWriter(new FileWriter(outDir+"/groundTruth_individual_"+i+".vcf"));
 			printVcfHeader(true,"individual_"+i,bw);
-			last1=chromosome2variants_last[i];
-			last2=chromosome2variants_last[i+1];
+			last1=haplotype2variants_last[i];
+			last2=haplotype2variants_last[i+1];
 			j=0; k=0;
 			while (j<=last1 && k<=last2) {
-				if (chromosome2variants[i][j]<chromosome2variants[i+1][k]) {
-					variant=chromosome2variants[i][j];
+				if (haplotype2variants[i][j]<haplotype2variants[i+1][k]) {
+					variant=haplotype2variants[i][j];
 					variants[variant].writeVCF(variant,formatter,bw);
 					bw.write(VCF_SEPARATOR+GENOTYPE_STR+VCF_SEPARATOR+"1|0\n");
 					j++;
 				}
-				else if (chromosome2variants[i+1][k]<chromosome2variants[i][j]) {
-					variant=chromosome2variants[i+1][k];
+				else if (haplotype2variants[i+1][k]<haplotype2variants[i][j]) {
+					variant=haplotype2variants[i+1][k];
 					variants[variant].writeVCF(variant,formatter,bw);
 					bw.write(VCF_SEPARATOR+GENOTYPE_STR+VCF_SEPARATOR+"0|1\n");
 					k++;
 				}
 				else {
-					variant=chromosome2variants[i][j];
+					variant=haplotype2variants[i][j];
 					variants[variant].writeVCF(variant,formatter,bw);
 					bw.write(VCF_SEPARATOR+GENOTYPE_STR+VCF_SEPARATOR+"1|1\n");
 					j++; k++;
 				}
 			}
 			while (j<=last1) {
-				variant=chromosome2variants[i][j];
+				variant=haplotype2variants[i][j];
 				variants[variant].writeVCF(variant,formatter,bw);
 				bw.write(VCF_SEPARATOR+GENOTYPE_STR+VCF_SEPARATOR+"1|0\n");
 				j++;
 			}
 			while (k<=last2) {
-				variant=chromosome2variants[i+1][k];
+				variant=haplotype2variants[i+1][k];
 				variants[variant].writeVCF(variant,formatter,bw);
 				bw.write(VCF_SEPARATOR+GENOTYPE_STR+VCF_SEPARATOR+"0|1\n");
 				k++;
@@ -1083,18 +1083,18 @@ public class SimulatePopulation {
 	}
 	
 	
-	private static final void serialize(String chromosome2variantsFile, String variantsFile) throws IOException {
+	private static final void serialize(String haplotype2variantsFile, String variantsFile) throws IOException {
 		int i, j;
 		int last;
 		BufferedWriter bw;
 		
-		// $chromosome2variants$
-		bw = new BufferedWriter(new FileWriter(chromosome2variantsFile));
-		bw.write(N_CHROMOSOMES+"\n");
-		for (i=0; i<N_CHROMOSOMES; i++) {
-			last=chromosome2variants_last[i];
+		// $haplotype2variants$
+		bw = new BufferedWriter(new FileWriter(haplotype2variantsFile));
+		bw.write(N_HAPLOTYPES+"\n");
+		for (i=0; i<N_HAPLOTYPES; i++) {
+			last=haplotype2variants_last[i];
 			bw.write(last+"");
-			for (j=0; j<=last; j++) bw.write(","+chromosome2variants[i][j]);
+			for (j=0; j<=last; j++) bw.write(","+haplotype2variants[i][j]);
 			bw.newLine();
 		}
 		bw.close();
@@ -1107,25 +1107,25 @@ public class SimulatePopulation {
 	}
 	
 	
-	public static final void deserialize(String chromosome2variantsFile, String variantsFile) throws IOException {
+	public static final void deserialize(String haplotype2variantsFile, String variantsFile) throws IOException {
 		int i, j;
 		int last;
 		String str;
 		BufferedReader br;
 		String[] tokens;
 		
-		// $chromosome2variants$
-		br = new BufferedReader(new FileReader(chromosome2variantsFile));
-		N_CHROMOSOMES=Integer.parseInt(br.readLine());
-		chromosome2variants = new int[N_CHROMOSOMES][0];
-		chromosome2variants_last = new int[N_CHROMOSOMES];
-		for (i=0; i<N_CHROMOSOMES; i++) {
+		// $haplotype2variants$
+		br = new BufferedReader(new FileReader(haplotype2variantsFile));
+		N_HAPLOTYPES=Integer.parseInt(br.readLine());
+		haplotype2variants = new int[N_HAPLOTYPES][0];
+		haplotype2variants_last = new int[N_HAPLOTYPES];
+		for (i=0; i<N_HAPLOTYPES; i++) {
 			str=br.readLine();
 			tokens=str.split(",");
 			last=Integer.parseInt(tokens[0]);
-			chromosome2variants_last[i]=last;
-			chromosome2variants[i] = new int[last+1];
-			for (j=0; j<=last; j++) chromosome2variants[i][j]=Integer.parseInt(tokens[1+j]);
+			haplotype2variants_last[i]=last;
+			haplotype2variants[i] = new int[last+1];
+			for (j=0; j<=last; j++) haplotype2variants[i][j]=Integer.parseInt(tokens[1+j]);
 		}
 		br.close();
 		
