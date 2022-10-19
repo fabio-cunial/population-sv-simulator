@@ -1,4 +1,4 @@
-version 1.0
+version 1.0CreateDescriptions
 
 import "../pav-wdl/pav.wdl"
 
@@ -17,27 +17,25 @@ workflow PavWrapper {
     parameter_meta {
         n_haplotypes: "Total number of haplotypes in the simulated population."
     }
-    call CreateWorkpackages {
+    call CreateDescriptions {
         input:
             n_haplotypes = n_haplotypes,
             coverages = coverages,
             lengths = lengths
     }
-    scatter(description in CreateWorkpackages.tasks) {
+    scatter(description in CreateDescriptions.tasks) {
         call RetrieveAssembly {
             input:
-                bucket_dir = bucket_dir,
                 filename = description,
-                haplotype_size = size(reference_fa, "GB"),
                 reference_fa = reference_fa
         }
         call pav.pav {
             input:
                 ref = reference_fa,
                 refFai = reference_fai,
-                hapOne = RetrieveAssembly.h1,
-                hapTwo = RetrieveAssembly.h2,
-                sample = "assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + "_h1.fa",
+                hapOne = bucket_dir + "/assemblies/assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + "_h1.fa",
+                hapTwo = bucket_dir + "/assemblies/assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + "_h2.fa",
+                sample = "assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + ".fa",
                 config = RetrieveAssembly.config
         }
         call ArchiveVCF {
@@ -55,7 +53,7 @@ workflow PavWrapper {
 }
 
 
-task CreateWorkpackages {
+task CreateDescriptions {
     input {
         Int n_haplotypes
         Array[Int] coverages
@@ -71,13 +69,13 @@ task CreateWorkpackages {
             ID2=$(( ${ID1} + 1 ))
             for LENGTH in ${LENGTHS}; do
                 for COVERAGE in ${COVERAGES}; do
-                    echo "assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}.tar"
+                    echo "${ID1}-${ID2}-${LENGTH}-${COVERAGE}"
                 done
             done
         done
     >>>
     output {
-        Array[String] tasks = read_lines(stdout())
+        Array[String] descriptions = read_lines(stdout())
     }
     runtime {
         docker: "ubuntu:latest"
@@ -86,28 +84,21 @@ task CreateWorkpackages {
 
 
 # Remark: the task creates also the <config.json> file for PAV.
-task RetrieveAssembly {
+task ReadDescription {
     input {
-        String bucket_dir
-        String filename
-        Float haplotype_size
+        String description
         String reference_fa
     }
     parameter_meta {
-        filename: "TAR archive containing the two haplotypes. Includes the <.tar> suffix."
-        haplotype_size: "Of one haplotype. In GB."
+        reference_fa: "Path of the reference in the simulation bucket"
     }
     command <<<
         set -euxo pipefail
-        gsutil cp ~{bucket_dir}/~{filename} .
-        tar -xf ~{filename}
-        rm -f ~{filename}
-        FILENAME=$(basename -s .tar ~{filename})
-        IFS='_' read -ra TOKENS <<< ${FILENAME}
-        echo ${TOKENS[1]} > id1.txt
-        echo ${TOKENS[2]} > id2.txt
-        echo ${TOKENS[3]} > length.txt
-        echo ${TOKENS[4]} > coverage.txt
+        IFS='-' read -ra TOKENS <<< ~{description}
+        echo ${TOKENS[0]} > id1.txt
+        echo ${TOKENS[1]} > id2.txt
+        echo ${TOKENS[2]} > length.txt
+        echo ${TOKENS[3]} > coverage.txt
         echo "{" >> config.json
         echo "\"reference\": \"~{reference_fa}\"," >> config.json
         echo "\"asm_pattern\": \"\{asm_name\}_\{hap\}.fa\"," >> config.json
@@ -119,14 +110,10 @@ task RetrieveAssembly {
         Int id2 = read_int("id2.txt")
         Int length = read_int("length.txt")
         Int coverage = read_int("coverage.txt")
-        File h1 = "assembly_" + id1 + "_" + id2 + "_" + length + "_" + coverage + "_h1.fa"
-        File h2 = "assembly_" + id1 + "_" + id2 + "_" + length + "_" + coverage + "_h2.fa"
         File config = "config.json"
     }
     runtime {
-        docker: "fcunial/simulation"
-        disks: "local-disk " + (ceil(haplotype_size*4) + 4) + " HDD"
-        preemptible: 3
+        docker: "ubuntu:latest"
     }
 }
 

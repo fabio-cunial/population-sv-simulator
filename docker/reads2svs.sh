@@ -82,8 +82,10 @@ samtools index -@ ${N_THREADS} coverage_${MIN_COVERAGE}.bam
 PREVIOUS_COVERAGE="0"
 for COVERAGE in ${COVERAGES}; do
     echo "Starting coverage ${COVERAGE}..."
+    CHECKPOINT_INDIVIDUAL=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $1 }')
+    CHECKPOINT_LENGTH=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $2 }')
     CHECKPOINT_COVERAGE=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $3 }')
-    if [ ${COVERAGE} -lt ${CHECKPOINT_COVERAGE} ]; then
+    if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -eq ${CHECKPOINT_LENGTH} -a ${COVERAGE} -le ${CHECKPOINT_COVERAGE} ]; then
         continue
     fi
     if [ ${PREVIOUS_COVERAGE} -ne 0 ]; then
@@ -151,11 +153,10 @@ for COVERAGE in ${COVERAGES}; do
             ${TIME_COMMAND} hifiasm --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm -t ${N_THREADS} coverage_${COVERAGE}.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX}_h1.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX}_h2.fa
-            rm -rf tmpasm*
-            tar -cf ${PREFIX}.tar ${PREFIX}_*.fa
-            rm -rf ${PREFIX}_*.fa
-            ${TIME_COMMAND} gsutil cp ${PREFIX}.tar ${BUCKET_DIR}/assemblies/
-            rm -f ${PREFIX}.*
+            rm -rf tmpasm*            
+            ${TIME_COMMAND} gsutil cp ${PREFIX}_h1.fa ${BUCKET_DIR}/assemblies/
+            ${TIME_COMMAND} gsutil cp ${PREFIX}_h2.fa ${BUCKET_DIR}/assemblies/
+            rm -f ${PREFIX}*
         fi
     fi
     
