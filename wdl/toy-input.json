@@ -11,7 +11,7 @@
     "SimulatePopulation.length_max": 25000,
     "SimulatePopulation.length_stdev": 2000,
     "SimulatePopulation.length_means": [10000, 15000],
-    "SimulatePopulation.bucket_address": "gs://cunial-bucket-1/simulation-root/run",
+    "SimulatePopulation.bucket_dir": "gs://cunial-bucket-1/simulation-root/run",
     "SimulatePopulation.n_nodes": 2,
     "SimulatePopulation.n_cpus_single_sample": 4,
     "SimulatePopulation.n_cpus_joint": 8,
