@@ -53,7 +53,7 @@ if [ ${TEST} -ne 1 ]; then
     tar -xf ${ALIGNMENTS_FILE}
     rm -f ${ALIGNMENTS_FILE}
 else
-    for CHUNK in $( find . -maxdepth 1 chunk-\* ); do
+    for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
         mv ${CHUNK} ${CHUNK}.fa
     	${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_MMI} ${CHUNK}.fa > ${CHUNK}.sam
         mv ${CHUNK}.fa ${CHUNK}
