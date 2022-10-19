@@ -234,8 +234,9 @@ task ProcessChunkOfHaplotypes {
                     continue
                 fi
                 LOG_FILE="haplotype2reads_i${ID1}_i${ID2}_l${LENGTH}.log"
-                bash ~{work_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir} &> ${LOG_FILE}
-                gsutil cp ${LOG_FILE} ~{bucket_dir}/logs/
+                bash ~{work_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir} 
+                #&> ${LOG_FILE}
+                #gsutil cp ${LOG_FILE} ~{bucket_dir}/logs/
                 LOG_FILE="reads2svs_i${ID1}_i${ID2}_l${LENGTH}.log"
                 READS_FILE="reads_i${ID1}_i${ID2}_l${LENGTH}_c~{max_coverage}.fa"
                 bash ~{work_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} 
