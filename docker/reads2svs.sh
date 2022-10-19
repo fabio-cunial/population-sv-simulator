@@ -48,7 +48,7 @@ split -d -l ${N_ROWS_1X} ${READS_FILE} chunk-
 rm -f ${READS_FILE}
 ALIGNMENTS_FILE="alignments_i${ID1}_i${ID2}_l${LENGTH}_c${MAX_COVERAGE}.tar"
 TEST=$(gsutil -q stat ${BUCKET_DIR}/alignments/${ALIGNMENTS_FILE} || echo 1)
-if [ ${TEST} -ne 1 ]; then
+if [ ${TEST} != 1 ]; then
     ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/alignments/${ALIGNMENTS_FILE} .
     tar -xf ${ALIGNMENTS_FILE}
     rm -f ${ALIGNMENTS_FILE}
@@ -105,7 +105,7 @@ for COVERAGE in ${COVERAGES}; do
     if [ ${USE_PBSV} -eq 1 ]; then
         PREFIX="pbsv_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz || echo 1)
-        if [ ${TEST} -ne 1 ]; then
+        if [ ${TEST} != 1 ]; then
             ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz .
         else 
             # <discover> is sequential
@@ -113,7 +113,7 @@ for COVERAGE in ${COVERAGES}; do
             gsutil cp ${PREFIX}.svsig.gz ${BUCKET_DIR}/signatures/
         fi
         TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf || echo 1)
-        if [ ${TEST} -eq 1 ]; then
+        if [ ${TEST} = 1 ]; then
         	${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ${REFERENCE_FA} ${PREFIX}.svsig.gz ${PREFIX}.vcf
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
         fi
@@ -124,7 +124,7 @@ for COVERAGE in ${COVERAGES}; do
     if [ ${USE_SNIFFLES1} -eq 1 ]; then 
         PREFIX="sniffles1_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf || echo 1)
-        if [ ${TEST} -eq 1 ]; then
+        if [ ${TEST} = 1 ]; then
             ${TIME_COMMAND} sniffles1 -t ${N_THREADS} -m coverage_${COVERAGE}.bam -v ${PREFIX}.vcf
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
             rm -f ${PREFIX}.*
@@ -135,7 +135,7 @@ for COVERAGE in ${COVERAGES}; do
     if [ ${USE_SNIFFLES2} -eq 1 ]; then 
         PREFIX="sniffles2_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.vcf || echo 1)
-        if [ ${TEST} -eq 1 ]; then
+        if [ ${TEST} = 1 ]; then
     	    ${TIME_COMMAND} sniffles --threads ${N_THREADS} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} --reference ${REFERENCE_FA} --sample-id ${SAMPLE_ID} --input coverage_${COVERAGE}.bam --vcf ${PREFIX}.vcf --snf ${PREFIX}.snf
             gsutil cp ${PREFIX}.snf ${BUCKET_DIR}/signatures/
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
@@ -147,7 +147,7 @@ for COVERAGE in ${COVERAGES}; do
     if [ ${USE_HIFIASM} -eq 1 ]; then 
         PREFIX="assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}.tar || echo 1)
-        if [ ${TEST} -eq 1 ]; then
+        if [ ${TEST} = 1 ]; then
             ${TIME_COMMAND} hifiasm --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm -t ${N_THREADS} coverage_${COVERAGE}.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX}_h1.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX}_h2.fa
