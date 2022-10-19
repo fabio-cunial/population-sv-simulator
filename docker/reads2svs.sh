@@ -46,7 +46,7 @@ N_ROWS_1X=$(( ( ${N_ROWS} / (4*${MAX_COVERAGE}) ) * 2 ))
 rm -f chunk-*
 split -d -l ${N_ROWS_1X} ${READS_FILE} chunk-
 rm -f ${READS_FILE}
-for CHUNK in $(find . -maxdepth 1 'chunk-*'); do
+for CHUNK in $( find . -maxdepth 1 chunk-\* ); do
 	mv ${CHUNK} ${CHUNK}.fa
 done
 ALIGNMENTS_FILE="alignments_i${ID1}_i${ID2}_l${LENGTH}_c${MAX_COVERAGE}.tar"
@@ -56,7 +56,7 @@ if [ ${TEST} -ne 1 ]; then
     tar -xf ${ALIGNMENTS_FILE}
     rm -f ${ALIGNMENTS_FILE}
 else
-    for CHUNK in $(find . -maxdepth 1 'chunk-*'); do
+    for CHUNK in $( find . -maxdepth 1 chunk-\* ); do
     	${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_MMI} ${CHUNK}.fa > ${CHUNK}.sam
     	${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b ${CHUNK}.sam ${REFERENCE_FA} > ${CHUNK}.1.bam
     	rm -f ${CHUNK}.sam
@@ -66,7 +66,7 @@ else
     tar -cf ${ALIGNMENTS_FILE} chunk-*.bam
     ${TIME_COMMAND} gsutil cp ${ALIGNMENTS_FILE} ${BUCKET_ADDRESS}/alignments/
     rm -f ${ALIGNMENTS_FILE}
-done
+fi
 
 # Building the BAM and reads file of the smallest coverage
 echo "Starting coverage ${MIN_COVERAGE}..."
