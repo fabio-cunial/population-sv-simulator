@@ -134,6 +134,6 @@ RUN cd PBSIM-PacBio-Simulator \
 COPY haplotype2reads.sh .
 COPY reads2svs.sh .
 COPY PrintHaplotypes.java .
-COPY SimulatePopulation.java .
+COPY SimulateHaplotypes.java .
 COPY BuildModel.java .
 RUN javac *.java
