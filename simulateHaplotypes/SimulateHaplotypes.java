@@ -12,7 +12,7 @@ import java.text.NumberFormat;
  * bits, so it wastes a lot of memory. This is done for simplicity and should be
  * improved in the future.
  */
-public class SimulatePopulation {
+public class SimulateHaplotypes {
 	/**
 	 * Reference chromosome
 	 */
@@ -692,7 +692,7 @@ public class SimulatePopulation {
 		System.err.println("Total variants after fixing collisions: "+(nVariants_frequent+nVariants_rare)+", frequent="+nVariants_frequent+" rare="+nVariants_rare);
 		System.err.println("Variants removed: "+(lastVariant+1-nVariants_frequent-nVariants_rare));
 		
-		// Printing histogram of nVariants per individual
+		// Printing histogram of nVariants per haplotype
 		histogram = new int[HISTOGRAM_MAX_LENGTH+1];
 		Arrays.fill(histogram,0);
 		for (i=0; i<N_HAPLOTYPES; i++) {
