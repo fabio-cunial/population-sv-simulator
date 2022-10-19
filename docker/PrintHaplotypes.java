@@ -11,10 +11,10 @@ public class PrintHaplotypes {
 		final String VARIANTS_FILE = args[4];
 		final String OUTPUT_DIR = args[5];
 		
-		SimulatePopulation.loadReference(REFERENCE_FILE);
-		SimulatePopulation.deserialize(HAPLOTYPE2VARIANTS_FILE,VARIANTS_FILE);
-		StringBuilder buffer = new StringBuilder(SimulatePopulation.referenceLength);
-		SimulatePopulation.buildHaplotypes(FIRST_HAPLOTYPE,LAST_HAPLOTYPE,OUTPUT_DIR,buffer);	
+		SimulateHaplotypes.loadReference(REFERENCE_FILE);
+		SimulateHaplotypes.deserialize(HAPLOTYPE2VARIANTS_FILE,VARIANTS_FILE);
+		StringBuilder buffer = new StringBuilder(SimulateHaplotypes.referenceLength);
+		SimulateHaplotypes.buildHaplotypes(FIRST_HAPLOTYPE,LAST_HAPLOTYPE,OUTPUT_DIR,buffer);	
 	}
 
 }
