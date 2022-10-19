@@ -3,5 +3,5 @@ workflows:
 - name: PopulationSVSimulator
   subclass: wdl
   publish: True
-  primaryDescriptorPath: /wdl/SimulatePopulation.wdl
+  primaryDescriptorPath: /wdl/SimulateHaplotypes.wdl
   testParameterFiles:
