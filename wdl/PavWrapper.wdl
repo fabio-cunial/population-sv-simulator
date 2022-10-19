@@ -1,4 +1,4 @@
-version 1.0CreateDescriptions
+version 1.0
 
 import "../pav-wdl/pav.wdl"
 
@@ -23,29 +23,29 @@ workflow PavWrapper {
             coverages = coverages,
             lengths = lengths
     }
-    scatter(description in CreateDescriptions.tasks) {
-        call RetrieveAssembly {
+    scatter(description in CreateDescriptions.descriptions) {
+        call ReadDescription {
             input:
-                filename = description,
+                description = description,
                 reference_fa = reference_fa
         }
         call pav.pav {
             input:
                 ref = reference_fa,
                 refFai = reference_fai,
-                hapOne = bucket_dir + "/assemblies/assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + "_h1.fa",
-                hapTwo = bucket_dir + "/assemblies/assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + "_h2.fa",
-                sample = "assembly_" + RetrieveAssembly.id1 + "_" + RetrieveAssembly.id2 + "_" + RetrieveAssembly.length + "_" + RetrieveAssembly.coverage + ".fa",
-                config = RetrieveAssembly.config
+                hapOne = bucket_dir + "/assemblies/assembly_i" + ReadDescription.id1 + "_i" + ReadDescription.id2 + "_l" + ReadDescription.length + "_c" + ReadDescription.coverage + "_h1.fa",
+                hapTwo = bucket_dir + "/assemblies/assembly_i" + ReadDescription.id1 + "_i" + ReadDescription.id2 + "_l" + ReadDescription.length + "_c" + ReadDescription.coverage + "_h2.fa",
+                sample = "assembly_i" + ReadDescription.id1 + "_i" + ReadDescription.id2 + "_l" + ReadDescription.length + "_c" + ReadDescription.coverage,
+                config = ReadDescription.config
         }
-        call ArchiveVCF {
+        call StoreVCF {
             input:
                 vcf = pav.vcf,
                 bucket_dir = bucket_dir,
-                id1 = RetrieveAssembly.id1,
-                id2 = RetrieveAssembly.id2,
-                length = RetrieveAssembly.length,
-                coverage = RetrieveAssembly.coverage
+                id1 = ReadDescription.id1,
+                id2 = ReadDescription.id2,
+                length = ReadDescription.length,
+                coverage = ReadDescription.coverage
         }
     }
     output {
@@ -83,7 +83,6 @@ task CreateDescriptions {
 }
 
 
-# Remark: the task creates also the <config.json> file for PAV.
 task ReadDescription {
     input {
         String description
@@ -118,7 +117,7 @@ task ReadDescription {
 }
 
 
-task ArchiveVCF {
+task StoreVCF {
     input {
         File vcf
         String bucket_dir
@@ -129,7 +128,7 @@ task ArchiveVCF {
     }
     command <<<
         set -euxo pipefail
-        FILENAME="pav_~{id1}_~{id2}_~{length}_~{coverage}.vcf"
+        FILENAME="pav_i~{id1}_i~{id2}_l~{length}_c~{coverage}.vcf"
         cp ~{vcf} ${FILENAME}
         gsutil cp ${FILENAME} ~{bucket_dir}/vcfs/
     >>>
