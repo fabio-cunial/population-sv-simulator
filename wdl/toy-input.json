@@ -18,5 +18,6 @@
     "SimulatePopulation.use_pbsv": 1,
     "SimulatePopulation.use_sniffles1": 1,
     "SimulatePopulation.use_sniffles2": 1,
-    "SimulatePopulation.use_pav": 0
+    "SimulatePopulation.use_pav": 0,
+    "SimulatePopulation.delete_bucket_dir": 1
 }

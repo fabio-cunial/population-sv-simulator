@@ -5,7 +5,7 @@ version 1.0
 # parallel.
 workflow JointCalling {
     input {
-        String bucket_address
+        String bucket_dir
         Array[Int] coverages
         Array[Int] lengths
         Int n_individuals
@@ -16,7 +16,7 @@ workflow JointCalling {
         Int use_sniffles2
     }
     parameter_meta {
-        bucket_address: "The full address of the directory in a bucket to be used to store temporary files and output files."
+        bucket_dir: "The full address of the directory in a bucket to be used to store temporary files and output files."
         n_individuals: "Total number of diploid individuals in the population."
         max_signature_file_size: "In MB."
         use_pbsv: "1=yes, 0=no."
@@ -32,7 +32,7 @@ workflow JointCalling {
         call JointCallingImpl { 
             input:
                 task_description = description,
-                bucket_address = bucket_address,
+                bucket_dir = bucket_dir,
                 reference_fa = reference_fa,
                 n_individuals = n_individuals,
                 max_signature_file_size = max_signature_file_size,
@@ -86,7 +86,7 @@ task CreateWorkpackages {
 task JointCallingImpl {
     input {
         String task_description
-        String bucket_address
+        String bucket_dir
         File reference_fa
         Int n_individuals
         Float max_signature_file_size
@@ -117,18 +117,18 @@ task JointCallingImpl {
         COVERAGE=$(echo ~{task_description} | awk '{ print $3 }')
         if [ ${CALLER} -eq 1 ]; then
             # PBSV
-            ${TIME_COMMAND} gsutil cp "~{bucket_address}/signatures/pbsv_*_*_l${LENGTH}_c${COVERAGE}.svsig.gz" .
+            ${TIME_COMMAND} gsutil cp "~{bucket_dir}/signatures/pbsv_*_*_l${LENGTH}_c${COVERAGE}.svsig.gz" .
             find . -maxdepth 1 -name "*.svsig.gz" > filenames.fofn
             VCF_FILE="joint_pbsv_l${LENGTH}_c${COVERAGE}.vcf"
             ${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ~{reference_fa} filenames.fofn ${VCF_FILE}
-            gsutil cp ${VCF_FILE} ~{bucket_address}/vcfs/
+            gsutil cp ${VCF_FILE} ~{bucket_dir}/vcfs/
         else
             # Sniffles 2
-            ${TIME_COMMAND} gsutil cp "~{bucket_address}/signatures/sniffles2_*_*_l${LENGTH}_c${COVERAGE}.snf" .
+            ${TIME_COMMAND} gsutil cp "~{bucket_dir}/signatures/sniffles2_*_*_l${LENGTH}_c${COVERAGE}.snf" .
             find . -maxdepth 1 -name "*.snf" > filenames.tsv
             VCF_FILE="joint_sniffles2_l${LENGTH}_c${COVERAGE}.vcf"
             ${TIME_COMMAND} sniffles --threads ${N_THREADS} --input filenames.tsv --vcf ${VCF_FILE}
-            gsutil cp ${VCF_FILE} ~{bucket_address}/vcfs/
+            gsutil cp ${VCF_FILE} ~{bucket_dir}/vcfs/
         fi
     >>>
     

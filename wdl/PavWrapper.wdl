@@ -7,7 +7,7 @@ import "../pav-wdl/pav.wdl"
 # coverage) in parallel.
 workflow PavWrapper {
     input {
-        String bucket_address
+        String bucket_dir
         Int n_haplotypes
         Array[Int] coverages
         Array[Int] lengths
@@ -26,7 +26,7 @@ workflow PavWrapper {
     scatter(description in CreateWorkpackages.tasks) {
         call RetrieveAssembly {
             input:
-                bucket_address = bucket_address,
+                bucket_dir = bucket_dir,
                 filename = description,
                 haplotype_size = size(reference_fa, "GB"),
                 reference_fa = reference_fa
@@ -43,7 +43,7 @@ workflow PavWrapper {
         call ArchiveVCF {
             input:
                 vcf = pav.vcf,
-                bucket_address = bucket_address,
+                bucket_dir = bucket_dir,
                 id1 = RetrieveAssembly.id1,
                 id2 = RetrieveAssembly.id2,
                 length = RetrieveAssembly.length,
@@ -88,7 +88,7 @@ task CreateWorkpackages {
 # Remark: the task creates also the <config.json> file for PAV.
 task RetrieveAssembly {
     input {
-        String bucket_address
+        String bucket_dir
         String filename
         Float haplotype_size
         String reference_fa
@@ -99,7 +99,7 @@ task RetrieveAssembly {
     }
     command <<<
         set -euxo pipefail
-        gsutil cp ~{bucket_address}/~{filename} .
+        gsutil cp ~{bucket_dir}/~{filename} .
         tar -xf ~{filename}
         rm -f ~{filename}
         FILENAME=$(basename -s .tar ~{filename})
@@ -134,7 +134,7 @@ task RetrieveAssembly {
 task ArchiveVCF {
     input {
         File vcf
-        String bucket_address
+        String bucket_dir
         Int id1
         Int id2
         Int length
@@ -144,7 +144,7 @@ task ArchiveVCF {
         set -euxo pipefail
         FILENAME="pav_~{id1}_~{id2}_~{length}_~{coverage}.vcf"
         cp ~{vcf} ${FILENAME}
-        gsutil cp ${FILENAME} ~{bucket_address}/vcfs/
+        gsutil cp ${FILENAME} ~{bucket_dir}/vcfs/
     >>>
     output {
     }

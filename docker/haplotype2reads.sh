@@ -17,7 +17,7 @@ LENGTH_MAX=$4
 LENGTH_MEAN=$5
 LENGTH_STDEV=$6
 MAX_COVERAGE=$7
-BUCKET_ADDRESS=$8  # Root dir of the simulation in the bucket
+BUCKET_DIR=$8  # Root dir of the simulation in the bucket
 
 TIME_COMMAND="/usr/bin/time --verbose"
 PBSIM_MODEL="/simulation/pbsim_data/model_qc_ccs"
@@ -29,9 +29,9 @@ lscpu
 cat /proc/meminfo
 
 OUTPUT_FILE="reads_i${ID1}_i${ID2}_l${LENGTH_MEAN}_c${MAX_COVERAGE}.fa"
-TEST=$(gsutil -q stat ${BUCKET_ADDRESS}/reads/${OUTPUT_FILE} || echo 1)
+TEST=$(gsutil -q stat ${BUCKET_DIR}/reads/${OUTPUT_FILE} || echo 1)
 if [ ${TEST} -ne 1 ]; then
-    ${TIME_COMMAND} gsutil cp ${BUCKET_ADDRESS}/reads/${OUTPUT_FILE} .
+    ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/reads/${OUTPUT_FILE} .
 else
     ${TIME_COMMAND} ${PBSIM_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID1} haplotype_${ID1}.fa
     mv reads_${ID1}_0001.fastq reads_${ID1}.fa
@@ -47,5 +47,5 @@ else
     rm -f reads_${ID1}.fa
     tr 'Z' '\n' < reads_${ID1}_${ID2}.1 > ${OUTPUT_FILE}
     rm -f reads_${ID1}_${ID2}.1
-    ${TIME_COMMAND} gsutil cp ${OUTPUT_FILE} ${BUCKET_ADDRESS}/reads/
+    ${TIME_COMMAND} gsutil cp ${OUTPUT_FILE} ${BUCKET_DIR}/reads/
 fi
