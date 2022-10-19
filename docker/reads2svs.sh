@@ -46,9 +46,6 @@ N_ROWS_1X=$(( ( ${N_ROWS} / (4*${MAX_COVERAGE}) ) * 2 ))
 rm -f chunk-*
 split -d -l ${N_ROWS_1X} ${READS_FILE} chunk-
 rm -f ${READS_FILE}
-for CHUNK in $( find . -maxdepth 1 chunk-\* ); do
-	mv ${CHUNK} ${CHUNK}.fa
-done
 ALIGNMENTS_FILE="alignments_i${ID1}_i${ID2}_l${LENGTH}_c${MAX_COVERAGE}.tar"
 TEST=$(gsutil -q stat ${BUCKET_ADDRESS}/alignments/${ALIGNMENTS_FILE} || echo 1)
 if [ ${TEST} -ne 1 ]; then
@@ -57,7 +54,9 @@ if [ ${TEST} -ne 1 ]; then
     rm -f ${ALIGNMENTS_FILE}
 else
     for CHUNK in $( find . -maxdepth 1 chunk-\* ); do
+        mv ${CHUNK} ${CHUNK}.fa
     	${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_MMI} ${CHUNK}.fa > ${CHUNK}.sam
+        mv ${CHUNK}.fa ${CHUNK}
     	${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b ${CHUNK}.sam ${REFERENCE_FA} > ${CHUNK}.1.bam
     	rm -f ${CHUNK}.sam
     	${TIME_COMMAND} samtools sort -@ ${N_THREADS} ${CHUNK}.1.bam > ${CHUNK}.bam
@@ -74,7 +73,7 @@ rm -f coverage_${MIN_COVERAGE}.bam coverage_${MIN_COVERAGE}.fa
 IDS=""
 for i in $(seq -f "%02g" 0 $(( ${MIN_COVERAGE}-1 )) ); do
 	IDS="${IDS} chunk-${i}.bam"
-    cat chunk-${i}.fa >> coverage_${MIN_COVERAGE}.fa
+    cat chunk-${i} >> coverage_${MIN_COVERAGE}.fa
 done
 ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE}.bam ${IDS}
 samtools index -@ ${N_THREADS} coverage_${MIN_COVERAGE}.bam
@@ -97,7 +96,7 @@ for COVERAGE in ${COVERAGES}; do
         rm -f coverage_${PREVIOUS_COVERAGE}.bam coverage_${PREVIOUS_COVERAGE}.bai
 		cp coverage_${PREVIOUS_COVERAGE}.fa coverage_${COVERAGE}.fa
 		for i in $(seq -f "%02g" ${PREVIOUS_COVERAGE} $(( ${COVERAGE}-1 )) ); do
-            cat chunk-${i}.fa >> coverage_${COVERAGE}.fa
+            cat chunk-${i} >> coverage_${COVERAGE}.fa
 		done
         rm -f coverage_${PREVIOUS_COVERAGE}.fa
     fi
