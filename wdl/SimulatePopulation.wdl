@@ -244,6 +244,7 @@ task ProcessChunkOfHaplotypes {
                 #gsutil cp ${LOG_FILE} ~{bucket_dir}/logs/
                 gsutil rm -f ~{bucket_dir}/reads/${READS_FILE}
             done
+            rm -f haplotype_${ID1}.fa haplotype_${ID2}.fa
         done
     >>>
     
