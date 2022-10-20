@@ -103,10 +103,6 @@ workflow SimulateHaplotypes {
         }
     }
     output {
-        Array[File] log_stdout_ProcessChunkOfHaplotypes = ProcessChunkOfHaplotypes.log_stdout
-        Array[File] log_stderr_ProcessChunkOfHaplotypes = ProcessChunkOfHaplotypes.log_stderr
-        Array[File] log_stdout_JointCalling = JointCalling.logs_stdout
-        Array[File] log_stderr_JointCalling = JointCalling.logs_stderr
     }
 }
 
@@ -237,24 +233,15 @@ task ProcessChunkOfHaplotypes {
                 if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -le ${CHECKPOINT_LENGTH} ]; then
                     continue
                 fi
-                LOG_FILE="haplotype2reads_i${ID1}_i${ID2}_l${LENGTH}.log"
-                bash ~{work_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir} 
-                #&> ${LOG_FILE}
-                #gsutil cp ${LOG_FILE} ~{bucket_dir}/logs/
-                LOG_FILE="reads2svs_i${ID1}_i${ID2}_l${LENGTH}.log"
+                bash ~{work_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir}
                 READS_FILE="reads_i${ID1}_i${ID2}_l${LENGTH}_c~{max_coverage}.fa"
-                bash ~{work_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} 
-                #&> ${LOG_FILE}
-                #gsutil cp ${LOG_FILE} ~{bucket_dir}/logs/
-                gsutil rm -f ~{bucket_dir}/reads/${READS_FILE}
+                bash ~{work_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm}
             done
             rm -f haplotype_${ID1}.fa haplotype_${ID2}.fa
         done
     >>>
     
     output {
-        File log_stdout = stdout()
-        File log_stderr = stderr()
     }
     runtime {
         docker: "fcunial/simulation"

@@ -40,8 +40,6 @@ workflow JointCalling {
         }
     }
     output {
-        Array[File] logs_stdout = JointCallingImpl.log_stdout
-        Array[File] logs_stderr = JointCallingImpl.log_stderr
     }
 }
 
@@ -104,6 +102,7 @@ task JointCallingImpl {
     command <<<
         set -euxo pipefail
         
+        GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
         TIME_COMMAND="/usr/bin/time --verbose"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
@@ -121,20 +120,18 @@ task JointCallingImpl {
             find . -maxdepth 1 -name "*.svsig.gz" > filenames.fofn
             VCF_FILE="joint_pbsv_l${LENGTH}_c${COVERAGE}.vcf"
             ${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ~{reference_fa} filenames.fofn ${VCF_FILE}
-            gsutil cp ${VCF_FILE} ~{bucket_dir}/vcfs/
+            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${VCF_FILE} ~{bucket_dir}/vcfs/
         else
             # Sniffles 2
             ${TIME_COMMAND} gsutil -m cp "~{bucket_dir}/signatures/sniffles2_*_*_l${LENGTH}_c${COVERAGE}.snf" .
             find . -maxdepth 1 -name "*.snf" > filenames.tsv
             VCF_FILE="joint_sniffles2_l${LENGTH}_c${COVERAGE}.vcf"
             ${TIME_COMMAND} sniffles --threads ${N_THREADS} --input filenames.tsv --vcf ${VCF_FILE}
-            gsutil cp ${VCF_FILE} ~{bucket_dir}/vcfs/
+            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${VCF_FILE} ~{bucket_dir}/vcfs/
         fi
     >>>
     
     output {
-        File log_stdout = stdout()
-        File log_stderr = stderr()
     }
     runtime {
         docker: "fcunial/simulation"
