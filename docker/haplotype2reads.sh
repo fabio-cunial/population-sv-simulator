@@ -19,6 +19,7 @@ LENGTH_STDEV=$6
 MAX_COVERAGE=$7
 BUCKET_DIR=$8  # Root dir of the simulation in the bucket
 
+GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 TIME_COMMAND="/usr/bin/time --verbose"
 PBSIM_MODEL="/simulation/pbsim_data/model_qc_ccs"
 PBSIM_COMMAND="pbsim --data-type CLR --length-min ${LENGTH_MIN} --length-max ${LENGTH_MAX} --accuracy-min 0.99 --accuracy-max 1.0 --difference-ratio 6:21:73 --model_qc ${PBSIM_MODEL} --length-mean ${LENGTH_MEAN} --length-sd ${LENGTH_STDEV} --accuracy-mean 0.995 --accuracy-sd 0.002"
@@ -45,5 +46,5 @@ else
     rm -f reads_${ID1}.fa
     tr 'Z' '\n' < reads_${ID1}_${ID2}.1 > ${OUTPUT_FILE}
     rm -f reads_${ID1}_${ID2}.1
-    ${TIME_COMMAND} gsutil cp ${OUTPUT_FILE} ${BUCKET_DIR}/reads/
+    ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${OUTPUT_FILE} ${BUCKET_DIR}/reads/
 fi

@@ -24,6 +24,7 @@ USE_SNIFFLES1=${13}
 USE_SNIFFLES2=${14}
 USE_HIFIASM=${15}
 
+GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 TIME_COMMAND="/usr/bin/time --verbose"
 COVERAGES=$(echo ${COVERAGES} | tr '-' ' ')
 N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
@@ -63,7 +64,7 @@ else
     	rm -f ${CHUNK}.1.bam
     done
     tar -cf ${ALIGNMENTS_FILE} chunk-*.bam
-    ${TIME_COMMAND} gsutil cp ${ALIGNMENTS_FILE} ${BUCKET_DIR}/alignments/
+    ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${ALIGNMENTS_FILE} ${BUCKET_DIR}/alignments/
     rm -f ${ALIGNMENTS_FILE}
 fi
 

@@ -45,6 +45,7 @@ RUN apt-get -qqy update --fix-missing \
         python3-pip
 
 # GSUTIL
+RUN pip3 uninstall -y crcmod && pip3 install --no-cache-dir -U crcmod
 RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${gcloud_version}-linux-x86_64.tar.gz \
     && tar -xf google-cloud-cli-${gcloud_version}-linux-x86_64.tar.gz \
     && rm -f google-cloud-cli-${gcloud_version}-linux-x86_64.tar.gz \

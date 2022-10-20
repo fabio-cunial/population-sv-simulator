@@ -117,14 +117,14 @@ task JointCallingImpl {
         COVERAGE=$(echo ~{task_description} | awk '{ print $3 }')
         if [ ${CALLER} -eq 1 ]; then
             # PBSV
-            ${TIME_COMMAND} gsutil cp "~{bucket_dir}/signatures/pbsv_*_*_l${LENGTH}_c${COVERAGE}.svsig.gz" .
+            ${TIME_COMMAND} gsutil -m cp "~{bucket_dir}/signatures/pbsv_*_*_l${LENGTH}_c${COVERAGE}.svsig.gz" .
             find . -maxdepth 1 -name "*.svsig.gz" > filenames.fofn
             VCF_FILE="joint_pbsv_l${LENGTH}_c${COVERAGE}.vcf"
             ${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ~{reference_fa} filenames.fofn ${VCF_FILE}
             gsutil cp ${VCF_FILE} ~{bucket_dir}/vcfs/
         else
             # Sniffles 2
-            ${TIME_COMMAND} gsutil cp "~{bucket_dir}/signatures/sniffles2_*_*_l${LENGTH}_c${COVERAGE}.snf" .
+            ${TIME_COMMAND} gsutil -m cp "~{bucket_dir}/signatures/sniffles2_*_*_l${LENGTH}_c${COVERAGE}.snf" .
             find . -maxdepth 1 -name "*.snf" > filenames.tsv
             VCF_FILE="joint_sniffles2_l${LENGTH}_c${COVERAGE}.vcf"
             ${TIME_COMMAND} sniffles --threads ${N_THREADS} --input filenames.tsv --vcf ${VCF_FILE}

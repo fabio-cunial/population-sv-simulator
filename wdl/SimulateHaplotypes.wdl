@@ -116,7 +116,11 @@ task DeleteBucketDir {
         String bucket_dir
     }    
     command <<<
-        gsutil rm -rf ~{bucket_dir} || true
+        while ! gsutil rm -rf ~{bucket_dir}
+        do
+            sleep 3
+            echo "Trying again to delete ~{bucket_dir}"
+        done
     >>>
     output {
     }
