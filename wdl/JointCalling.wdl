@@ -14,7 +14,7 @@ workflow JointCalling {
         Int n_cpus
         Int use_pbsv
         Int use_sniffles2
-        Array[Int] force_sequentiality
+        Array[Int]? force_sequentiality
     }
     parameter_meta {
         bucket_dir: "The full address of the directory in a bucket to be used to store temporary files and output files."

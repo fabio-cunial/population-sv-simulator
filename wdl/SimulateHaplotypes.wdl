@@ -55,7 +55,8 @@ workflow SimulateHaplotypes {
     call GetHaplotypeChunks {
         input:
             n_haplotypes = n_haplotypes,
-            n_chunks = n_nodes
+            n_chunks = n_nodes,
+            force_sequentiality = DeleteBucketDir.force_sequentiality
     }
     scatter(i in GetHaplotypeChunks.chunks) {
         call ProcessChunkOfHaplotypes {
@@ -114,13 +115,15 @@ task DeleteBucketDir {
         String bucket_dir
     }    
     command <<<
-        while ! gsutil rm -rf ~{bucket_dir}
+        while ! gsutil -m rm -rf ~{bucket_dir}
         do
             sleep 3
             echo "Trying again to delete ~{bucket_dir}"
         done
+        echo "1" > force_sequentiality.txt
     >>>
     output {
+        Int force_sequentiality = read_int("force_sequentiality.txt")
     }
     runtime {
         docker: "fcunial/simulation"
@@ -134,7 +137,11 @@ task GetHaplotypeChunks {
     input { 
         Int n_haplotypes
         Int n_chunks
-    }    
+        Int? force_sequentiality
+    }
+    parameter_meta {
+        force_sequentiality: "Fake input, just to make sure that this workflow is executed after some previous step has completed."
+    }
     Int size = ( (n_haplotypes/2 + n_chunks - 1) / n_chunks ) * 2
     command <<<
         seq 0 ~{size} $(( ~{n_haplotypes} - 1 )) > out.txt

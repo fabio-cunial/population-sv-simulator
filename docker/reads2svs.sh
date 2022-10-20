@@ -58,9 +58,10 @@ split -d -l ${N_ROWS_1X} ${READS_FILE} chunk-
 rm -f ${READS_FILE}
 ALIGNMENTS_PREFIX="alignments_i${ID1}_i${ID2}_l${LENGTH}_c${MAX_COVERAGE}"
 for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
-    TEST=$(gsutil -q stat ${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_${CHUNK}.bam || echo 1)
+    FILE_NAME="${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_$(basename ${CHUNK}).bam"
+    TEST=$(gsutil -q stat ${FILE_NAME} || echo 1)
     if [ ${TEST} != 1 ]; then
-        gsutil cp ${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_${CHUNK}.bam ${CHUNK}.bam
+        gsutil cp ${FILE_NAME} ${CHUNK}.bam
     else
         mv ${CHUNK} ${CHUNK}.fa
     	${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_MMI} ${CHUNK}.fa > ${CHUNK}.sam
@@ -69,7 +70,7 @@ for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
     	rm -f ${CHUNK}.sam
     	${TIME_COMMAND} samtools sort -@ ${N_THREADS} ${CHUNK}.1.bam > ${CHUNK}.bam
     	rm -f ${CHUNK}.1.bam
-        gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${CHUNK}.bam ${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_${CHUNK}.bam
+        gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${CHUNK}.bam ${FILE_NAME}
     fi
 done
 
