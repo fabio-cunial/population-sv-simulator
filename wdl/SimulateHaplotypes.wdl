@@ -230,7 +230,7 @@ task ProcessChunkOfHaplotypes {
             java -cp ~{work_dir} -Xmx10g PrintHaplotypes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
             for LENGTH in ${LENGTHS}; do
                 CHECKPOINT_LENGTH=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $2 }')
-                if [ ${LENGTH} -lt ${CHECKPOINT_LENGTH} ]; then
+                if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -le ${CHECKPOINT_LENGTH} ]; then
                     continue
                 fi
                 LOG_FILE="haplotype2reads_i${ID1}_i${ID2}_l${LENGTH}.log"

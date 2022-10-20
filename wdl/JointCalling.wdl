@@ -55,17 +55,17 @@ task CreateWorkpackages {
     }
     command <<<
         set -euxo pipefail
-        COVERAGES=~{sep='-' coverages}
-        COVERAGES=$(echo ${COVERAGES} | tr '-' ' ')
         LENGTHS=~{sep='-' lengths}
         LENGTHS=$(echo ${LENGTHS} | tr '-' ' ')
-        for COVERAGE in ${COVERAGES}; do
-            for LENGTH in ${LENGTHS}; do
+        COVERAGES=~{sep='-' coverages}
+        COVERAGES=$(echo ${COVERAGES} | tr '-' ' ')
+        for LENGTH in ${LENGTHS}; do
+            for COVERAGE in ${COVERAGES}; do
                 if [ ~{use_pbsv} -eq 1 ]; then
-                    echo "1 ${COVERAGE} ${LENGTH}"
+                    echo "1 ${LENGTH} ${COVERAGE}"
                 fi
                 if [ ~{use_sniffles2} -eq 1 ]; then
-                    echo "2 ${COVERAGE} ${LENGTH}"
+                    echo "2 ${LENGTH} ${COVERAGE}"
                 fi
             done
         done
