@@ -8,6 +8,15 @@
 # current disk usage. Peak RAM with one thread and no hifiasm: 2 GB (from
 # minimap2).
 #
+# Time analysis on a 2-core node:
+# minimap2 of one chunk: ~2 mins and 1.8 GB of RAM
+# samtools sort of one chunk: ~3 s and 400 MB of RAM
+# samtools merge: ~20 s and 10 MB of RAM
+# pbsv discover: 
+# pbsv call: 
+# sniffles1: 
+# sniffles2: 
+# hifiasm:
 READS_FILE=$1
 SAMPLE_ID=$2  # SM field in the .sam file (needed later for joint calling)
 LENGTH=$3

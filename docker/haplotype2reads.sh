@@ -10,6 +10,11 @@
 # (from <shuf>, which loads the whole file in memory; <pbsim> takes just 240 MB
 # of RAM).
 #
+# Time analysis for ~3 GB reads:
+# pbsim: ~2 mins
+# shuf: ~30 s and ~3 GB of RAM
+# bucket upload/download: ~40 s
+#
 ID1=$1
 ID2=$2
 LENGTH_MIN=$3
