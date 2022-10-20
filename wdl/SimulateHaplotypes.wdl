@@ -89,7 +89,8 @@ workflow SimulateHaplotypes {
             reference_fa = reference_fa,
             n_cpus = n_cpus_joint,
             use_pbsv = use_pbsv,
-            use_sniffles2 = use_sniffles2
+            use_sniffles2 = use_sniffles2,
+            force_sequentiality = ProcessChunkOfHaplotypes.force_sequentiality
     }
     if (use_pav == 1) {
         call PavWrapper.PavWrapper {
@@ -99,7 +100,8 @@ workflow SimulateHaplotypes {
                 coverages = coverages,
                 lengths = length_means,
                 reference_fa = reference_fa,
-                reference_fai = reference_fai
+                reference_fai = reference_fai,
+                force_sequentiality = ProcessChunkOfHaplotypes.force_sequentiality
         }
     }
     output {
@@ -239,9 +241,11 @@ task ProcessChunkOfHaplotypes {
             done
             rm -f haplotype_${ID1}.fa haplotype_${ID2}.fa
         done
+        echo "1" > force_sequentiality.txt
     >>>
     
     output {
+        Int force_sequentiality = read_int("force_sequentiality.txt")
     }
     runtime {
         docker: "fcunial/simulation"

@@ -13,9 +13,11 @@ workflow PavWrapper {
         Array[Int] lengths
         File reference_fa
         File reference_fai
+        Array[Int] force_sequentiality
     }
     parameter_meta {
         n_haplotypes: "Total number of haplotypes in the simulated population."
+        force_sequentiality: "Fake input, just to make sure that this workflow is executed after some previous step has completed."
     }
     call CreateDescriptions {
         input:
@@ -85,7 +87,7 @@ task CreateDescriptions {
 
 task ReadDescription {
     input {
-        String description
+        File description
         String reference_fa
     }
     parameter_meta {

@@ -14,12 +14,14 @@ workflow JointCalling {
         Int n_cpus
         Int use_pbsv
         Int use_sniffles2
+        Array[Int] force_sequentiality
     }
     parameter_meta {
         bucket_dir: "The full address of the directory in a bucket to be used to store temporary files and output files."
         n_individuals: "Total number of diploid individuals in the population."
         max_signature_file_size: "In MB."
         use_pbsv: "1=yes, 0=no."
+        force_sequentiality: "Fake input, just to make sure that this workflow is executed after some previous step has completed."
     }
     call CreateWorkpackages {
         input:

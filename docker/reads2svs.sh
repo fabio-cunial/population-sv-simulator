@@ -145,8 +145,9 @@ for COVERAGE in ${COVERAGES}; do
     # HIFIASM
     if [ ${USE_HIFIASM} -eq 1 ]; then 
         PREFIX="assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}.tar || echo 1)
-        if [ ${TEST} = 1 ]; then
+        TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa || echo 1)
+        TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa || echo 1)
+        if [ ${TEST1} = 1 -o ${TEST2} = 1 ]; then
             ${TIME_COMMAND} hifiasm --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm -t ${N_THREADS} coverage_${COVERAGE}.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX}_h1.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX}_h2.fa
