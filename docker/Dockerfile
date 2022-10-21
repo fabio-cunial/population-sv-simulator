@@ -123,6 +123,9 @@ RUN wget https://github.com/chhylp123/hifiasm/archive/refs/tags/${hifiasm_versio
     && rm -rf hifiasm-${hifiasm_version} \
     && hifiasm -h
 
+# QUAST
+RUN conda install -c bioconda quast
+
 # PAV
 COPY ./pav-environment.yml .
 RUN conda env create -f ./pav-environment.yml && conda clean -a

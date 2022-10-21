@@ -228,7 +228,7 @@ task ProcessChunkOfHaplotypes {
                 continue
             fi
             ID2=$(( ${ID1} + 1 ))
-            java -Xmx10g PrintHaplotypes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
+            java -cp . -Xmx10g PrintHaplotypes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
             for LENGTH in ${LENGTHS}; do
                 CHECKPOINT_LENGTH=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $2 }')
                 if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -le ${CHECKPOINT_LENGTH} ]; then
