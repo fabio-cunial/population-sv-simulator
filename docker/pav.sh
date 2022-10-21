@@ -4,7 +4,6 @@
 # single Bash script with checkpointing at every step.
 #
 # Max requirements from the original WDL: 8 threads, 32 GB of RAM, 1 GB of disk.
-# docker="us.gcr.io/broad-dsp-lrma/lr-pav:1.2.1"
 #
 ID1=$1
 ID2=$2

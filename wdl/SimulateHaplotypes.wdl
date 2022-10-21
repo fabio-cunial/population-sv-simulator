@@ -95,18 +95,6 @@ workflow SimulateHaplotypes {
             use_sniffles2 = use_sniffles2,
             force_sequentiality = ProcessChunkOfHaplotypes.force_sequentiality
     }
-    if (use_pav == 1) {
-        call PavWrapper.PavWrapper {
-            input:
-                bucket_dir = bucket_dir,
-                n_haplotypes = n_haplotypes,
-                coverages = coverages,
-                lengths = length_means,
-                reference_fa = reference_fa,
-                reference_fai = reference_fai,
-                force_sequentiality = ProcessChunkOfHaplotypes.force_sequentiality
-        }
-    }
     output {
     }
 }
@@ -214,6 +202,7 @@ task ProcessChunkOfHaplotypes {
     Int last = length(coverages) - 1
     Int max_coverage = coverages[last]
     Int ram_size_gb = ceil((size(reference_fa, "GB")*max_coverage*2) * 3)  # *3 because of hifiasm
+    ram_size_gb = 32 if 32 > ram_size_gb else ram_size_gb  # 32 GB is from PAV
     Int disk_size_image = 20
     Int disk_size_tools = 5
     Int disk_size_gb = disk_size_image + ram_size_gb*2 + ceil( size(reference_fa, "GB") + size(reference_mmi, "GB") + size(reference_tandem_repeats, "GB") + size(haplotype2variants_file, "GB") + size(variants_file, "GB") ) + disk_size_tools
