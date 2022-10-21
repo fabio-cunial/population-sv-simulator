@@ -1,7 +1,6 @@
 version 1.0
 
 import "JointCalling.wdl"
-import "PavWrapper.wdl"
 
 
 # Given the config files created by the simulator and describing a set of
@@ -65,6 +64,7 @@ workflow SimulateHaplotypes {
                  id_from = i,
                  chunk_size = GetHaplotypeChunks.chunk_size,
                  reference_fa = reference_fa,
+                 reference_fai = reference_fai,
                  reference_mmi = reference_mmi,
                  reference_tandem_repeats = reference_tandem_repeats,
                  haplotype2variants_file = haplotype2variants_file,
@@ -168,6 +168,7 @@ task ProcessChunkOfHaplotypes {
         Int id_from
         Int chunk_size
         File reference_fa
+        File reference_fai
         File reference_mmi
         File reference_tandem_repeats
         File haplotype2variants_file
@@ -201,8 +202,8 @@ task ProcessChunkOfHaplotypes {
     Int min_coverage = coverages[0]
     Int last = length(coverages) - 1
     Int max_coverage = coverages[last]
-    Int ram_size_gb = ceil((size(reference_fa, "GB")*max_coverage*2) * 3)  # *3 because of hifiasm
-    ram_size_gb = 32 if 32 > ram_size_gb else ram_size_gb  # 32 GB is from PAV
+    Int ram_size_gb_pre = ceil((size(reference_fa, "GB")*max_coverage*2) * 3)  # *3 because of hifiasm
+    Int ram_size_gb = if 32 > ram_size_gb_pre then 32 else ram_size_gb_pre  # 32 GB is from PAV
     Int disk_size_image = 20
     Int disk_size_tools = 5
     Int disk_size_gb = disk_size_image + ram_size_gb*2 + ceil( size(reference_fa, "GB") + size(reference_mmi, "GB") + size(reference_tandem_repeats, "GB") + size(haplotype2variants_file, "GB") + size(variants_file, "GB") ) + disk_size_tools
