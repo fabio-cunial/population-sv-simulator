@@ -17,6 +17,7 @@
 # sniffles1: 
 # sniffles2: 
 # hifiasm:
+#
 READS_FILE=$1
 SAMPLE_ID=$2  # SM field in the .sam file (needed later for joint calling)
 LENGTH=$3
@@ -24,14 +25,16 @@ MIN_COVERAGE=$4
 MAX_COVERAGE=$5
 COVERAGES=$6  # String, separated by "-".
 REFERENCE_FA=$7
-REFERENCE_MMI=$8
-REFERENCE_TANDEM_REPEATS=$9
-CHECKPOINT_FILE=${10}
-BUCKET_DIR=${11}  # Root dir of the simulation in the bucket
-USE_PBSV=${12}
-USE_SNIFFLES1=${13}
-USE_SNIFFLES2=${14}
-USE_HIFIASM=${15}
+REFERENCE_FAI=$8
+REFERENCE_MMI=$9
+REFERENCE_TANDEM_REPEATS=${10}
+CHECKPOINT_FILE=${11}
+BUCKET_DIR=${12}  # Root dir of the simulation in the bucket
+USE_PBSV=${13}
+USE_SNIFFLES1=${14}
+USE_SNIFFLES2=${15}
+USE_HIFIASM=${16}
+USE_PAV=${17}
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 TIME_COMMAND="/usr/bin/time --verbose"
@@ -153,7 +156,7 @@ for COVERAGE in ${COVERAGES}; do
     fi
     
     # HIFIASM
-    if [ ${USE_HIFIASM} -eq 1 ]; then 
+    if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 ]; then 
         PREFIX="assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa || echo 1)
         TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa || echo 1)
@@ -168,6 +171,11 @@ for COVERAGE in ${COVERAGES}; do
         fi
     fi
     
+    # PAV
+    if [ ${USE_PAV} -eq 1 ]; then 
+        bash pav.sh ${ID1} ${ID2} ${LENGTH} ${COVERAGE} ${REFERENCE_FA} ${REFERENCE_FAI} ${PREFIX}_h1.fa ${PREFIX}_h2.fa ${BUCKET_DIR} ${N_THREADS}
+    fi
+    
     # Next iteration
     echo "${SAMPLE_ID} ${LENGTH} ${COVERAGE}" >> ${CHECKPOINT_FILE}
     gsutil cp ${CHECKPOINT_FILE} ${BUCKET_DIR}/checkpoints/
@@ -177,4 +185,4 @@ rm -f coverage_* chunk-*
 
 # Cleaning the bucket
 gsutil rm -f ${BUCKET_DIR}/reads/${READS_FILE}
-gsutil rm -f "${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam"
+gsutil -m rm -f "${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam"

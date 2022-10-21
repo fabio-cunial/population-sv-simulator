@@ -7,11 +7,13 @@ WORKDIR ${work_dir}
 # --------------------------------- Versions -----------------------------------
 ARG gcloud_version=405.0.1
 ARG samtools_version=1.16.1
+ARG bcftools_version=1.16
 ARG minimap2_version=2.24
 ARG pbsv_version=2.8.0
 ARG sniffles1_version=1.0.12
 ARG sniffles2_version=2.0.7
 ARG hifiasm_version=0.16.1
+ARG pav_version=2.1.0
 # PBSIM1 has no version
 # ------------------------------------------------------------------------------
 
@@ -64,15 +66,27 @@ RUN wget https://github.com/samtools/samtools/releases/download/${samtools_versi
     && rm -rf samtools-${samtools_version} \
     && samtools --help
 
+# Bcftools
+RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_version}/bcftools-${bcftools_version}.tar.bz2 \
+    && tar xjf bcftools-${bcftools_version}.tar.bz2 \
+    && rm bcftools-${bcftools_version}.tar.bz2 \
+    && cd bcftools-${bcftools_version} \
+    && ./configure --without-curses \
+    && make \
+    && make install \
+    && cd ${work_dir} \
+    && rm -rf bcftools-${bcftools_version} \
+    && bcftools --help
+
 # Minimap2
 RUN wget https://github.com/lh3/minimap2/releases/download/v${minimap2_version}/minimap2-${minimap2_version}_x64-linux.tar.bz2 \
-        && tar xjf minimap2-${minimap2_version}_x64-linux.tar.bz2 \
-        && rm minimap2-${minimap2_version}_x64-linux.tar.bz2 \
-        && cd minimap2-${minimap2_version}_x64-linux \
-        && cp minimap2 /usr/local/bin/ \
-        && cd ${work_dir} \
-        && rm -rf minimap2-${minimap2_version}_x64-linux \
-        && minimap2 --help
+    && tar xjf minimap2-${minimap2_version}_x64-linux.tar.bz2 \
+    && rm minimap2-${minimap2_version}_x64-linux.tar.bz2 \
+    && cd minimap2-${minimap2_version}_x64-linux \
+    && cp minimap2 /usr/local/bin/ \
+    && cd ${work_dir} \
+    && rm -rf minimap2-${minimap2_version}_x64-linux \
+    && minimap2 --help
 
 # PBSV
 RUN conda update conda \
@@ -109,6 +123,19 @@ RUN wget https://github.com/chhylp123/hifiasm/archive/refs/tags/${hifiasm_versio
     && rm -rf hifiasm-${hifiasm_version} \
     && hifiasm -h
 
+# PAV
+COPY ./pav-environment.yml .
+RUN conda env create -f ./pav-environment.yml && conda clean -a
+ENV PATH=/opt/conda/envs/lr-pav/bin/:${PATH}
+COPY pav_test_install.py .
+SHELL ["conda", "run", "-n", "lr-pav", "/bin/bash", "-c"]
+RUN echo "conda init bash" > ~/.bashrc
+RUN python pav_test_install.py
+RUN wget https://github.com/EichlerLab/pav/archive/refs/tags/v${pav_version}.tar.gz \
+    && tar -xzf v${pav_version}.tar.gz \
+    && rm -f v${pav_version}.tar.gz \
+    && mv pav-${pav_version}/ pav/
+
 # PBSIM 1
 #
 # Remark: we use PBSIM 1 in CLR mode, since that is the only way we can
@@ -134,6 +161,7 @@ RUN cd PBSIM-PacBio-Simulator \
 # Simulation code
 COPY haplotype2reads.sh .
 COPY reads2svs.sh .
+COPY pav.sh .
 COPY PrintHaplotypes.java .
 COPY SimulateHaplotypes.java .
 COPY BuildModel.java .

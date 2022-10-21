@@ -6,7 +6,7 @@
     "SimulateHaplotypes.n_haplotypes": 8,
     "SimulateHaplotypes.haplotype2variants_file": "gs://cunial-bucket-1/simulation-root/haplotype2variants.txt",
     "SimulateHaplotypes.variants_file": "gs://cunial-bucket-1/simulation-root/variants.txt",
-    "SimulateHaplotypes.coverages": [4, 8, 16, 30],
+    "SimulateHaplotypes.coverages": [4, 8],
     "SimulateHaplotypes.length_min": 5000,
     "SimulateHaplotypes.length_max": 25000,
     "SimulateHaplotypes.length_stdev": 2000,
@@ -18,6 +18,7 @@
     "SimulateHaplotypes.use_pbsv": 1,
     "SimulateHaplotypes.use_sniffles1": 1,
     "SimulateHaplotypes.use_sniffles2": 1,
-    "SimulateHaplotypes.use_pav": 0,
+    "SimulateHaplotypes.use_hifiasm": 0,
+    "SimulateHaplotypes.use_pav": 1,
     "SimulateHaplotypes.delete_bucket_dir": 1
 }
