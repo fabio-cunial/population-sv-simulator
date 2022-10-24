@@ -108,11 +108,14 @@ task DeleteBucketDir {
         String bucket_dir
     }    
     command <<<
-        while ! gsutil -m rm -rf ~{bucket_dir}
-        do
-            sleep 3
-            echo "Trying again to delete ~{bucket_dir}"
-        done
+        TEST=$(gsutil -q stat ~{bucket_dir} || echo 1)
+        if [ ${TEST} != 1 ]; then
+            while ! gsutil -m rm -rf ~{bucket_dir}
+            do
+                sleep 3
+                echo "Trying again to delete ~{bucket_dir}"
+            done
+        else
         echo "1" > force_sequentiality.txt
     >>>
     output {
