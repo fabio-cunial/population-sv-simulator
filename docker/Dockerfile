@@ -15,7 +15,7 @@ ARG sniffles2_version=2.0.7
 ARG hifiasm_version=0.16.1
 ARG quast_version=5.2.0
 ARG pav_version=2.1.0
-# PBSIM1 has no version
+# PBSIM 2 and 1 have no version
 # ------------------------------------------------------------------------------
 
 
@@ -36,6 +36,7 @@ RUN apt-get -qqy update --fix-missing \
         time \
         curl \
         wget \
+        autotools-dev \
         autoconf \
         automake \
         make \
@@ -146,27 +147,43 @@ RUN wget https://github.com/EichlerLab/pav/archive/refs/tags/v${pav_version}.tar
     && rm -f v${pav_version}.tar.gz \
     && mv pav-${pav_version}/ pav/
 
-# PBSIM 1
+# PBSIM 2
 #
-# Remark: we use PBSIM 1 in CLR mode, since that is the only way we can
-# customize the error rate. PBSIM2 dropped support for CCS.
+# Remark: PBSIM 2 is a CLR simulator (it dropped support for CCS), but the
+# error rate can be customized. PBSIM 1 supported CCS, but it was probably an
+# old model that is unrealistic now. PBSIM 3 seems to be under development
+# <https://github.com/yukiteruono/pbsim3>: it seems to simulate CLR and to feed
+# it to the CCS consensus algorithm. The paper does not seem to be accepted yet.
 #
 # Remark: we do not use BADREAD <https://github.com/rrwick/Badread> since it is
 # too slow in practice.
-RUN git clone https://github.com/pfaucon/PBSIM-PacBio-Simulator
-# File <src/pbsim.cpp> was modified to output only a FASTA file. The original
-# program outputs a FASTQ and a MAF file that contains read alignments to the
-# reference: these take a lot of disk space and are useless for our purposes.
-COPY pbsim.cpp PBSIM-PacBio-Simulator/src/
-RUN cd PBSIM-PacBio-Simulator \
-    && autoreconf -i \
+RUN git clone https://github.com/yukiteruono/pbsim2.git
+# File <src/pbsim.cpp> was modified by us to output only a FASTA file. The
+# original program outputs a FASTQ and a MAF file that contains read alignments
+# to the reference: these take a lot of disk space and are useless for our
+# purposes.
+COPY pbsim2.cpp pbsim2/src/pbsim.cpp
+RUN cd pbsim2 \
     && ./configure \
     && make \
-    && cp src/pbsim /usr/local/bin \
-    && cp -r data/ ${work_dir}/pbsim_data \
+    && mv src/pbsim /usr/local/bin \
+    && mv data/ ${work_dir}/pbsim_data \
     && cd ${work_dir} \
-    && rm -rf PBSIM-PacBio-Simulator \
-    && pbsim --help
+    && rm -rf pbsim2 \
+    && pbsim
+
+# PBSIM 1
+# RUN git clone https://github.com/pfaucon/PBSIM-PacBio-Simulator
+# COPY pbsim1.cpp PBSIM-PacBio-Simulator/src/pbsim.cpp
+# RUN cd PBSIM-PacBio-Simulator \
+#     && autoreconf -i \
+#     && ./configure \
+#     && make \
+#     && cp src/pbsim /usr/local/bin \
+#     && cp -r data/ ${work_dir}/pbsim_data \
+#     && cd ${work_dir} \
+#     && rm -rf PBSIM-PacBio-Simulator \
+#     && pbsim --help
 
 # Simulation code
 COPY haplotype2reads.sh .

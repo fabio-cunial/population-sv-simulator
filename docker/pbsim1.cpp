@@ -70,7 +70,7 @@ int main (int argc, char** argv) {
 
   if (argv[optind] == NULL) {
     print_help();
-    exit(-1);
+    exit(0);
   }
 
   ///// Initialize

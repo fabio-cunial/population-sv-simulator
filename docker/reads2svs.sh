@@ -168,10 +168,11 @@ for COVERAGE in ${COVERAGES}; do
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX}_h1.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX}_h2.fa
             rm -rf tmpasm*
-            ${TIME_COMMAND} gsutil cp ${PREFIX}_h1.fa ${BUCKET_DIR}/assemblies/
-            ${TIME_COMMAND} gsutil cp ${PREFIX}_h2.fa ${BUCKET_DIR}/assemblies/
-            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.p_ctg.gfa > ${PREFIX}_primaryContigs.fa
+            ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX}_h1.fa ${BUCKET_DIR}/assemblies/
+            ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX}_h2.fa ${BUCKET_DIR}/assemblies/
+            awk '/^S/{print ">"$2; print $3}' tmpasm.p_ctg.gfa > ${PREFIX}_primaryContigs.fa
             quast --threads ${N_THREADS} --eukaryote --large --est-ref-size ${REFERENCE_LENGTH} --no-gc ${PREFIX}_primaryContigs.fa
+            rm -f ${PREFIX}_primaryContigs.fa
             tar -czf ${PREFIX}_quast.tar.gz quast_results/ 
             rm -rf quast_results/
             gsutil cp ${PREFIX}_quast.tar.gz ${BUCKET_DIR}/assemblies/

@@ -26,8 +26,10 @@ BUCKET_DIR=$8  # Root dir of the simulation in the bucket
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 TIME_COMMAND="/usr/bin/time --verbose"
-PBSIM_MODEL="/simulation/pbsim_data/model_qc_ccs"
-PBSIM_COMMAND="pbsim --data-type CLR --length-min ${LENGTH_MIN} --length-max ${LENGTH_MAX} --accuracy-min 0.99 --accuracy-max 1.0 --difference-ratio 6:21:73 --model_qc ${PBSIM_MODEL} --length-mean ${LENGTH_MEAN} --length-sd ${LENGTH_STDEV} --accuracy-mean 0.995 --accuracy-sd 0.002"
+PBSIM1_MODEL="/simulation/pbsim_data/model_qc_ccs"
+PBSIM2_MODEL="/simulation/pbsim_data/P6C4.model"
+PBSIM1_COMMAND="pbsim --data-type CLR --length-min ${LENGTH_MIN} --length-max ${LENGTH_MAX} --accuracy-min 0.99 --accuracy-max 1.0 --difference-ratio 6:21:73 --model_qc  ${PBSIM1_MODEL} --length-mean ${LENGTH_MEAN} --length-sd ${LENGTH_STDEV} --accuracy-mean 0.995 --accuracy-sd 0.002"
+PBSIM2_COMMAND="pbsim                 --length-min ${LENGTH_MIN} --length-max ${LENGTH_MAX} --accuracy-min 0.99 --accuracy-max 1.0 --difference-ratio 6:50:54 --hmm_model ${PBSIM2_MODEL} --length-mean ${LENGTH_MEAN} --length-sd ${LENGTH_STDEV} --accuracy-mean 0.995"
 
 set -euxo pipefail
 echo "Running <haplotype2reads.sh> on the following node:"
@@ -39,7 +41,7 @@ TEST=$(gsutil -q stat ${BUCKET_DIR}/reads/${OUTPUT_FILE} || echo 1)
 if [ ${TEST} != 1 ]; then
     ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/reads/${OUTPUT_FILE} .
 else
-    ${TIME_COMMAND} ${PBSIM_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID1} haplotype_${ID1}.fa
+    ${TIME_COMMAND} ${PBSIM2_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID1} haplotype_${ID1}.fa
     mv reads_${ID1}_0001.fastq reads_${ID1}.fa
     rm -f reads_${ID1}_0001.* 
     ${TIME_COMMAND} ${PBSIM_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID2} haplotype_${ID2}.fa
