@@ -35,6 +35,8 @@ USE_SNIFFLES1=${14}
 USE_SNIFFLES2=${15}
 USE_HIFIASM=${16}
 USE_PAV=${17}
+WORK_DIR=${18}
+KEEP_ASSEMBLIES=${19}
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 TIME_COMMAND="/usr/bin/time --verbose"
@@ -44,6 +46,7 @@ N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
 N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
 MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
 READ_GROUP="@RG\tID:movie\tSM:${SAMPLE_ID}"
+REFERENCE_LENGTH=$(wc -c < ${REFERENCE_FA})
 ID1=${SAMPLE_ID}
 ID2=$((${SAMPLE_ID} + 1))
 
@@ -156,25 +159,36 @@ for COVERAGE in ${COVERAGES}; do
     fi
     
     # HIFIASM
+    PREFIX="assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
     if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 ]; then 
-        PREFIX="assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
         TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa || echo 1)
         TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa || echo 1)
         if [ ${TEST1} = 1 -o ${TEST2} = 1 ]; then
-            ${TIME_COMMAND} hifiasm --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm -t ${N_THREADS} coverage_${COVERAGE}.fa
+            ${TIME_COMMAND} hifiasm -t ${N_THREADS} --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm coverage_${COVERAGE}.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX}_h1.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX}_h2.fa
-            rm -rf tmpasm*            
+            rm -rf tmpasm*
             ${TIME_COMMAND} gsutil cp ${PREFIX}_h1.fa ${BUCKET_DIR}/assemblies/
             ${TIME_COMMAND} gsutil cp ${PREFIX}_h2.fa ${BUCKET_DIR}/assemblies/
-            rm -f ${PREFIX}*
+            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.p_ctg.gfa > ${PREFIX}_primaryContigs.fa
+            quast --threads ${N_THREADS} --eukaryote --large --est-ref-size ${REFERENCE_LENGTH} --no-gc ${PREFIX}_primaryContigs.fa
+            tar -czf ${PREFIX}_quast.tar.gz quast_results/ 
+            rm -rf quast_results/
+            gsutil cp ${PREFIX}_quast.tar.gz ${BUCKET_DIR}/assemblies/
+            rm -f ${PREFIX}_quast.tar.gz
+        else
+            ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa ${PREFIX}_h1.fa
+            ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa ${PREFIX}_h2.fa
         fi
     fi
     
     # PAV
     if [ ${USE_PAV} -eq 1 ]; then 
-        bash pav.sh ${ID1} ${ID2} ${LENGTH} ${COVERAGE} ${REFERENCE_FA} ${REFERENCE_FAI} ${PREFIX}_h1.fa ${PREFIX}_h2.fa ${BUCKET_DIR} ${N_THREADS}
+        bash ${WORK_DIR}/pav.sh ${ID1} ${ID2} ${LENGTH} ${COVERAGE} ${REFERENCE_FA} ${REFERENCE_FAI} ${PREFIX}_h1.fa ${PREFIX}_h2.fa ${BUCKET_DIR} ${N_THREADS}
     fi
+    
+    # Removing local assemblies
+    rm -f ${PREFIX}*
     
     # Next iteration
     echo "${SAMPLE_ID} ${LENGTH} ${COVERAGE}" >> ${CHECKPOINT_FILE}
@@ -186,3 +200,6 @@ rm -f coverage_* chunk-*
 # Cleaning the bucket
 gsutil rm -f ${BUCKET_DIR}/reads/${READS_FILE}
 gsutil -m rm -f "${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam"
+if [ ${KEEP_ASSEMBLIES} -ne 1 ]; then
+    gsutil -m rm -f "${BUCKET_DIR}/assemblies/assembly_i${ID1}_i${ID2}_l${LENGTH}_*"
+fi

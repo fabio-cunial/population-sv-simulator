@@ -1,8 +1,7 @@
 name: lr-pav
 channels:
-  - defaults
-  - conda-forge
   - bioconda
+  - conda-forge
 dependencies:
   - snakemake=7.8.2
   - biopython=1.78

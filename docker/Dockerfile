@@ -13,6 +13,7 @@ ARG pbsv_version=2.8.0
 ARG sniffles1_version=1.0.12
 ARG sniffles2_version=2.0.7
 ARG hifiasm_version=0.16.1
+ARG quast_version=5.2.0
 ARG pav_version=2.1.0
 # PBSIM1 has no version
 # ------------------------------------------------------------------------------
@@ -91,6 +92,7 @@ RUN wget https://github.com/lh3/minimap2/releases/download/v${minimap2_version}/
 # PBSV
 RUN conda update conda \
     && conda install -c bioconda pbsv=${pbsv_version} \
+    && conda clean --packages --tempfiles --logfiles \
     && pbsv --help
 
 # Sniffles 1
@@ -110,6 +112,7 @@ RUN wget https://github.com/fritzsedlazeck/Sniffles/archive/refs/tags/v${sniffle
 # Sniffles 2
 RUN conda update conda \
     && conda install -c bioconda -c conda-forge -c defaults sniffles=${sniffles2_version} \
+    && conda clean --packages --tempfiles --logfiles \
     && sniffles --help
 
 # Hifiasm
@@ -124,11 +127,15 @@ RUN wget https://github.com/chhylp123/hifiasm/archive/refs/tags/${hifiasm_versio
     && hifiasm -h
 
 # QUAST
-RUN conda install -c bioconda quast
+RUN conda update conda \
+    && conda install -c bioconda -c conda-forge libgcc-ng quast \
+    && conda clean --packages --tempfiles --logfiles \
+    && quast --version
 
 # PAV
 COPY ./pav-environment.yml .
-RUN conda env create -f ./pav-environment.yml && conda clean -a
+RUN conda env create -f ./pav-environment.yml \
+    && conda clean --packages --tempfiles --logfiles
 ENV PATH=/opt/conda/envs/lr-pav/bin/:${PATH}
 COPY pav_test_install.py .
 SHELL ["conda", "run", "-n", "lr-pav", "/bin/bash", "-c"]

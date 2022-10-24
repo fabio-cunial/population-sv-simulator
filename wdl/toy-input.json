@@ -20,5 +20,6 @@
     "SimulateHaplotypes.use_sniffles2": 1,
     "SimulateHaplotypes.use_hifiasm": 0,
     "SimulateHaplotypes.use_pav": 1,
-    "SimulateHaplotypes.delete_bucket_dir": 1
+    "SimulateHaplotypes.delete_bucket_dir": 1,
+    "SimulateHaplotypes.keep_assemblies": 0
 }

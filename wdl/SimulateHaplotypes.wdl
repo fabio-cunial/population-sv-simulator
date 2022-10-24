@@ -31,6 +31,7 @@ workflow SimulateHaplotypes {
         Int use_hifiasm
         Int use_pav
         Int delete_bucket_dir
+        Int keep_assemblies
     }
     parameter_meta {
         reference_fa: "A version of GRCh37 that contains just chr1 and whose header is '>chr1'."
@@ -45,6 +46,7 @@ workflow SimulateHaplotypes {
         bucket_dir: "The full address of the directory in a bucket to be used to store temporary files and output files. The directory is deleted if it already exists."
         use_pbsv: "1=yes, 0=no."
         delete_bucket_dir: "Erases <bucket_dir> before running the simulation (1=yes, 0=no)."
+        keep_assemblies: "Stores two assemblies per individual and per configuration in the remote bucket. 1=yes, 0=no."
     }
     if (delete_bucket_dir == 1) {
         call DeleteBucketDir {
@@ -80,7 +82,8 @@ workflow SimulateHaplotypes {
                  use_sniffles1 = use_sniffles1,
                  use_sniffles2 = use_sniffles2,
                  use_hifiasm = use_hifiasm,
-                 use_pav = use_pav
+                 use_pav = use_pav,
+                 keep_assemblies = keep_assemblies
         }
     }
     call JointCalling.JointCalling {
@@ -185,6 +188,7 @@ task ProcessChunkOfHaplotypes {
         Int use_sniffles2
         Int use_hifiasm
         Int use_pav
+        Int keep_assemblies
     }
     parameter_meta {
         id_from: "First simulated haplotype to process (zero-based, inclusive)."
@@ -197,6 +201,7 @@ task ProcessChunkOfHaplotypes {
         lengths: "Mean read length values, in no particular order."
         n_cpus: "Used only for setting the runtime."
         use_pbsv: "1=yes, 0=no."
+        keep_assemblies: "Stores two assemblies per individual and per configuration in the remote bucket. 1=yes, 0=no."
     }
     
     Int min_coverage = coverages[0]
@@ -207,6 +212,7 @@ task ProcessChunkOfHaplotypes {
     Int disk_size_image = 20
     Int disk_size_tools = 5
     Int disk_size_gb = disk_size_image + ram_size_gb*2 + ceil( size(reference_fa, "GB") + size(reference_mmi, "GB") + size(reference_tandem_repeats, "GB") + size(haplotype2variants_file, "GB") + size(variants_file, "GB") ) + disk_size_tools
+    String work_dir = "/simulation"
     
     command <<<
         set -euxo pipefail
@@ -228,15 +234,15 @@ task ProcessChunkOfHaplotypes {
                 continue
             fi
             ID2=$(( ${ID1} + 1 ))
-            java -cp . -Xmx10g PrintHaplotypes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
+            java -cp ~{work_dir} -Xmx10g PrintHaplotypes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
             for LENGTH in ${LENGTHS}; do
                 CHECKPOINT_LENGTH=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $2 }')
                 if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -le ${CHECKPOINT_LENGTH} ]; then
                     continue
                 fi
-                bash haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir}
+                bash ~{work_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir}
                 READS_FILE="reads_i${ID1}_i${ID2}_l${LENGTH}_c~{max_coverage}.fa"
-                bash reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav}
+                bash ~{work_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{work_dir} ~{keep_assemblies}
             done
             rm -f haplotype_${ID1}.fa haplotype_${ID2}.fa
         done
