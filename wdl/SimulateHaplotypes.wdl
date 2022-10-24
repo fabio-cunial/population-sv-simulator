@@ -115,7 +115,7 @@ task DeleteBucketDir {
                 sleep 3
                 echo "Trying again to delete ~{bucket_dir}"
             done
-        else
+        fi
         echo "1" > force_sequentiality.txt
     >>>
     output {
