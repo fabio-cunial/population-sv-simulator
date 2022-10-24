@@ -44,7 +44,7 @@ else
     ${TIME_COMMAND} ${PBSIM2_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID1} haplotype_${ID1}.fa
     mv reads_${ID1}_0001.fastq reads_${ID1}.fa
     rm -f reads_${ID1}_0001.* 
-    ${TIME_COMMAND} ${PBSIM_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID2} haplotype_${ID2}.fa
+    ${TIME_COMMAND} ${PBSIM2_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID2} haplotype_${ID2}.fa
     mv reads_${ID2}_0001.fastq reads_${ID2}.fa
     rm -f reads_${ID2}_0001.* 
     cat reads_${ID2}.fa >> reads_${ID1}.fa

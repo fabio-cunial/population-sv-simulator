@@ -179,8 +179,8 @@ RUN cd pbsim2 \
 #     && autoreconf -i \
 #     && ./configure \
 #     && make \
-#     && cp src/pbsim /usr/local/bin \
-#     && cp -r data/ ${work_dir}/pbsim_data \
+#     && mv src/pbsim /usr/local/bin \
+#     && mv data/ ${work_dir}/pbsim_data \
 #     && cd ${work_dir} \
 #     && rm -rf PBSIM-PacBio-Simulator \
 #     && pbsim --help
