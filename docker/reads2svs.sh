@@ -65,11 +65,8 @@ rm -f ${READS_FILE}
 ALIGNMENTS_PREFIX="alignments_i${ID1}_i${ID2}_l${LENGTH}_c${MAX_COVERAGE}"
 for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
     FILE_NAME="${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_$(basename ${CHUNK}).bam"
-    TEST=$(gsutil -q stat ${FILE_NAME} || echo 1)
-    if [ ${#TEST} = 0 ]; then
-        TEST="0"
-    fi
-    if [ ${TEST} != 1 ]; then
+    TEST=$(gsutil -q stat ${FILE_NAME} && echo 0 || echo 1)
+    if [ ${TEST} -eq 0 ]; then
         gsutil cp ${FILE_NAME} ${CHUNK}.bam
     else
         mv ${CHUNK} ${CHUNK}.fa
@@ -122,22 +119,16 @@ for COVERAGE in ${COVERAGES}; do
 	# PBSV
     if [ ${USE_PBSV} -eq 1 ]; then
         PREFIX="pbsv_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz || echo 1)
-        if [ ${#TEST} = 0 ]; then
-            TEST="0"
-        fi
-        if [ ${TEST} != 1 ]; then
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz && echo 0 || echo 1)
+        if [ ${TEST} -eq 0 ]; then
             ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz .
         else 
             # <discover> is sequential
         	${TIME_COMMAND} pbsv discover --tandem-repeats ${REFERENCE_TANDEM_REPEATS} coverage_${COVERAGE}.bam ${PREFIX}.svsig.gz
             gsutil cp ${PREFIX}.svsig.gz ${BUCKET_DIR}/signatures/
         fi
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf || echo 1)
-        if [ ${#TEST} = 0 ]; then
-            TEST="0"
-        fi
-        if [ ${TEST} = 1 ]; then
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
         	${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ${REFERENCE_FA} ${PREFIX}.svsig.gz ${PREFIX}.vcf
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
         fi
@@ -147,11 +138,8 @@ for COVERAGE in ${COVERAGES}; do
 	# SNIFFLES 1
     if [ ${USE_SNIFFLES1} -eq 1 ]; then 
         PREFIX="sniffles1_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf || echo 1)
-        if [ ${#TEST} = 0 ]; then
-            TEST="0"
-        fi
-        if [ ${TEST} = 1 ]; then
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
             ${TIME_COMMAND} sniffles1 -t ${N_THREADS} -m coverage_${COVERAGE}.bam -v ${PREFIX}.vcf
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
             rm -f ${PREFIX}.*
@@ -161,11 +149,8 @@ for COVERAGE in ${COVERAGES}; do
     # SNIFFLES 2
     if [ ${USE_SNIFFLES2} -eq 1 ]; then 
         PREFIX="sniffles2_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.vcf || echo 1)
-        if [ ${#TEST} = 0 ]; then
-            TEST="0"
-        fi
-        if [ ${TEST} = 1 ]; then
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.vcf && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
     	    ${TIME_COMMAND} sniffles --threads ${N_THREADS} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} --reference ${REFERENCE_FA} --sample-id ${SAMPLE_ID} --input coverage_${COVERAGE}.bam --vcf ${PREFIX}.vcf --snf ${PREFIX}.snf
             gsutil cp ${PREFIX}.snf ${BUCKET_DIR}/signatures/
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
@@ -176,15 +161,9 @@ for COVERAGE in ${COVERAGES}; do
     # HIFIASM
     PREFIX="assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
     if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 ]; then 
-        TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa || echo 1)
-        TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa || echo 1)
-        if [ ${#TEST1} = 0 ]; then
-            TEST1="0"
-        fi
-        if [ ${#TEST2} = 0 ]; then
-            TEST2="0"
-        fi
-        if [ ${TEST1} = 1 -o ${TEST2} = 1 ]; then
+        TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa && echo 0 || echo 1)
+        TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa && echo 0 || echo 1)
+        if [ ${TEST1} -eq 1 -o ${TEST2} -eq 1 ]; then
             ${TIME_COMMAND} hifiasm -t ${N_THREADS} --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm coverage_${COVERAGE}.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX}_h1.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX}_h2.fa

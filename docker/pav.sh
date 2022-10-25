@@ -34,16 +34,13 @@ function createFiles() {
     local LOCAL_FILES=$1
     MISSING="0"
     for FILE in ${LOCAL_FILES}; do
-        TEST=$(gsutil -q stat "${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE}" || echo 1)
-        if [ ${#TEST} = 0 ]; then
-            TEST="0"
-        fi
-        if [ ${TEST} = 1 ]; then
+        TEST=$(gsutil -q stat "${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE}" && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
             MISSING="1"
             break
         fi
     done
-    if [ ${MISSING} != 1 ]; then
+    if [ ${MISSING} -eq 0 ]; then
         for FILE in ${LOCAL_FILES}; do
             mkdir -p $(dirname ${FILE})
             gsutil cp "${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE}" ${FILE}

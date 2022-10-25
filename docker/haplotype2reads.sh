@@ -37,11 +37,8 @@ lscpu
 cat /proc/meminfo
 
 OUTPUT_FILE="reads_i${ID1}_i${ID2}_l${LENGTH_MEAN}_c${MAX_COVERAGE}.fa"
-TEST=$(gsutil -q stat ${BUCKET_DIR}/reads/${OUTPUT_FILE} || echo 1)
-if [ ${#TEST} = 0 ]; then
-    TEST="0"
-fi 
-if [ ${TEST} != 1 ]; then
+TEST=$(gsutil -q stat ${BUCKET_DIR}/reads/${OUTPUT_FILE} && echo 0 || echo 1)
+if [ ${TEST} -eq 0 ]; then
     ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/reads/${OUTPUT_FILE} .
 else
     ${TIME_COMMAND} ${PBSIM2_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID1} haplotype_${ID1}.fa
