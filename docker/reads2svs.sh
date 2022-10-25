@@ -185,7 +185,7 @@ for COVERAGE in ${COVERAGES}; do
     
     # PAV
     if [ ${USE_PAV} -eq 1 ]; then 
-        bash ${WORK_DIR}/pav.sh ${ID1} ${ID2} ${LENGTH} ${COVERAGE} ${REFERENCE_FA} ${REFERENCE_FAI} ${PREFIX}_h1.fa ${PREFIX}_h2.fa ${BUCKET_DIR} ${N_THREADS}
+        bash ${WORK_DIR}/pav.sh ${ID1} ${ID2} ${LENGTH} ${COVERAGE} ${REFERENCE_FA} ${REFERENCE_FAI} ${PREFIX}_h1.fa ${PREFIX}_h2.fa ${BUCKET_DIR} ${N_THREADS} ${WORK_DIR}
     fi
     
     # Removing local assemblies

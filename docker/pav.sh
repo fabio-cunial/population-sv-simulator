@@ -15,10 +15,11 @@ HAPLOTYPE1_FA=$7
 HAPLOTYPE2_FA=$8
 BUCKET_DIR=$9
 N_THREADS=${10}
+WORK_DIR=${11}
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 TIME_COMMAND="/usr/bin/time --verbose"
-SNAKEMAKE_COMMAND="snakemake -s pav/Snakefile --cores ${N_THREADS}"
+SNAKEMAKE_COMMAND="snakemake -s ${WORK_DIR}/pav/Snakefile --cores ${N_THREADS}"
 SAMPLE_ID="i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
 CHROMOSOME="chr1"
 
@@ -68,6 +69,12 @@ gzip -q -c --fast ${HAPLOTYPE2_FA} > asm/${SAMPLE_ID}/h2.fa.gz
 ${SNAKEMAKE_COMMAND} data/ref/ref.fa.gz data/ref/ref.fa.gz.fai
 ${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h1.fa.gz temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai
 ${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h2.fa.gz temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai
+
+# Backing up (these files will be needed in the future, but they will be deleted
+# by Snakemake).
+cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai.backup
+cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai.backup
+
 createFiles "data/ref/n_gap.bed.gz"
 createFiles "temp/${SAMPLE_ID}/align/pre-cut/aligned_tig_h1.sam.gz"
 createFiles "temp/${SAMPLE_ID}/align/pre-cut/aligned_tig_h2.sam.gz"
@@ -85,6 +92,11 @@ for i in $(seq 1 10); do
     createFiles temp/${SAMPLE_ID}/lg_sv/batch/sv_ins_h1_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_del_h1_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_inv_h1_${i}.bed.gz
     createFiles temp/${SAMPLE_ID}/lg_sv/batch/sv_ins_h2_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_del_h2_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_inv_h2_${i}.bed.gz
 done
+
+# Restoring backup
+cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai.backup temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai
+cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai.backup temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai
+
 createFiles temp/${SAMPLE_ID}/cigar/pre_inv/svindel_insdel_h1.bed.gz temp/${SAMPLE_ID}/cigar/pre_inv/snv_snv_h1.bed.gz
 createFiles temp/${SAMPLE_ID}/cigar/pre_inv/svindel_insdel_h2.bed.gz temp/${SAMPLE_ID}/cigar/pre_inv/snv_snv_h2.bed.gz
 createFiles temp/${SAMPLE_ID}/lg_sv/sv_del_h1.bed.gz

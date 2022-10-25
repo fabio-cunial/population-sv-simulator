@@ -14,8 +14,9 @@ ARG sniffles1_version=1.0.12
 ARG sniffles2_version=2.0.7
 ARG hifiasm_version=0.16.1
 ARG quast_version=5.2.0
-ARG pav_version=2.1.0
-# PBSIM 2 and 1 have no version
+# - PAV has releases, but for simplicity we just clone the repo to resolve a 
+# dependency on SVPOP. Should be done more rigorously.
+# - PBSIM 2 and 1 have no version
 # ------------------------------------------------------------------------------
 
 
@@ -142,10 +143,7 @@ COPY pav_test_install.py .
 SHELL ["conda", "run", "-n", "lr-pav", "/bin/bash", "-c"]
 RUN echo "conda init bash" > ~/.bashrc
 RUN python pav_test_install.py
-RUN wget https://github.com/EichlerLab/pav/archive/refs/tags/v${pav_version}.tar.gz \
-    && tar -xzf v${pav_version}.tar.gz \
-    && rm -f v${pav_version}.tar.gz \
-    && mv pav-${pav_version}/ pav/
+RUN git clone --recursive https://github.com/EichlerLab/pav.git
 
 # PBSIM 2
 #
@@ -158,10 +156,9 @@ RUN wget https://github.com/EichlerLab/pav/archive/refs/tags/v${pav_version}.tar
 # Remark: we do not use BADREAD <https://github.com/rrwick/Badread> since it is
 # too slow in practice.
 RUN git clone https://github.com/yukiteruono/pbsim2.git
-# File <src/pbsim.cpp> was modified by us to output only a FASTA file. The
-# original program outputs a FASTQ and a MAF file that contains read alignments
-# to the reference: these take a lot of disk space and are useless for our
-# purposes.
+# We modified file <src/pbsim.cpp> to output only a FASTA file. The original
+# program outputs a FASTQ and a MAF file that contains read alignments to the
+# reference: these take a lot of disk space and are useless for our purposes.
 COPY pbsim2.cpp pbsim2/src/pbsim.cpp
 RUN cd pbsim2 \
     && ./configure \
