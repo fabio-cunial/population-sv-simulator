@@ -504,7 +504,7 @@ public class BuildModel {
 	 * @param maxDistance adjacent segdups at this distance or smaller are 
 	 * merged. Overlapping segupds are always merged.
 	 */
-	private static final void loadSegdups(String path, int nSegdups, int maxDistance) throws IOException {
+	public static final void loadSegdups(String path, int nSegdups, int maxDistance) throws IOException {
 		int i, j;
 		String str;
 		BufferedReader br;
@@ -561,7 +561,7 @@ public class BuildModel {
 	 * Stores every segdup interval in chr1, regardless of whether its mate is
 	 * also in chr1 or not.
 	 */
-	private static final void serializeSegdups(String outFile) throws IOException {
+	public static final void serializeSegdups(String outFile) throws IOException {
 		int i;
 		BufferedWriter bw;
 		

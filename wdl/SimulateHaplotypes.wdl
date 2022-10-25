@@ -109,7 +109,10 @@ task DeleteBucketDir {
     }    
     command <<<
         TEST=$(gsutil -q stat ~{bucket_dir} || echo 1)
-        if [ ${#TEST} = 0 -o ${TEST} != 1 ]; then
+        if [ ${#TEST} = 0 ]; then
+            TEST="0"
+        fi
+        if [ ${TEST} != 1 ]; then
             while ! gsutil -m rm -rf ~{bucket_dir}
             do
                 sleep 3
@@ -223,7 +226,10 @@ task ProcessChunkOfHaplotypes {
         
         CHECKPOINT_FILE="checkpoint_i~{id_from}_i${ID_TO}.txt"
         TEST=$(gsutil -q stat ~{bucket_dir}/checkpoints/${CHECKPOINT_FILE} || echo 1)
-        if [ ${#TEST} = 0 -o ${TEST} -ne 1 ]; then
+        if [ ${#TEST} = 0 ]; then
+            TEST="0"
+        fi
+        if [ ${TEST} -ne 1 ]; then
             gsutil cp ~{bucket_dir}/checkpoints/${CHECKPOINT_FILE} .
         else
             echo "0 0 0" > ${CHECKPOINT_FILE}
