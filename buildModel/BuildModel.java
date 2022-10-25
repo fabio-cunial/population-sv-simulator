@@ -3,19 +3,19 @@ import java.io.*;
 
 
 /**
- * Learns from gnomAD-SV a model for simulating structural variants on chr1.
+ * Derives from gnomAD-SV a model for simulating structural variants on chr1.
  */
 public class BuildModel {
 	/**
 	 * Distance thresholds
 	 */
-	private static final int MAX_DISTANCE_REPEATMASKER = 25;
-	private static final int MIN_OVERLAP_TRF = 10;
-	private static final int MIN_OVERLAP_INTERVALS = 25;
+	public static final int MAX_DISTANCE_REPEATMASKER = 25;
+	public static final int MIN_OVERLAP_TRF = 10;
+	public static final int MIN_OVERLAP_INTERVALS = 25;
 	public static final int MAX_DISTANCE_SR = 25;  // Suggested by Ryan Collins
 	private static final int MAX_DISTANCE_PE = 250; // Suggested by Ryan Collins
 	private static final int MAX_DISTANCE_OTHER = 1000;  // Suggested by Collins
-	private static final int MAX_DISTANCE_SEGDUPS = 25;
+	public static final int MAX_DISTANCE_SEGDUPS = 25;
 
 
 	public static void main(String[] args) throws IOException {
@@ -440,7 +440,7 @@ public class BuildModel {
 	/**
 	 * Stores only chr1 intervals.
 	 */
-	private static final void serializeRepeatIntervals(String outFile) throws IOException {
+	public static final void serializeRepeatIntervals(String outFile) throws IOException {
 		int i;
 		BufferedWriter bw;
 		

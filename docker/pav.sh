@@ -35,7 +35,7 @@ function createFiles() {
     MISSING="0"
     for FILE in ${LOCAL_FILES}; do
         TEST=$(gsutil -q stat "${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE}" || echo 1)
-        if [ ${TEST} = 1 ]; then
+        if [ ${#TEST} != 0 -a ${TEST} = 1 ]; then
             MISSING="1"
             break
         fi
