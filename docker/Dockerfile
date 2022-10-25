@@ -135,8 +135,8 @@ RUN conda update conda \
     && quast --version
 
 # PAV
-COPY ./pav-environment.yml .
-RUN conda env create -f ./pav-environment.yml \
+COPY ./pavEnvironment.yml .
+RUN conda env create -f ./pavEnvironment.yml \
     && conda clean --packages --tempfiles --logfiles
 ENV PATH=/opt/conda/envs/lr-pav/bin/:${PATH}
 COPY pav_test_install.py .
