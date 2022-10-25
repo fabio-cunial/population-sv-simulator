@@ -32,6 +32,22 @@ source activate lr-pav
 # files).
 function createFiles() {
     local LOCAL_FILES=$1
+    
+    # Restoring backup copies of the contigs
+    if [ ! -e temp/${SAMPLE_ID}/align/contigs_h1.fa.gz ]; then
+        cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.backup temp/${SAMPLE_ID}/align/contigs_h1.fa.gz
+    fi
+    if [ ! -e temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai ]; then
+        cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai.backup temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai
+    fi
+    if [ ! -e temp/${SAMPLE_ID}/align/contigs_h2.fa.gz ]; then
+        cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.backup temp/${SAMPLE_ID}/align/contigs_h2.fa.gz
+    fi
+    if [ ! -e temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai ]; then
+        cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai.backup temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai
+    fi
+    
+    # Checking remote bucket
     MISSING="0"
     for FILE in ${LOCAL_FILES}; do
         TEST=$(gsutil -q stat "${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE}" && echo 0 || echo 1)
@@ -70,8 +86,8 @@ ${SNAKEMAKE_COMMAND} data/ref/ref.fa.gz data/ref/ref.fa.gz.fai
 ${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h1.fa.gz temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai
 ${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h2.fa.gz temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai
 
-# Backing up (these files will be needed in the future, but they will be deleted
-# by Snakemake).
+# Backing up (these files will be needed in the future, but they might get
+# deleted by Snakemake).
 cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.backup
 cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai.backup
 cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.backup
@@ -94,13 +110,6 @@ for i in $(seq 1 10); do
     createFiles temp/${SAMPLE_ID}/lg_sv/batch/sv_ins_h1_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_del_h1_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_inv_h1_${i}.bed.gz
     createFiles temp/${SAMPLE_ID}/lg_sv/batch/sv_ins_h2_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_del_h2_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_inv_h2_${i}.bed.gz
 done
-
-# Restoring backup
-cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.backup temp/${SAMPLE_ID}/align/contigs_h1.fa.gz
-cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai.backup temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai
-cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.backup temp/${SAMPLE_ID}/align/contigs_h2.fa.gz
-cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai.backup temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai
-
 createFiles temp/${SAMPLE_ID}/cigar/pre_inv/svindel_insdel_h1.bed.gz temp/${SAMPLE_ID}/cigar/pre_inv/snv_snv_h1.bed.gz
 createFiles temp/${SAMPLE_ID}/cigar/pre_inv/svindel_insdel_h2.bed.gz temp/${SAMPLE_ID}/cigar/pre_inv/snv_snv_h2.bed.gz
 createFiles temp/${SAMPLE_ID}/lg_sv/sv_del_h1.bed.gz

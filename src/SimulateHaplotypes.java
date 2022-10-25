@@ -76,12 +76,14 @@ public class SimulateHaplotypes {
 		final String MODEL_DIR = args[0];
 		final String POPULATION_NAME = args[1];
 		final String REFERENCE_FILE = args[2];
-		final String INSERTION_STRINGS_FILE = args[3];
-		final int N_INSERTION_STRINGS = Integer.parseInt(args[4]);
-		final double ALLELE_FREQUENCY_THRESHOLD = Double.parseDouble(args[5]);
-		final int N_VARIANTS_FREQUENT = Integer.parseInt(args[6]);
-		final int N_INDIVIDUALS = Integer.parseInt(args[7]);
-		final String OUTPUT_DIR = args[8];
+        final String REPEAT_INTERVALS_FILE = args[3];
+        final String SEGDUPS_FILE = args[4];
+		final String INSERTION_STRINGS_FILE = args[5];
+		final int N_INSERTION_STRINGS = Integer.parseInt(args[6]);
+		final double ALLELE_FREQUENCY_THRESHOLD = Double.parseDouble(args[7]);
+		final int N_VARIANTS_FREQUENT = Integer.parseInt(args[8]);
+		final int N_INDIVIDUALS = Integer.parseInt(args[9]);
+		final String OUTPUT_DIR = args[10];
 		
 		final int MAX_DISTANCE_TO_REPEAT_INTERVAL = 100;  // Arbitrary
 		StringBuilder buffer = new StringBuilder(10000);  // Arbitrary
@@ -90,8 +92,8 @@ public class SimulateHaplotypes {
 		loadReference(REFERENCE_FILE);
 		System.err.println("Loading model...");
 		BuildModel.deserializeStatistics(MODEL_DIR);
-		BuildModel.deserializeRepeatIntervals(MODEL_DIR+"/repeatIntervals.txt");
-		BuildModel.deserializeSegdups(MODEL_DIR+"/segdups.txt");
+		BuildModel.deserializeRepeatIntervals(REPEAT_INTERVALS_FILE);
+		BuildModel.deserializeSegdups(SEGDUPS_FILE);
 		System.err.println("Loading repetitive positions...");
 		loadPositions(referenceLength,BuildModel.MAX_DISTANCE_SR);
 		System.err.println("Sampling variants...");
@@ -139,7 +141,7 @@ public class SimulateHaplotypes {
 	private static final void loadPositions(int chromosomeLength, int maxDistance) {
 		char c;
 		int i, j, k, p;
-		int type, last1, last2;
+		int type, last1, last2, from, to;
 		int[] tmpArray1, tmpArray2;
 		
 		// Collecting positions from repeat intervals and segdups
@@ -148,10 +150,18 @@ public class SimulateHaplotypes {
 		Arrays.fill(positions_last,-1);
 		for (i=0; i<=BuildModel.lastRepeatInterval; i++) {
 			type=BuildModel.repeatIntervals[i][0];
-			for (j=BuildModel.repeatIntervals[i][1]-maxDistance; j<=BuildModel.repeatIntervals[i][2]+maxDistance; j++) positions[type][++positions_last[type]]=j;
+            from=BuildModel.repeatIntervals[i][1]-maxDistance;
+            if (from<0) from=0;
+            to=BuildModel.repeatIntervals[i][2]+maxDistance;
+            if (to>=referenceLength) to=referenceLength-1;
+			for (j=from; j<=to; j++) positions[type][++positions_last[type]]=j;
 		}
 		for (i=0; i<=BuildModel.lastSegdup; i++) {
-			for (j=BuildModel.segdups[i][0]-maxDistance; j<=BuildModel.segdups[i][1]+maxDistance; j++) positions[3][++positions_last[3]]=j;
+            from=BuildModel.segdups[i][0]-maxDistance;
+            if (from<0) from=0;
+            to=BuildModel.segdups[i][1]+maxDistance;
+            if (to>=referenceLength) to=referenceLength-1;
+			for (j=from; j<=to; j++) positions[3][++positions_last[3]]=j;
 		}
 		for (i=0; i<positions.length; i++) {
 			Arrays.sort(positions[i],0,positions_last[i]+1);
