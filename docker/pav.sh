@@ -72,7 +72,9 @@ ${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h2.fa.gz temp/${SAMPLE_ID}/
 
 # Backing up (these files will be needed in the future, but they will be deleted
 # by Snakemake).
+cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.backup
 cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai.backup
+cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.backup
 cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai.backup
 
 createFiles "data/ref/n_gap.bed.gz"
@@ -94,7 +96,9 @@ for i in $(seq 1 10); do
 done
 
 # Restoring backup
+cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.backup temp/${SAMPLE_ID}/align/contigs_h1.fa.gz
 cp temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai.backup temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai
+cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.backup temp/${SAMPLE_ID}/align/contigs_h2.fa.gz
 cp temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai.backup temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai
 
 createFiles temp/${SAMPLE_ID}/cigar/pre_inv/svindel_insdel_h1.bed.gz temp/${SAMPLE_ID}/cigar/pre_inv/snv_snv_h1.bed.gz
