@@ -74,17 +74,39 @@ rm -f config.json
 echo "{" >> config.json
 echo "\"reference\": \"asm/ref.fa\"," >> config.json
 echo "\"asm_pattern\": \"asm/{asm_name}/{hap}.fa.gz\"" >> config.json
+echo "\"aligner\": \"minimap2\"" >> config.json
+echo "\"map_threads\": \"${N_THREADS}\"" >> config.json
+echo "\"merge_threads\": \"${N_THREADS}\"" >> config.json
+echo "\"inv_threads\": \"${N_THREADS}\"" >> config.json
+echo "\"inv_threads_lg\": \"${N_THREADS}\"" >> config.json
+echo "\"lg_batch_count\": \"1\"" >> config.json
+echo "\"inv_sig_batch_count\": \"1\"" >> config.json
 echo "}" >> config.json
 mkdir -p asm/${SAMPLE_ID}
 cp ${REFERENCE_FA} asm/ref.fa
 cp ${REFERENCE_FAI} asm/ref.fa.fai
-gzip -q -c --fast ${HAPLOTYPE1_FA} > asm/${SAMPLE_ID}/h1.fa.gz
-gzip -q -c --fast ${HAPLOTYPE2_FA} > asm/${SAMPLE_ID}/h2.fa.gz
+bgzip -@ ${N_THREADS} --compress-level 0 -c ${HAPLOTYPE1_FA} > asm/${SAMPLE_ID}/h1.fa.gz
+bgzip -@ ${N_THREADS} --compress-level 0 -c ${HAPLOTYPE2_FA} > asm/${SAMPLE_ID}/h2.fa.gz
 
 # Main pipeline
 ${SNAKEMAKE_COMMAND} data/ref/ref.fa.gz data/ref/ref.fa.gz.fai
-${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h1.fa.gz temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai
-${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h2.fa.gz temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai
+
+
+
+
+
+mkdir -p temp/${SAMPLE_ID}/align/
+cp asm/${SAMPLE_ID}/h1.fa.gz temp/${SAMPLE_ID}/align/contigs_h1.fa.gz
+samtools faidx temp/${SAMPLE_ID}/align/contigs_h1.fa.gz
+cp asm/${SAMPLE_ID}/h2.fa.gz temp/${SAMPLE_ID}/align/contigs_h2.fa.gz
+samtools faidx temp/${SAMPLE_ID}/align/contigs_h2.fa.gz
+#${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h1.fa.gz temp/${SAMPLE_ID}/align/contigs_h1.fa.gz.fai
+#${SNAKEMAKE_COMMAND} temp/${SAMPLE_ID}/align/contigs_h2.fa.gz temp/${SAMPLE_ID}/align/contigs_h2.fa.gz.fai
+
+
+
+
+
 
 # Backing up (these files will be needed in the future, but they might get
 # deleted by Snakemake).
@@ -100,13 +122,15 @@ createFiles "results/${SAMPLE_ID}/align/pre-cut/aligned_tig_h1.bed.gz"
 createFiles "results/${SAMPLE_ID}/align/pre-cut/aligned_tig_h2.bed.gz"
 createFiles "results/${SAMPLE_ID}/align/aligned_tig_h1.bed.gz"
 createFiles "results/${SAMPLE_ID}/align/aligned_tig_h2.bed.gz"
-for i in $(seq 1 10); do
+for i in $(seq 1 1); do
+    # These were batches in the original WDL
     createFiles temp/${SAMPLE_ID}/cigar/batched/insdel_h1_${i}.bed.gz temp/${SAMPLE_ID}/cigar/batched/snv.bed_h1_${i}.gz
     createFiles temp/${SAMPLE_ID}/cigar/batched/insdel_h2_${i}.bed.gz temp/${SAMPLE_ID}/cigar/batched/snv.bed_h2_${i}.gz
 done
 createFiles temp/${SAMPLE_ID}/lg_sv/batch_h1.tsv.gz
 createFiles temp/${SAMPLE_ID}/lg_sv/batch_h2.tsv.gz
-for i in $(seq 1 10); do
+for i in $(seq 1 1); do
+    # These were batches in the original WDL
     createFiles temp/${SAMPLE_ID}/lg_sv/batch/sv_ins_h1_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_del_h1_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_inv_h1_${i}.bed.gz
     createFiles temp/${SAMPLE_ID}/lg_sv/batch/sv_ins_h2_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_del_h2_${i}.bed.gz temp/${SAMPLE_ID}/lg_sv/batch/sv_inv_h2_${i}.bed.gz
 done
@@ -130,7 +154,8 @@ createFiles results/${SAMPLE_ID}/callable/callable_regions_h1_500.bed.gz
 createFiles results/${SAMPLE_ID}/callable/callable_regions_h2_500.bed.gz
 createFiles results/${SAMPLE_ID}/inv_caller/flagged_regions_h1.bed.gz
 createFiles results/${SAMPLE_ID}/inv_caller/flagged_regions_h2.bed.gz
-for i in $(seq 1 60); do
+for i in $(seq 1 1); do
+    # These were batches in the original WDL
     createFiles temp/${SAMPLE_ID}/inv_caller/batch/h1/inv_call_${i}.bed.gz
     createFiles temp/${SAMPLE_ID}/inv_caller/batch/h2/inv_call_${i}.bed.gz
 done

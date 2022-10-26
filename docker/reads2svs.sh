@@ -177,19 +177,24 @@ for COVERAGE in ${COVERAGES}; do
             rm -rf quast_results/
             gsutil cp ${PREFIX}_quast.tar.gz ${BUCKET_DIR}/assemblies/
             rm -f ${PREFIX}_quast.tar.gz
-        else
-            ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa ${PREFIX}_h1.fa
-            ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa ${PREFIX}_h2.fa
+        elif [ ${USE_PAV} -eq 1 ]; then
+            TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/pav_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}.vcf && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa ${PREFIX}_h1.fa
+                ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa ${PREFIX}_h2.fa
+            fi
         fi
     fi
     
     # PAV
-    if [ ${USE_PAV} -eq 1 ]; then 
-        bash ${WORK_DIR}/pav.sh ${ID1} ${ID2} ${LENGTH} ${COVERAGE} ${REFERENCE_FA} ${REFERENCE_FAI} ${PREFIX}_h1.fa ${PREFIX}_h2.fa ${BUCKET_DIR} ${N_THREADS} ${WORK_DIR}
+    if [ ${USE_PAV} -eq 1 ]; then
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/pav_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}.vcf && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            bash ${WORK_DIR}/pav.sh ${ID1} ${ID2} ${LENGTH} ${COVERAGE} ${REFERENCE_FA} ${REFERENCE_FAI} ${PREFIX}_h1.fa ${PREFIX}_h2.fa ${BUCKET_DIR} ${N_THREADS} ${WORK_DIR}
+            # Removing local assemblies
+            rm -f ${PREFIX}*
+        fi
     fi
-    
-    # Removing local assemblies
-    rm -f ${PREFIX}*
     
     # Next iteration
     echo "${SAMPLE_ID} ${LENGTH} ${COVERAGE}" >> ${CHECKPOINT_FILE}
