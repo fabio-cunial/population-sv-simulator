@@ -108,6 +108,7 @@ task DeleteBucketDir {
         String bucket_dir
     }    
     command <<<
+        set -euxo pipefail
         TEST=$(gsutil -q stat ~{bucket_dir} && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
             while ! gsutil -m rm -rf ~{bucket_dir}
@@ -140,6 +141,7 @@ task GetHaplotypeChunks {
     }
     Int size = ( (n_haplotypes/2 + n_chunks - 1) / n_chunks ) * 2
     command <<<
+        set -euxo pipefail
         seq 0 ~{size} $(( ~{n_haplotypes} - 1 )) > out.txt
     >>>
     output {

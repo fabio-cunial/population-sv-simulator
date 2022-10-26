@@ -73,14 +73,14 @@ function createFiles() {
 rm -f config.json
 echo "{" >> config.json
 echo "\"reference\": \"asm/ref.fa\"," >> config.json
-echo "\"asm_pattern\": \"asm/{asm_name}/{hap}.fa.gz\"" >> config.json
-echo "\"aligner\": \"minimap2\"" >> config.json
-echo "\"map_threads\": \"${N_THREADS}\"" >> config.json
-echo "\"merge_threads\": \"${N_THREADS}\"" >> config.json
-echo "\"inv_threads\": \"${N_THREADS}\"" >> config.json
-echo "\"inv_threads_lg\": \"${N_THREADS}\"" >> config.json
-echo "\"lg_batch_count\": \"1\"" >> config.json
-echo "\"inv_sig_batch_count\": \"1\"" >> config.json
+echo "\"asm_pattern\": \"asm/{asm_name}/{hap}.fa.gz\"," >> config.json
+echo "\"aligner\": \"minimap2\"," >> config.json
+echo "\"map_threads\": ${N_THREADS}," >> config.json
+echo "\"merge_threads\": ${N_THREADS}," >> config.json
+echo "\"inv_threads\": ${N_THREADS}," >> config.json
+echo "\"inv_threads_lg\": ${N_THREADS}," >> config.json
+echo "\"lg_batch_count\": 1," >> config.json
+echo "\"inv_sig_batch_count\": 1" >> config.json
 echo "}" >> config.json
 mkdir -p asm/${SAMPLE_ID}
 cp ${REFERENCE_FA} asm/ref.fa

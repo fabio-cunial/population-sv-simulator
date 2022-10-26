@@ -158,7 +158,7 @@ RUN echo "conda init bash" > ~/.bashrc
 RUN python pav_test_install.py
 RUN git clone --recursive https://github.com/EichlerLab/pav.git
 # We modified <pav/rules/call.snakefile> to set MERGE_BATCH_COUNT=1, since this
-# is not accessible from the configuration json.
+# parameter is not accessible from the configuration json.
 COPY pavCall.snakefile ./pav/rules/call.snakefile
 
 # PBSIM2
