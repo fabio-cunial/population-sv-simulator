@@ -17,6 +17,7 @@
 # sniffles1: 
 # sniffles2: 
 # hifiasm:
+# PAV: Max requirements from the original WDL: 8 threads, 32 GB of RAM, 1 GB of disk.
 #
 READS_FILE=$1
 SAMPLE_ID=$2  # SM field in the .sam file (needed later for joint calling)
@@ -167,16 +168,16 @@ for COVERAGE in ${COVERAGES}; do
             ${TIME_COMMAND} hifiasm -t ${N_THREADS} --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm coverage_${COVERAGE}.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX}_h1.fa
             awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX}_h2.fa
-            rm -rf tmpasm*
             ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX}_h1.fa ${BUCKET_DIR}/assemblies/
             ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX}_h2.fa ${BUCKET_DIR}/assemblies/
-            awk '/^S/{print ">"$2; print $3}' tmpasm.p_ctg.gfa > ${PREFIX}_primaryContigs.fa
+            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.p_ctg.gfa > ${PREFIX}_primaryContigs.fa
             quast --threads ${N_THREADS} --eukaryote --large --est-ref-size ${REFERENCE_LENGTH} --no-gc ${PREFIX}_primaryContigs.fa
             rm -f ${PREFIX}_primaryContigs.fa
             tar -czf ${PREFIX}_quast.tar.gz quast_results/ 
             rm -rf quast_results/
             gsutil cp ${PREFIX}_quast.tar.gz ${BUCKET_DIR}/assemblies/
             rm -f ${PREFIX}_quast.tar.gz
+            rm -rf tmpasm*
         elif [ ${USE_PAV} -eq 1 ]; then
             TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/pav_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}.vcf && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
@@ -188,11 +189,41 @@ for COVERAGE in ${COVERAGES}; do
     
     # PAV
     if [ ${USE_PAV} -eq 1 ]; then
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/pav_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}.vcf && echo 0 || echo 1)
+        ASSEMBLY_PREFIX=${PREFIX}
+        PREFIX="pav_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
-            bash ${WORK_DIR}/pav.sh ${ID1} ${ID2} ${LENGTH} ${COVERAGE} ${REFERENCE_FA} ${REFERENCE_FAI} ${PREFIX}_h1.fa ${PREFIX}_h2.fa ${BUCKET_DIR} ${N_THREADS} ${WORK_DIR}
-            # Removing local assemblies
-            rm -f ${PREFIX}*
+            if [ ! -e config.json ]; then
+                echo "{" >> config.json
+                echo "\"reference\": \"asm/ref.fa\"," >> config.json
+                echo "\"asm_pattern\": \"asm/{asm_name}/{hap}.fa.gz\"," >> config.json
+                echo "\"aligner\": \"minimap2\"," >> config.json
+                echo "\"map_threads\": ${N_THREADS}," >> config.json
+                echo "\"merge_threads\": ${N_THREADS}," >> config.json
+                echo "\"inv_threads\": ${N_THREADS}," >> config.json
+                echo "\"inv_threads_lg\": ${N_THREADS}," >> config.json
+                echo "\"lg_batch_count\": 1," >> config.json
+                echo "\"inv_sig_batch_count\": 1" >> config.json
+                echo "}" >> config.json
+            fi
+            mkdir -p asm/sample
+            cp ${REFERENCE_FA} asm/ref.fa
+            cp ${REFERENCE_FAI} asm/ref.fa.fai
+            bgzip -@ ${N_THREADS} --compress-level 0 -c ${ASSEMBLY_PREFIX}_h1.fa > asm/sample/h1.fa.gz
+            bgzip -@ ${N_THREADS} --compress-level 0 -c ${ASSEMBLY_PREFIX}_h2.fa > asm/sample/h2.fa.gz
+            mkdir -p temp/sample/align/
+            cp asm/sample/h1.fa.gz temp/sample/align/contigs_h1.fa.gz
+            samtools faidx temp/sample/align/contigs_h1.fa.gz
+            cp asm/sample/h2.fa.gz temp/sample/align/contigs_h2.fa.gz
+            samtools faidx temp/sample/align/contigs_h2.fa.gz
+            source activate lr-pav
+            ${TIME_COMMAND} snakemake -s ${WORK_DIR}/pav/Snakefile --cores ${N_THREADS} pav_sample.vcf.gz
+            conda deactivate
+            bcftools filter --exclude 'SVTYPE="SNV" || (SVLEN>-40 && SVLEN<40)' pav_sample.vcf.gz > ${PREFIX}.vcf
+            gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
+            rm -rf asm/ data/ temp/ results/ log/
+            # Removing local assemblies as well
+            rm -f ${ASSEMBLY_PREFIX}*
         fi
     fi
     

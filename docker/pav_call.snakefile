@@ -121,15 +121,20 @@ rule call_merge_haplotypes:
     output:
         bed=temp('temp/{asm_name}/bed/merged/{vartype_svtype}.bed.gz')
     run:
-
-        df = pd.concat(
-            [pd.read_csv(file_name, sep='\t') for file_name in input.bed_batch],
-            axis=0
-        ).sort_values(
-            ['#CHROM', 'POS', 'END', 'ID']
-        ).to_csv(
-            output.bed, sep='\t', index=False, compression='gzip'
-        )
+        a = []
+        for file_name in input.bed_batch:
+            try:
+                b = pd.read_csv(file_name, sep='\t')
+                a.append(b)
+            except:
+                pass
+        if len(a) != 0:
+            c = pd.concat(a, axis=0)
+            df = c.sort_values(
+                ['#CHROM', 'POS', 'END', 'ID']
+            ).to_csv(
+                output.bed, sep='\t', index=False, compression='gzip'
+            )
 
 
 # call_merge_haplotypes_chrom

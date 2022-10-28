@@ -986,7 +986,7 @@ public class SimulateHaplotypes {
 	
 	
 	private static final String VCF_SEPARATOR = "\t";
-	private static final String CHROMOSOME = "1";
+	private static final String CHROMOSOME = "chr1";
 	private static final String ID_PREFIX = "simulated_";
 	private static final String REF = "N";
 	private static final String QUALITY = "999";
@@ -999,9 +999,6 @@ public class SimulateHaplotypes {
 	 * Prints a joint VCF that contains the sorted set of distinct variants, and
 	 * a VCF for each individual, where an individual consists of two 
 	 * consecutive haplotypes in the list of all haplotypes.
-	 *
-	 * Remark: the procedure does not print the header (could be copied from the
-	 * gnomAD-SV file).
 	 */
 	private static final void buildVCF(String outDir) throws IOException {
 		final String SUPPORT_STR = INFO_SEPARATOR+"HAPLOTYPES=";
@@ -1073,7 +1070,7 @@ public class SimulateHaplotypes {
 	 */
 	private static final void printVcfHeader(boolean printGenotype, String sampleName, BufferedWriter bw) throws IOException {
 		bw.write("##fileformat=VCFv4.2\n");
-		bw.write("##contig=<ID=chr1,length="+referenceLength+">\n");
+		bw.write("##contig=<ID="+CHROMOSOME+",length="+referenceLength+">\n");
 		bw.write("##ALT=<ID=INS,Description=\"Insertion\">\n");
 		bw.write("##ALT=<ID=DEL,Description=\"Deletion\">\n");
 		bw.write("##ALT=<ID=DUP,Description=\"Duplication\">\n");

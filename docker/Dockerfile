@@ -33,6 +33,7 @@ RUN apt-get -qqy update --fix-missing \
         libcurl4-openssl-dev \
         apt-transport-https \
         ca-certificates \
+        tree \
         gnupg \
         ssh \
         time \
@@ -143,23 +144,28 @@ RUN wget https://github.com/chhylp123/hifiasm/archive/refs/tags/${hifiasm_versio
 
 # QUAST
 RUN conda update conda \
-    && conda install -c bioconda -c conda-forge libgcc-ng quast \
+    && conda install -c bioconda -c conda-forge libgcc-ng joblib quast \
     && conda clean --packages --tempfiles --logfiles \
-    && quast --version
+    && quast --version \
+    && python -c 'import joblib'
 
 # PAV
 COPY ./pavEnvironment.yml .
 RUN conda env create -f ./pavEnvironment.yml \
     && conda clean --packages --tempfiles --logfiles
-ENV PATH=/opt/conda/envs/lr-pav/bin/:${PATH}
 COPY pav_test_install.py .
 SHELL ["conda", "run", "-n", "lr-pav", "/bin/bash", "-c"]
 RUN echo "conda init bash" > ~/.bashrc
 RUN python pav_test_install.py
 RUN git clone --recursive https://github.com/EichlerLab/pav.git
-# We modified <pav/rules/call.snakefile> to set MERGE_BATCH_COUNT=1, since this
-# parameter is not accessible from the configuration json.
-COPY pavCall.snakefile ./pav/rules/call.snakefile
+# We modified <pav/rules/call.snakefile> as follows:
+# - We set MERGE_BATCH_COUNT=1, since this parameter is not accessible from the
+#   configuration JSON.
+# - We fixed an empty CSV bug in rule <call_merge_haplotypes>.
+COPY pav_call.snakefile ./pav/rules/call.snakefile
+# We fixed an empty BED bug in rule <vcf_write_vcf> of file
+# <pav/rules/vcf.snakefile>.
+COPY pav_vcf.snakefile ./pav/rules/vcf.snakefile
 
 # PBSIM2
 #
