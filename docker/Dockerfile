@@ -216,6 +216,5 @@ RUN cd pbsim2 \
 # Simulation code
 COPY haplotype2reads.sh .
 COPY reads2svs.sh .
-COPY pav.sh .
 COPY *.java .
 RUN javac *.java
