@@ -150,8 +150,8 @@ RUN conda update conda \
     && python -c 'import joblib'
 
 # PAV
-COPY ./pavEnvironment.yml .
-RUN conda env create -f ./pavEnvironment.yml \
+COPY ./pav_environment.yml .
+RUN conda env create -f ./pav_environment.yml \
     && conda clean --packages --tempfiles --logfiles
 COPY pav_test_install.py .
 SHELL ["conda", "run", "-n", "lr-pav", "/bin/bash", "-c"]
