@@ -118,8 +118,9 @@ for COVERAGE in ${COVERAGES}; do
     fi
     
 	# PBSV
+    INFIX="i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
     if [ ${USE_PBSV} -eq 1 ]; then
-        PREFIX="pbsv_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
+        PREFIX="pbsv_${INFIX}"
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
             ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz .
@@ -138,7 +139,7 @@ for COVERAGE in ${COVERAGES}; do
 	
 	# SNIFFLES 1
     if [ ${USE_SNIFFLES1} -eq 1 ]; then 
-        PREFIX="sniffles1_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
+        PREFIX="sniffles1_${INFIX}"
         TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             ${TIME_COMMAND} sniffles1 -t ${N_THREADS} -m coverage_${COVERAGE}.bam -v ${PREFIX}.vcf
@@ -149,7 +150,7 @@ for COVERAGE in ${COVERAGES}; do
     
     # SNIFFLES 2
     if [ ${USE_SNIFFLES2} -eq 1 ]; then 
-        PREFIX="sniffles2_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
+        PREFIX="sniffles2_${INFIX}"
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
     	    ${TIME_COMMAND} sniffles --threads ${N_THREADS} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} --reference ${REFERENCE_FA} --sample-id ${SAMPLE_ID} --input coverage_${COVERAGE}.bam --vcf ${PREFIX}.vcf --snf ${PREFIX}.snf
@@ -160,7 +161,7 @@ for COVERAGE in ${COVERAGES}; do
     fi
     
     # HIFIASM
-    PREFIX="assembly_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
+    PREFIX="assembly_${INFIX}"
     if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 ]; then 
         TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa && echo 0 || echo 1)
         TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa && echo 0 || echo 1)
@@ -190,7 +191,7 @@ for COVERAGE in ${COVERAGES}; do
     # PAV
     if [ ${USE_PAV} -eq 1 ]; then
         ASSEMBLY_PREFIX=${PREFIX}
-        PREFIX="pav_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
+        PREFIX="pav_${INFIX}"
         TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             if [ ! -e config.json ]; then
@@ -216,12 +217,16 @@ for COVERAGE in ${COVERAGES}; do
             samtools faidx temp/sample/align/contigs_h1.fa.gz
             cp asm/sample/h2.fa.gz temp/sample/align/contigs_h2.fa.gz
             samtools faidx temp/sample/align/contigs_h2.fa.gz
+            bash ${WORK_DIR}/pav_restoreCheckpoint.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR}
+            bash ${WORK_DIR}/pav_checkpointDaemon.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} &
             source activate lr-pav
             ${TIME_COMMAND} snakemake -s ${WORK_DIR}/pav/Snakefile --cores ${N_THREADS} pav_sample.vcf.gz
             conda deactivate
+            pkill -f pav_checkpointDaemon.sh
             bcftools filter --exclude 'SVTYPE="SNV" || (SVLEN>-40 && SVLEN<40)' pav_sample.vcf.gz > ${PREFIX}.vcf
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
             rm -rf asm/ data/ temp/ results/ log/
+            gsutil -m rm -f "${BUCKET_DIR}/pav/${INFIX}"
             # Removing local assemblies as well
             rm -f ${ASSEMBLY_PREFIX}*
         fi

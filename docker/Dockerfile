@@ -216,5 +216,8 @@ RUN cd pbsim2 \
 # Simulation code
 COPY haplotype2reads.sh .
 COPY reads2svs.sh .
+COPY pav_state_files.txt .
+COPY pav_restoreCheckpoint.sh .
+COPY pav_checkpointDaemon.sh .
 COPY *.java .
 RUN javac *.java
