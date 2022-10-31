@@ -55,6 +55,7 @@ set -euxo pipefail
 echo "Running <reads2svs.sh> on ${N_THREADS} cores on the following node:"
 lscpu
 cat /proc/meminfo
+cd ${WORK_DIR}
 
 # Splitting the reads into chunks equal to 1x of a diploid individual, and 
 # aligning each chunk to the reference in isolation.
@@ -160,7 +161,7 @@ for COVERAGE in ${COVERAGES}; do
         fi
     fi
     
-    # HIFIASM
+    # HIFIASM + QUAST
     PREFIX="assembly_${INFIX}"
     if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 ]; then 
         TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa && echo 0 || echo 1)
@@ -219,14 +220,15 @@ for COVERAGE in ${COVERAGES}; do
             samtools faidx temp/sample/align/contigs_h2.fa.gz
             bash ${WORK_DIR}/pav_restoreCheckpoint.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR}
             bash ${WORK_DIR}/pav_checkpointDaemon.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} &
+            DAEMON_ID=$!
             source activate lr-pav
             ${TIME_COMMAND} snakemake -s ${WORK_DIR}/pav/Snakefile --cores ${N_THREADS} pav_sample.vcf.gz
             conda deactivate
-            pkill -f pav_checkpointDaemon.sh
+            kill -KILL ${DAEMON_ID} || echo "The process ID <${DAEMON_ID}> of <pav_checkpointDaemon.sh> cannot be found."
             bcftools filter --exclude 'SVTYPE="SNV" || (SVLEN>-40 && SVLEN<40)' pav_sample.vcf.gz > ${PREFIX}.vcf
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
             rm -rf asm/ data/ temp/ results/ log/
-            gsutil -m rm -f "${BUCKET_DIR}/pav/${INFIX}"
+            gsutil -m rm -rf "${BUCKET_DIR}/pav/${INFIX}" || echo "Cannot remove directory ${BUCKET_DIR}/pav/${INFIX}"
             # Removing local assemblies as well
             rm -f ${ASSEMBLY_PREFIX}*
         fi
@@ -240,8 +242,8 @@ done
 rm -f coverage_* chunk-*
 
 # Cleaning the bucket
-gsutil rm -f ${BUCKET_DIR}/reads/${READS_FILE}
-gsutil -m rm -f "${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam"
+gsutil rm -f ${BUCKET_DIR}/reads/${READS_FILE} || echo "Cannot remove file ${BUCKET_DIR}/reads/${READS_FILE}"
+gsutil -m rm -f "${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam" || echo "Cannot remove some of the files ${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam"
 if [ ${KEEP_ASSEMBLIES} -ne 1 ]; then
-    gsutil -m rm -f "${BUCKET_DIR}/assemblies/assembly_i${ID1}_i${ID2}_l${LENGTH}_*"
+    gsutil -m rm -f "${BUCKET_DIR}/assemblies/assembly_i${ID1}_i${ID2}_l${LENGTH}_*" || echo "Cannot remove some of the files ${BUCKET_DIR}/assemblies/assembly_i${ID1}_i${ID2}_l${LENGTH}_*"
 fi

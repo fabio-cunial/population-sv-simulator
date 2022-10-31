@@ -245,7 +245,7 @@ task ProcessChunkOfHaplotypes {
                 if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -lt ${CHECKPOINT_LENGTH} ]; then
                     continue
                 fi
-                bash ~{work_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir}
+                bash ~{work_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir} ~{work_dir}
                 READS_FILE="reads_i${ID1}_i${ID2}_l${LENGTH}_c~{max_coverage}.fa"
                 bash ~{work_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{work_dir} ~{keep_assemblies}
             done

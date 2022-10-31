@@ -23,6 +23,7 @@ LENGTH_MEAN=$5
 LENGTH_STDEV=$6
 MAX_COVERAGE=$7
 BUCKET_DIR=$8  # Root dir of the simulation in the bucket
+WORK_DIR=$9  # Absolute path
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 TIME_COMMAND="/usr/bin/time --verbose"
@@ -35,6 +36,7 @@ set -euxo pipefail
 echo "Running <haplotype2reads.sh> on the following node:"
 lscpu
 cat /proc/meminfo
+cd ${WORK_DIR}
 
 OUTPUT_FILE="reads_i${ID1}_i${ID2}_l${LENGTH_MEAN}_c${MAX_COVERAGE}.fa"
 TEST=$(gsutil -q stat ${BUCKET_DIR}/reads/${OUTPUT_FILE} && echo 0 || echo 1)

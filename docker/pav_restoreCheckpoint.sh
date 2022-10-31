@@ -4,15 +4,15 @@
 #
 BUCKET_DIR=$1  # Root dir of the simulation in the bucket
 SAMPLE_ID=$2
-WORK_DIR=$3
+WORK_DIR=$3  # Absolute path
 
 STATE_FILES_LIST="pav_state_files.txt"
 IN_BUCKET_FILE="pav_in_bucket.txt"
 
 set -euxo pipefail
+cd ${WORK_DIR}
 
 # Initializing local directory structure
-cd ${WORK_DIR}
 mkdir -p data/ref/
 mkdir -p temp/sample/align/pre-cut/
 mkdir -p results/sample/align/pre-cut/
@@ -44,4 +44,4 @@ while read FILE; do
         echo "0" >> ${IN_BUCKET_FILE}
     fi
 done < ${STATE_FILES_LIST}
-rm -f ${STOPPING_FILE}
+cat ${IN_BUCKET_FILE}
