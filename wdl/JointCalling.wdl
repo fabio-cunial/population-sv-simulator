@@ -100,9 +100,11 @@ task JointCallingImpl {
     Int disk_size_image = 20
     Int ram_size_gb = ceil(n_individuals*max_signature_file_size)*2 + ceil(size(reference_fa, "GB"))  # Both PBSV and Sniffles 2 seem to load all input files in RAM
     Int disk_size_gb = disk_size_image + ram_size_gb
+    String work_dir = "/simulation"
     
     command <<<
         set -euxo pipefail
+        cd ~{work_dir}
         
         GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
         TIME_COMMAND="/usr/bin/time --verbose"

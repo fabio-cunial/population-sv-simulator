@@ -18,8 +18,8 @@ DELAY_MS=$((${DELAY_S} * 1000))
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 SUFFIX="checkpointed"
 
-# <set -u> has to be done after array construction, since it gives unbound
-# variable error with the array.
+# <set -u> has to be issued after array construction, otherwise it gives unbound
+# variable error on the array.
 set -eo pipefail
 cd ${WORK_DIR}
 

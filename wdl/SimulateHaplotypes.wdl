@@ -221,6 +221,7 @@ task ProcessChunkOfHaplotypes {
     
     command <<<
         set -euxo pipefail
+        cd ~{work_dir}
         ID_TO=$(( ~{id_from} + ~{chunk_size} - 1 ))
         
         CHECKPOINT_FILE="checkpoint_i~{id_from}_i${ID_TO}.txt"
