@@ -14,7 +14,6 @@ WORK_DIR=$3  # Absolute path
 STATE_FILES_LIST="pav_state_files.txt"
 IN_BUCKET_FILE="pav_in_bucket.txt"
 DELAY_S="60"
-DELAY_MS=$((${DELAY_S} * 1000))
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 SUFFIX="checkpointed"
 
@@ -30,16 +29,14 @@ done < ${IN_BUCKET_FILE}
 echo "STATE_ARRAY=${STATE_ARRAY[*]}"
 set -u
 rm -f *.${SUFFIX}
-currentTime=$(date +%s)
 while true; do
     tree data/ temp/ results/ || echo ""
     i=0
     while read FILE; do
         echo "Checking if file exists: ${FILE}"
         if [ ${STATE_ARRAY[${i}]} -eq 0 -a -e ${FILE} ]; then
-            echo "FILE exists: ${FILE}"
-            lastModified=$(stat --format %Y ${FILE})
-            if [ ${currentTime} -ge $((${lastModified} + ${DELAY_MS})) ]; then
+            echo "FILE exists! ${FILE} lastModified=$(stat --format %Y ${FILE}) currentTime=$(date +%s) DELAY_S=${DELAY_S}"
+            if [ $(date +%s) -ge $(( $(stat --format %Y ${FILE}) + ${DELAY_S} )) ]; then
                 cp ${FILE} $(echo ${FILE} | tr '/' '+').${SUFFIX}
                 STATE_ARRAY[${i}]="1"
                 echo "STATE_ARRAY[${i}] set to one! FILE=${FILE}"
