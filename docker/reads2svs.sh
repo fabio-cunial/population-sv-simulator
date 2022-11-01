@@ -219,8 +219,8 @@ for COVERAGE in ${COVERAGES}; do
             samtools faidx temp/sample/align/contigs_h1.fa.gz
             cp asm/sample/h2.fa.gz temp/sample/align/contigs_h2.fa.gz
             samtools faidx temp/sample/align/contigs_h2.fa.gz
-            bash ${DOCKER_DIR}/pav_restoreCheckpoint.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR}
-            bash ${DOCKER_DIR}/pav_checkpointDaemon.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} &
+            bash ${DOCKER_DIR}/pav_restoreCheckpoint.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} ${DOCKER_DIR}
+            bash ${DOCKER_DIR}/pav_checkpointDaemon.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} ${DOCKER_DIR} &
             DAEMON_ID=$!
             source activate lr-pav
             ${TIME_COMMAND} snakemake -s ${DOCKER_DIR}/pav/Snakefile --cores ${N_THREADS} pav_sample.vcf.gz

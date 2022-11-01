@@ -10,8 +10,9 @@
 BUCKET_DIR=$1  # Root dir of the simulation in the bucket
 SAMPLE_ID=$2
 WORK_DIR=$3  # Absolute path
+DOCKER_DIR=$4  # Absolute path
 
-STATE_FILES_LIST="pav_state_files.txt"
+STATE_FILES_LIST="${DOCKER_DIR}/pav_state_files.txt"
 IN_BUCKET_FILE="pav_in_bucket.txt"
 DELAY_S="60"
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
