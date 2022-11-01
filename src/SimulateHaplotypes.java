@@ -1207,19 +1207,41 @@ public class SimulateHaplotypes {
 			return "svType="+svType+" position="+position+" length="+length+" isActive="+isActive+" intervalType="+intervalType+" alleleFrequency="+alleleFrequency;
 		}
 		
+        /**
+         * Remark: positions are one-based in the VCF format.
+         */
 		public void writeVCF(int id, NumberFormat formatter, BufferedWriter bw) throws IOException {
 			bw.write(CHROMOSOME); bw.write(VCF_SEPARATOR);
-			bw.write((position+1)+VCF_SEPARATOR);
-			bw.write(ID_PREFIX); bw.write(id+VCF_SEPARATOR);
-			bw.write(REF); bw.write(VCF_SEPARATOR);
-			if (svType==2) bw.write(sequence);
-			else bw.write("<"+BuildModel.SV_TYPES[svType]+">");
-			bw.write(VCF_SEPARATOR);
-			bw.write(QUALITY); bw.write(VCF_SEPARATOR);
-			bw.write(FILTER); bw.write(VCF_SEPARATOR);
-			bw.write("END="+(svType==2?position:(position+length))); bw.write(INFO_SEPARATOR);
+            if (svType==0) {  // DEL
+                bw.write(position+VCF_SEPARATOR);  // Previous position
+                bw.write(ID_PREFIX); bw.write(id+VCF_SEPARATOR);
+                bw.write(reference.substring(position-1,position+length)); bw.write(VCF_SEPARATOR);
+                bw.write(reference.charAt(position-1)+""); bw.write(VCF_SEPARATOR);
+    			bw.write(QUALITY); bw.write(VCF_SEPARATOR);
+    			bw.write(FILTER); bw.write(VCF_SEPARATOR);
+    			bw.write("END="+(position+length)); bw.write(INFO_SEPARATOR);  
+                bw.write("SVLEN="+(-length)); bw.write(INFO_SEPARATOR);              
+            }
+            else if (svType==2) {  // INS
+                bw.write((position+1)+VCF_SEPARATOR);
+                bw.write(ID_PREFIX); bw.write(id+VCF_SEPARATOR);
+                bw.write(reference.charAt(position)+""); bw.write(VCF_SEPARATOR);
+                bw.write(reference.charAt(position)+""); bw.write(sequence); bw.write(VCF_SEPARATOR);
+    			bw.write(QUALITY); bw.write(VCF_SEPARATOR);
+    			bw.write(FILTER); bw.write(VCF_SEPARATOR);
+    			bw.write("END="+(position+1)); bw.write(INFO_SEPARATOR);  
+                bw.write("SVLEN="+length); bw.write(INFO_SEPARATOR);              
+            }
+            else {
+    			bw.write((position+1)+VCF_SEPARATOR);
+    			bw.write(ID_PREFIX); bw.write(id+VCF_SEPARATOR);
+    			bw.write(reference.charAt(position)+""); bw.write(VCF_SEPARATOR);
+    			bw.write("<"+BuildModel.SV_TYPES[svType]+">"); bw.write(VCF_SEPARATOR);
+    			bw.write(QUALITY); bw.write(VCF_SEPARATOR);
+    			bw.write(FILTER); bw.write(VCF_SEPARATOR);
+    			bw.write("END="+(position+length)); bw.write(INFO_SEPARATOR);
+            }
 			bw.write("SVTYPE="); bw.write(BuildModel.SV_TYPES[svType]); bw.write(INFO_SEPARATOR);
-			bw.write("SVLEN="+length); bw.write(INFO_SEPARATOR);
 			bw.write("AF="+alleleFrequency); bw.write(INFO_SEPARATOR);
 			bw.write("REPEATS_START="+intervalType_start); bw.write(INFO_SEPARATOR);
 			bw.write("REPEATS_END="+intervalType_end); bw.write(INFO_SEPARATOR);

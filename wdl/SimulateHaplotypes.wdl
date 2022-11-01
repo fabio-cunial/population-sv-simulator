@@ -263,6 +263,6 @@ task ProcessChunkOfHaplotypes {
         cpu: n_cpus
         memory: ram_size_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"
-        preemptible: 10
+        preemptible: 3
     }
 }
