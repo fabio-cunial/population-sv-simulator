@@ -214,13 +214,13 @@ task ProcessChunkOfHaplotypes {
     Int max_coverage = coverages[last]
     Int ram_size_gb_pre = ceil((size(reference_fa, "GB")*max_coverage*2) * 3)  # *3 because of hifiasm
     Int ram_size_gb = if 32 > ram_size_gb_pre then 32 else ram_size_gb_pre  # 32 GB is from PAV
-    Int disk_size_image = 20
-    Int disk_size_tools = 5
-    Int disk_size_gb = disk_size_image + ram_size_gb*2 + ceil( size(reference_fa, "GB") + size(reference_mmi, "GB") + size(reference_tandem_repeats, "GB") + size(haplotype2variants_file, "GB") + size(variants_file, "GB") ) + disk_size_tools
-    String work_dir = "/simulation"
+    Int disk_size_gb = ram_size_gb*2 + ceil( size(reference_fa, "GB") + size(reference_mmi, "GB") + size(reference_tandem_repeats, "GB") + size(haplotype2variants_file, "GB") + size(variants_file, "GB") )
+    String docker_dir = "/simulation"
+    String work_dir = "/cromwell_root/simulation"
     
     command <<<
         set -euxo pipefail
+        mkdir -p ~{work_dir}
         cd ~{work_dir}
         ID_TO=$(( ~{id_from} + ~{chunk_size} - 1 ))
         
@@ -240,15 +240,15 @@ task ProcessChunkOfHaplotypes {
                 continue
             fi
             ID2=$(( ${ID1} + 1 ))
-            java -cp ~{work_dir} -Xmx10g PrintHaplotypes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
+            java -cp ~{docker_dir} -Xmx10g PrintHaplotypes ${ID1} ${ID2} ~{reference_fa} ~{haplotype2variants_file} ~{variants_file} .
             for LENGTH in ${LENGTHS}; do
                 CHECKPOINT_LENGTH=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $2 }')
                 if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -lt ${CHECKPOINT_LENGTH} ]; then
                     continue
                 fi
-                bash ~{work_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir} ~{work_dir}
+                bash ~{docker_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir} ~{work_dir}
                 READS_FILE="reads_i${ID1}_i${ID2}_l${LENGTH}_c~{max_coverage}.fa"
-                bash ~{work_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{work_dir} ~{keep_assemblies}
+                bash ~{docker_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{work_dir} ~{docker_dir} ~{keep_assemblies}
             done
             rm -f haplotype_${ID1}.fa haplotype_${ID2}.fa
         done

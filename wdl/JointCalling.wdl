@@ -97,13 +97,14 @@ task JointCallingImpl {
         n_individuals: "Total number of diploid individuals in the population."
         max_signature_file_size: "In GB."
     }
-    Int disk_size_image = 20
     Int ram_size_gb = ceil(n_individuals*max_signature_file_size)*2 + ceil(size(reference_fa, "GB"))  # Both PBSV and Sniffles 2 seem to load all input files in RAM
-    Int disk_size_gb = disk_size_image + ram_size_gb
-    String work_dir = "/simulation"
+    Int disk_size_gb = ram_size_gb
+    String docker_dir = "/simulation"
+    String work_dir = "/cromwell_root/simulation"
     
     command <<<
         set -euxo pipefail
+        mkdir -p ~{work_dir}
         cd ~{work_dir}
         
         GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"

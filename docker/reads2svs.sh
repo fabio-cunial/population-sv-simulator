@@ -37,7 +37,8 @@ USE_SNIFFLES2=${15}
 USE_HIFIASM=${16}
 USE_PAV=${17}
 WORK_DIR=${18}
-KEEP_ASSEMBLIES=${19}
+DOCKER_DIR=${19}
+KEEP_ASSEMBLIES=${20}
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 TIME_COMMAND="/usr/bin/time --verbose"
@@ -218,21 +219,26 @@ for COVERAGE in ${COVERAGES}; do
             samtools faidx temp/sample/align/contigs_h1.fa.gz
             cp asm/sample/h2.fa.gz temp/sample/align/contigs_h2.fa.gz
             samtools faidx temp/sample/align/contigs_h2.fa.gz
-            bash ${WORK_DIR}/pav_restoreCheckpoint.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR}
-            bash ${WORK_DIR}/pav_checkpointDaemon.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} &
+            bash ${DOCKER_DIR}/pav_restoreCheckpoint.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR}
+            bash ${DOCKER_DIR}/pav_checkpointDaemon.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} &
             DAEMON_ID=$!
             source activate lr-pav
-            ${TIME_COMMAND} snakemake -s ${WORK_DIR}/pav/Snakefile --cores ${N_THREADS} pav_sample.vcf.gz
+            ${TIME_COMMAND} snakemake -s ${DOCKER_DIR}/pav/Snakefile --cores ${N_THREADS} pav_sample.vcf.gz
             conda deactivate
             kill -KILL ${DAEMON_ID} || echo "The process ID <${DAEMON_ID}> of <pav_checkpointDaemon.sh> cannot be found."
             bcftools filter --exclude 'SVTYPE="SNV" || (SVLEN>-40 && SVLEN<40)' pav_sample.vcf.gz > ${PREFIX}.vcf
+            rm -f pav_sample.vcf.gz*
             gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
+            rm -f ${PREFIX}.vcf
             rm -rf asm/ data/ temp/ results/ log/
             gsutil -m rm -rf "${BUCKET_DIR}/pav/${INFIX}" || echo "Cannot remove directory ${BUCKET_DIR}/pav/${INFIX}"
             # Removing local assemblies as well
             rm -f ${ASSEMBLY_PREFIX}*
         fi
     fi
+    
+    tree -L 2
+    df -h
     
     # Next iteration
     echo "${SAMPLE_ID} ${LENGTH} ${COVERAGE}" >> ${CHECKPOINT_FILE}
