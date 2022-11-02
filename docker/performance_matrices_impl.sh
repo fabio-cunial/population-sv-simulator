@@ -24,6 +24,7 @@ else
 fi
 
 
+# Handles a chunk of individuals sequentially.
 function processChunk() {
     local CHUNK_ID=$1
     
@@ -45,7 +46,7 @@ function processChunk() {
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}}
         if [ ${#FILTER_STRING} -ne 0 ]; then
-            bcftools filter --include '${FILTER_STRING}' ground_truth_vcfs//groundTruth_individual_${ID}.vcf > true.vcf
+            bcftools filter --include '${FILTER_STRING}' ground_truth_vcfs/groundTruth_individual_${ID}.vcf > true.vcf
         else
             cp ground_truth_vcfs/groundTruth_individual_${ID}.vcf true.vcf
         fi
@@ -81,3 +82,12 @@ for CHUNK_FILE in $(ls chunk-*); do
     cat ${PREFIX}_f1.txt >> ${F1_MATRIX}
 done
 rm -f chunk-*.txt *_tp.txt *_fp.txt *_fn.txt *_precision.txt *_recall.txt *_f1.txt
+
+
+
+
+
+
+
+bcftools merge --threads ${N_THREADS} -m none --file-list file.txt | bgzip > merge.vcf.gz
+truvari collapse --threads ${N_THREADS} --keep common --minhaplen 40 --sizemin 40 -i merge.vcf.gz -o truvari_merge.vcf -c truvari_collapsed.vcf --reference ${REFERENCE_FA} 

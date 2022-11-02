@@ -950,7 +950,7 @@ public class SimulateHaplotypes {
 			}
 			if (firstInReference<referenceLength) out.append(reference,firstInReference,referenceLength);
 			bw = new BufferedWriter(new FileWriter(outDir+"/haplotype_"+i+".fa"));
-			bw.write(">GRCh37_chr1_"+i); bw.newLine();
+			bw.write(">chr1_"+i); bw.newLine();
 			bw.write(out.toString()); bw.newLine();
 			bw.close();
 			System.gc();

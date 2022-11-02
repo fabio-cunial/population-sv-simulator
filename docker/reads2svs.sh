@@ -102,6 +102,7 @@ for COVERAGE in ${COVERAGES}; do
     CHECKPOINT_LENGTH=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $2 }')
     CHECKPOINT_COVERAGE=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $3 }')
     if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -eq ${CHECKPOINT_LENGTH} -a ${COVERAGE} -le ${CHECKPOINT_COVERAGE} ]; then
+        PREVIOUS_COVERAGE=${COVERAGE}
         continue
     fi
     if [ ${PREVIOUS_COVERAGE} -ne 0 ]; then

@@ -122,6 +122,7 @@ task ProcessChunk {
         File reference_fa
         Float max_vcf_size
         Int n_individuals
+        Int only_pass
         String bucket_dir_measured_vcfs
         String bucket_dir_ground_truth_vcfs
         String bucket_dir_matrices
@@ -131,6 +132,7 @@ task ProcessChunk {
         chunk_file: "Every row is a workpackage ID with format <caller svType repeatFraction previousRepeatFraction contextTypeStart contextTypeEnd>."
         n_individuals: "Total number of diploid individuals in the population."
         max_vcf_size: "Max size of a single VCF file, in GB."
+        only_pass: "Use only calls with FILTER=PASS."
         n_cpus: "The program proceeds through sequential iterations, but in each iteration it processes all VCF files using all the cores of the machine."
     }
     Int ram_size_gb_pre = max_vcf_size*4
@@ -188,6 +190,13 @@ task ProcessChunk {
                     FILTER_STRING="${FILTER_STRING} && REPEATS_FRACTION>${previousRepeatFraction} && REPEATS_FRACTION<=${repeatFraction}"
                 fi
                 PREFIX="${PREFIX}_rf${repeatFraction}"
+            fi
+            if [ ~{only_pass} -eq 1 ]; then
+                if [ ${#FILTER_STRING} -eq 0 ]; then
+                    FILTER_STRING="FILTER=\"PASS\""
+                else
+                    FILTER_STRING="FILTER=\"PASS\" && ${FILTER_STRING}"
+                fi
             fi
             if [ ${#FILTER_STRING} -eq 0 ]; then
                 FILTER_STRING="+"
