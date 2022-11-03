@@ -109,7 +109,7 @@ function processChunk() {
 
 
 # 1. Per-individual matrices
-find measured_vcfs/ -maxdepth 1 -name '*.vcf' > files.txt
+find measured_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*.vcf' > files.txt
 split -d -n ${N_THREADS} files.txt chunk-
 rm -f files.txt
 for CHUNK_FILE in $(ls chunk-*); do

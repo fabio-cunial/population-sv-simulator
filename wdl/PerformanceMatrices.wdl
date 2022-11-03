@@ -48,10 +48,16 @@ workflow PerformanceMatrices {
 }
 
 
+
+
+
+
+
+
 # Collects all workpackage IDs into the rows of a list with format:
 #
-# <caller svType repeatFraction previousRepeatFraction contextTypeStart
-# contextTypeEnd>
+# caller svType repeatFraction previousRepeatFraction contextTypeStart
+# contextTypeEnd
 #
 # and splits such a list into a given number of chunks.
 task GetChunks {
@@ -71,9 +77,9 @@ task GetChunks {
         CONTEXT_TYPES=~{sep='-' contextTypes}
         REPEAT_FRACTIONS=~{sep='-' repeatFractions}
         for caller in ${CALLERS}; do
-            # Specific SV type
+            # 1. Specific SV type
             for svType in ${SV_TYPES}; do
-                # Specific context
+                # 1.1 Specific context
                 for contextTypeStart in ${CONTEXT_TYPES}; do
                     for contextTypeEnd in ${CONTEXT_TYPES}; do
                         echo "${caller} ${svType} -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> ${WORKPACKAGES_FILE}
@@ -84,11 +90,11 @@ task GetChunks {
                     echo "${caller} ${svType} ${repeatFraction} ${previousRepeatFraction} -1 -1" >> ${WORKPACKAGES_FILE}
                     previousRepeatFraction=${repeatFraction}
                 done
-                # Any context
+                # 1.2 Any context
                 echo "${caller} ${svType} -1 -1 -1 -1" >> ${WORKPACKAGES_FILE}
             done
-            # Any SV type
-            # Specific context
+            # 2. Any SV type
+            # 2.1 Specific context
             for contextTypeStart in ${CONTEXT_TYPES}; do
                 for contextTypeEnd in ${CONTEXT_TYPES}; do
                     echo "${caller} -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> ${WORKPACKAGES_FILE}
@@ -99,7 +105,7 @@ task GetChunks {
                 echo "${caller} -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> ${WORKPACKAGES_FILE}
                 previousRepeatFraction=${repeatFraction}
             done
-            # Any context
+            # 2.2 Any context
             echo "${caller} -1 -1 -1 -1 -1" >> ${WORKPACKAGES_FILE}
         done
         split -d -n ~{n_chunks} ${WORKPACKAGES_FILE} chunk-
@@ -113,7 +119,7 @@ task GetChunks {
 }
 
 
-# Processes every workpackage in a given chunk sequentially.
+# Processes every workpackage in a given chunk, sequentially.
 task ProcessChunk {
     input {
         File chunk_file
@@ -130,13 +136,13 @@ task ProcessChunk {
         Int n_cpus
     }
     parameter_meta {
-        chunk_file: "Every row is a workpackage ID with format <caller svType repeatFraction previousRepeatFraction contextTypeStart contextTypeEnd>."
+        chunk_file: "Every row is a workpackage ID created by $GetChunks$."
         n_individuals: "Total number of diploid individuals in the population."
         max_vcf_size: "Max size of a single VCF file, in GB."
         only_pass: "Use only calls with FILTER=PASS."
-        n_cpus: "The program proceeds through sequential iterations, but in each iteration it processes all VCF files using all the cores of the machine."
+        n_cpus: "The program proceeds sequentially, but in each iteration it processes the VCF files from all individuals using all the cores of the machine."
     }
-    Int ram_size_gb_pre = max_vcf_size*4
+    Int ram_size_gb_pre = max_vcf_size*2*n_cpus
     Int ram_size_gb = if 16 > ram_size_gb_pre then 16 else ram_size_gb_pre
     Int disk_size_gb = ceil(max_vcf_size*n_individuals*2) + ceil((size(reference_fa, "GB")))
     String docker_dir = "/simulation"
@@ -240,10 +246,12 @@ task ProcessChunk {
             fi
             for readLength in ~{read_lengths}; do
                 for coverage in ~{coverages}; do
-                    TEST=$(gsutil -q stat "${BUCKET_DIR_MEASURED_VCFS}/joint_${caller}_l${readLength}_c${coverage}.vcf" && echo 0 || echo 1)
+                    rm -rf measured_vcfs/; mkdir -p measured_vcfs/
+                    ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_measured_vcfs}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/
                     JOINT_CALLING_FILE="null"
+                    TEST=$(gsutil -q stat "~{bucket_dir_measured_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" && echo 0 || echo 1)
                     if [ ${TEST} -eq 0 ]; then
-                        ${TIME_COMMAND} gsutil -m cp "${BUCKET_DIR_MEASURED_VCFS}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/
+                        ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_measured_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/
                         JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}.vcf"
                     fi
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX}
@@ -258,7 +266,7 @@ task ProcessChunk {
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${PRECISION_MATRIX_MERGE}
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX_MERGE}
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX_MERGE}
-                    if [ ${JOINT_CALLING_FILE} != null ]; then
+                    if [ ${JOINT_CALLING_FILE} != "null" ]; then
                         echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX_JOINT}
                         echo -n "${READ_LENGTH},${COVERAGE}," >> ${FP_MATRIX_JOINT}
                         echo -n "${READ_LENGTH},${COVERAGE}," >> ${FN_MATRIX_JOINT}
@@ -266,19 +274,16 @@ task ProcessChunk {
                         echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX_JOINT}
                         echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX_JOINT}
                     fi
-                    rm -rf measured_vcfs/; mkdir -p measured_vcfs/
-                    ${TIME_COMMAND} gsutil -m cp "${BUCKET_DIR_MEASURED_VCFS}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/
                     bash ~{docker_dir}/performance_matrices_impl.sh ${FILTER_STRING} ${JOINT_CALLING_FILE} ~{reference_fa} ${N_THREADS} ~{work_dir} "${PREFIX}_l${readLength}_c${coverage}" ~{bucket_dir_allIndividuals_vcfs} ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX}    ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE}    ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT}
                     echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
                     echo "" >> ${TP_MATRIX_MERGE}; echo "" >> ${FP_MATRIX_MERGE}; echo "" >> ${FN_MATRIX_MERGE}; echo "" >> ${PRECISION_MATRIX_MERGE}; echo "" >> ${RECALL_MATRIX_MERGE}; echo "" >> ${F1_MATRIX_MERGE}
-                    if [ ${JOINT_CALLING_FILE} != null ]; then
+                    if [ ${JOINT_CALLING_FILE} != "null" ]; then
                         echo "" >> ${TP_MATRIX_JOINT}; echo "" >> ${FP_MATRIX_JOINT}; echo "" >> ${FN_MATRIX_JOINT}; echo "" >> ${PRECISION_MATRIX_JOINT}; echo "" >> ${RECALL_MATRIX_JOINT}; echo "" >> ${F1_MATRIX_JOINT}
                     fi
                 done
             done
             ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ~{bucket_dir_matrices}
             ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE} ~{bucket_dir_matrices}
-            TEST=$(gsutil -q stat ${TP_MATRIX} && echo 0 || echo 1)
             if [ -e ${TP_MATRIX_JOINT} ]; then
                 ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT} ~{bucket_dir_matrices}
             fi
