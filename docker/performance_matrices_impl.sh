@@ -24,7 +24,8 @@ else
 fi
 
 
-# Handles a chunk of individuals sequentially.
+# Filters every VCF file in a chunk of files, filters the corresponding ground
+# truth, and compares the two, sequentially.
 function processChunk() {
     local CHUNK_ID=$1
     
@@ -35,24 +36,26 @@ function processChunk() {
     local RECALL_MATRIX="${CHUNK_ID}_recall.txt"
     local F1_MATRIX="${CHUNK_ID}_f1.txt"
     while read VCF_FILE; do
+        MEASURED_FILE="${VCF_FILE%.vcf}_filtered.vcf"
+        TRUE_FILE="ground_truth_vcfs/groundTruth_individual_${ID}_filtered.vcf"
         if [ ${#FILTER_STRING} -ne 0 ]; then
-            bcftools filter --include '${FILTER_STRING}' ${VCF_FILE} > measured.vcf
+            bcftools filter --include '${FILTER_STRING}' ${VCF_FILE} > ${MEASURED_FILE}
         else 
-            cp ${VCF_FILE} measured.vcf
+            cp ${VCF_FILE} ${MEASURED_FILE}
         fi
-        bgzip -@ 1 measured.vcf
-        tabix measured.vcf.gz
+        bgzip -@ 1 ${MEASURED_FILE}
+        tabix ${MEASURED_FILE}.gz
         ID=$(basename ${VCF_FILE} .vcf)
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}}
         if [ ${#FILTER_STRING} -ne 0 ]; then
-            bcftools filter --include '${FILTER_STRING}' ground_truth_vcfs/groundTruth_individual_${ID}.vcf > true.vcf
+            bcftools filter --include '${FILTER_STRING}' ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
         else
-            cp ground_truth_vcfs/groundTruth_individual_${ID}.vcf true.vcf
+            cp ground_truth_vcfs/groundTruth_individual_${ID}.vcf ${TRUE_FILE}
         fi
-        bgzip -@ 1 true.vcf
-        tabix true.vcf.gz
-        ${TIME_COMMAND} truvari bench -b true.vcf.gz -c measured.vcf.gz -f ${REFERENCE_FA} -o ouput/
+        bgzip -@ 1 ${TRUE_FILE}
+        tabix ${TRUE_FILE}.gz
+        ${TIME_COMMAND} truvari bench -b ${TRUE_FILE}.gz -c ${MEASURED_FILE}.gz -f ${REFERENCE_FA} -o ouput/
         grep "\"TP-call\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
         grep "\"FP\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
         grep "\"FN\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX}
@@ -88,6 +91,10 @@ rm -f chunk-*.txt *_tp.txt *_fp.txt *_fn.txt *_precision.txt *_recall.txt *_f1.t
 
 
 
-
+# Merging calls over the entire population and comparing to the merged ground
+# truth.
+rm -f files.txt
+find measured_vcfs/ -maxdepth 1 -name '*_filtered.vcf.gz' > files.txt
 bcftools merge --threads ${N_THREADS} -m none --file-list file.txt | bgzip > merge.vcf.gz
-truvari collapse --threads ${N_THREADS} --keep common --minhaplen 40 --sizemin 40 -i merge.vcf.gz -o truvari_merge.vcf -c truvari_collapsed.vcf --reference ${REFERENCE_FA} 
+truvari collapse --threads ${N_THREADS} --keep common --minhaplen 40 --sizemin 40 --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference ${REFERENCE_FA}
+truvari bench .........

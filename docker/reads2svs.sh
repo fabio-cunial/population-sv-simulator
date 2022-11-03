@@ -101,10 +101,6 @@ for COVERAGE in ${COVERAGES}; do
     CHECKPOINT_INDIVIDUAL=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $1 }')
     CHECKPOINT_LENGTH=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $2 }')
     CHECKPOINT_COVERAGE=$(tail -n1 ${CHECKPOINT_FILE} | awk '{ print $3 }')
-    if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -eq ${CHECKPOINT_LENGTH} -a ${COVERAGE} -le ${CHECKPOINT_COVERAGE} ]; then
-        PREVIOUS_COVERAGE=${COVERAGE}
-        continue
-    fi
     if [ ${PREVIOUS_COVERAGE} -ne 0 ]; then
 		IDS="coverage_${PREVIOUS_COVERAGE}.bam"
 		for i in $(seq -f "%02g" ${PREVIOUS_COVERAGE} $(( ${COVERAGE}-1 )) ); do
@@ -118,6 +114,10 @@ for COVERAGE in ${COVERAGES}; do
             cat chunk-${i} >> coverage_${COVERAGE}.fa
 		done
         rm -f coverage_${PREVIOUS_COVERAGE}.fa
+    fi
+    if [ ${ID1} -eq ${CHECKPOINT_INDIVIDUAL} -a ${LENGTH} -eq ${CHECKPOINT_LENGTH} -a ${COVERAGE} -le ${CHECKPOINT_COVERAGE} ]; then
+        PREVIOUS_COVERAGE=${COVERAGE}
+        continue
     fi
     
 	# PBSV
