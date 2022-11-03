@@ -1,57 +1,84 @@
 version 1.0
 
 
+# The program: (1) Compares each experimental VCF to its corresponding ground
+# truth, collecting per-individual performance measures. (2) Merges all
+# experimental VCFs and compares the result to the set of distinct ground-truth
+# variants in the population. (3) Compares the joint-calling files produced by
+# some callers to the set of distinct ground-truth variants in the population.
+# To enable granular data analysis downstream, this is performed separately for
+# every combination of (caller, SV type, repeat context).
+#
+# Remark: this workflow can be run while the VCF files are being created by the
+# simulation workflow.
+#
+# svTypes = ["ANY", "DEL", "DUP", "INS", "INV"]
+# contextTypes = [0, 1, 2, 3, 4]
 # 
+# repeatFractions = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+#
 workflow PerformanceMatrices {
-    input {
-        String bucket_dir
+    input {        
         Array[String] callers
+        Array[String] svTypes
+        Array[Int] contextTypes
+        Array[Float] repeatFractions
+        Array[Int] read_lengths
         Array[Int] coverages
-        Array[Int] lengths
-
-        File reference_fa
-
+        Int only_pass
+        Int n_nodes
+        Int n_cpus_per_node
+        String reference_fa
+        String reference_fai
+        String bucket_dir_experimental_vcfs
+        String bucket_dir_ground_truth_vcfs
+        String bucket_dir_allIndividuals_vcfs
+        String bucket_dir_matrices
+        Float max_vcf_size
+        Int n_individuals
     }
     parameter_meta {
-        bucket_dir: "a"
+        contextTypes: "0=non-satellite repeat; 1=satellite repeat; 2=both of the above; 3=none of the above, but segmental duplication; 4=none of the above."
+        repeatFractions: "Fractions of one."
+        only_pass: "Use only variants with FILTER=PASS."
+        n_nodes: "Number of machines over which to distribute the computation."
+        reference_fa: "Address in a bucket"
+        reference_fai: "Address in a bucket"
+        bucket_dir_experimental_vcfs: "Input directory"
+        bucket_dir_ground_truth_vcfs: "Input directory"
+        bucket_dir_allIndividuals_vcfs: "Output directory: the merged VCFs over all individuals will be stored here."
+        bucket_dir_matrices: "Output directory: the matrices with performance measures will be stored here."
+        n_individuals: "Total number of diploid individuals in the population. Used just to estimate space."
     }
-    Array[String] svTypes = ["ANY", "DEL", "DUP", "INS", "INV"]
-    Array[Int] contextTypes = [0, 1, 2, 3, 4]
-    # 0: non-satellite repeat;
-    # 1: satellite repeat;
-    # 2: both of the above;
-    # 3: none of the above, but segmental duplication;
-    # 4: none of the above.
-    Array[Float] repeatFractions = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     call GetChunks {
         input:
             callers = callers,
             svTypes = svTypes,
             contextTypes = contextTypes,
             repeatFractions = repeatFractions
-            n_chunks = n_chunks
+            n_chunks = n_nodes
     }
-    scatter(chunk in GetChunks.chunks) {
-        ----------->
-        call JointCallingImpl { 
+    scatter(chunk_file in GetChunks.chunks) {
+        call ProcessChunk { 
             input:
-                task_description = description,
-                bucket_dir = bucket_dir,
+                chunk_file = chunk_file,
+                read_lengths = read_lengths,
+                coverages = coverages,
                 reference_fa = reference_fa,
+                reference_fai = reference_fai,
+                max_vcf_size = max_vcf_size,
                 n_individuals = n_individuals,
-                max_signature_file_size = max_signature_file_size,
-                n_cpus = n_cpus
+                only_pass = only_pass,
+                bucket_dir_experimental_vcfs = bucket_dir_experimental_vcfs,
+                bucket_dir_ground_truth_vcfs = bucket_dir_ground_truth_vcfs,
+                bucket_dir_allIndividuals_vcfs = bucket_dir_allIndividuals_vcfs,
+                bucket_dir_matrices = bucket_dir_matrices,
+                n_cpus = n_cpus_per_node
         }
     }
     output {
     }
 }
-
-
-
-
-
-
 
 
 # Collects all workpackage IDs into the rows of a list with format:
@@ -125,11 +152,12 @@ task ProcessChunk {
         File chunk_file
         Array[Int] read_lengths
         Array[Int] coverages
-        File reference_fa
+        String reference_fa
+        String reference_fai
         Float max_vcf_size
         Int n_individuals
         Int only_pass
-        String bucket_dir_measured_vcfs
+        String bucket_dir_experimental_vcfs
         String bucket_dir_ground_truth_vcfs
         String bucket_dir_allIndividuals_vcfs
         String bucket_dir_matrices
@@ -137,7 +165,9 @@ task ProcessChunk {
     }
     parameter_meta {
         chunk_file: "Every row is a workpackage ID created by $GetChunks$."
-        n_individuals: "Total number of diploid individuals in the population."
+        reference_fa: "Address in a bucket"
+        reference_fai: "Address in a bucket"
+        n_individuals: "Total number of diploid individuals in the population. Used just to estimate space."
         max_vcf_size: "Max size of a single VCF file, in GB."
         only_pass: "Use only calls with FILTER=PASS."
         n_cpus: "The program proceeds sequentially, but in each iteration it processes the VCF files from all individuals using all the cores of the machine."
@@ -247,11 +277,11 @@ task ProcessChunk {
             for readLength in ~{read_lengths}; do
                 for coverage in ~{coverages}; do
                     rm -rf measured_vcfs/; mkdir -p measured_vcfs/
-                    ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_measured_vcfs}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/
+                    ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/
                     JOINT_CALLING_FILE="null"
-                    TEST=$(gsutil -q stat "~{bucket_dir_measured_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" && echo 0 || echo 1)
+                    TEST=$(gsutil -q stat "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" && echo 0 || echo 1)
                     if [ ${TEST} -eq 0 ]; then
-                        ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_measured_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/
+                        ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/
                         JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}.vcf"
                     fi
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX}
@@ -274,7 +304,7 @@ task ProcessChunk {
                         echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX_JOINT}
                         echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX_JOINT}
                     fi
-                    bash ~{docker_dir}/performance_matrices_impl.sh ${FILTER_STRING} ${JOINT_CALLING_FILE} ~{reference_fa} ${N_THREADS} ~{work_dir} "${PREFIX}_l${readLength}_c${coverage}" ~{bucket_dir_allIndividuals_vcfs} ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX}    ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE}    ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT}
+                    bash ~{docker_dir}/performance_matrices_impl.sh ${FILTER_STRING} ${JOINT_CALLING_FILE} ~{reference_fa} ~{reference_fai} ${N_THREADS} ~{work_dir} "${PREFIX}_l${readLength}_c${coverage}" ~{bucket_dir_allIndividuals_vcfs} ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX}    ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE}    ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT}
                     echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
                     echo "" >> ${TP_MATRIX_MERGE}; echo "" >> ${FP_MATRIX_MERGE}; echo "" >> ${FN_MATRIX_MERGE}; echo "" >> ${PRECISION_MATRIX_MERGE}; echo "" >> ${RECALL_MATRIX_MERGE}; echo "" >> ${F1_MATRIX_MERGE}
                     if [ ${JOINT_CALLING_FILE} != "null" ]; then

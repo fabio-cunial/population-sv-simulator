@@ -2,50 +2,52 @@
 #
 # Given a set of rules for filtering VCFs, the program: 
 #
-# 1. Compares every filtered VCF file in <measured_vcfs/> to the corresponding
-# file in <ground_truth_vcfs/>, in parallel over all the cores of the machine,
-# collecting per-individual statistics.
+# 1. Compares every filtered VCF file in <experimental_vcfs/> to the
+# corresponding file in <ground_truth_vcfs/>, in parallel over all the cores of
+# the machine, collecting per-individual statistics.
 #
-# 2. Merges all filtered VCF files in <measured_vcfs/>, and compares the result
-# to the filtered set of distinct ground-truth variants in the population.
+# 2. Merges all filtered VCF files in <experimental_vcfs/>, and compares the
+# result to the filtered set of distinct ground-truth variants in the
+# population.
 #
 # 3. Compares a filtered joint-calling file to the filtered set of distinct
 # ground-truth variants in the population.
 #
 FILTER_STRING=$1  # Spaces are replaced with '+'. It equals '+' if empty.
 JOINT_CALLING_FILE=$2  # Relative path or "null".
-REFERENCE_FA=$3
-N_THREADS=$4
-WORK_DIR=$5  # Absolute path
-CONFIGURATION_ID=$6  # Used just for storing the all-individuals merged VCF
-BUCKET_DIR_ALLINDIVIDUALS_VCFS=$7
+REFERENCE_FA_ADDRESS=$3  # Address in a bucket
+REFERENCE_FAI_ADDRESS=$4  # Address in a bucket
+N_THREADS=$5
+WORK_DIR=$6  # Absolute path
+CONFIGURATION_ID=$7  # Used just for storing the all-individuals merged VCF
+BUCKET_DIR_ALLINDIVIDUALS_VCFS=$8
 
 # Per-individual matrices. The script appends many values (one value per
 # individual) to a single row of each matrix.
-TP_MATRIX=$8
-FP_MATRIX=$9
-FN_MATRIX=${10}
-PRECISION_MATRIX=${11}
-RECALL_MATRIX=${12}
-F1_MATRIX=${13}
+TP_MATRIX=$9
+FP_MATRIX=${10}
+FN_MATRIX=${11}
+PRECISION_MATRIX=${12}
+RECALL_MATRIX=${13}
+F1_MATRIX=${14}
 
 # All-individuals matrices. The script appends one aggregated value to a single
 # row of each matrix.
-TP_MATRIX_MERGE=${14}
-FP_MATRIX_MERGE=${15}
-FN_MATRIX_MERGE=${16}
-PRECISION_MATRIX_MERGE=${17}
-RECALL_MATRIX_MERGE=${18}
-F1_MATRIX_MERGE=${19}
+TP_MATRIX_MERGE=${15}
+FP_MATRIX_MERGE=${16}
+FN_MATRIX_MERGE=${17}
+PRECISION_MATRIX_MERGE=${18}
+RECALL_MATRIX_MERGE=${19}
+F1_MATRIX_MERGE=${20}
 
 # Joint-calling matrices (ignored if there is no joint calling file). The
 # script appends one aggregated value to a single row of each matrix.
-TP_MATRIX_JOINT=${20}
-FP_MATRIX_JOINT=${21}
-FN_MATRIX_JOINT=${22}
-PRECISION_MATRIX_JOINT=${23}
-RECALL_MATRIX_JOINT=${24}
-F1_MATRIX_JOINT=${25}
+TP_MATRIX_JOINT=${21}
+FP_MATRIX_JOINT=${22}
+FN_MATRIX_JOINT=${23}
+PRECISION_MATRIX_JOINT=${24}
+RECALL_MATRIX_JOINT=${25}
+F1_MATRIX_JOINT=${26}
 
 
 set -euxo pipefail
@@ -95,7 +97,7 @@ function processChunk() {
         fi
         bgzip -@ 1 ${TRUE_FILE}
         tabix ${TRUE_FILE}.gz
-        ${TIME_COMMAND} truvari bench -b ${TRUE_FILE}.gz -c ${MEASURED_FILE}.gz -f ${REFERENCE_FA} -o ${OUTPUT_DIR}/
+        ${TIME_COMMAND} truvari bench -b ${TRUE_FILE}.gz -c ${MEASURED_FILE}.gz -f reference.fa -o ${OUTPUT_DIR}/
         rm -f ${TRUE_FILE}*
         grep "\"TP-call\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
         grep "\"FP\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
@@ -108,8 +110,12 @@ function processChunk() {
 }
 
 
+# Main program
+${TIME_COMMAND} gsutil cp ${REFERENCE_FA_ADDRESS} reference.fa
+gsutil cp ${REFERENCE_FAI_ADDRESS} reference.fai
+
 # 1. Per-individual matrices
-find measured_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*.vcf' > files.txt
+find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*.vcf' > files.txt
 split -d -n ${N_THREADS} files.txt chunk-
 rm -f files.txt
 for CHUNK_FILE in $(ls chunk-*); do
@@ -131,9 +137,9 @@ rm -f chunk-* tp_*.txt fp_*.txt fn_*.txt precision_*.txt recall_*.txt f1_*.txt
 # comparing the merge to the filtered set of distinct variants in the ground
 # truth.
 rm -f files.txt
-find measured_vcfs/ -maxdepth 1 -name '*_filtered.vcf.gz' > files.txt
+find experimental_vcfs/ -maxdepth 1 -name '*_filtered.vcf.gz' > files.txt
 ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --output-type z --merge none --file-list file.txt --output merge.vcf.gz 
-truvari collapse --threads ${N_THREADS} --keep common --minhaplen 40 --sizemin 40 --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference ${REFERENCE_FA}
+truvari collapse --threads ${N_THREADS} --keep common --minhaplen 40 --sizemin 40 --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference reference.fa
 bgzip -@ ${N_THREADS} truvari_merge.vcf
 tabix truvari_merge.vcf.gz
 gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz
@@ -144,7 +150,7 @@ else
 fi
 bgzip -@ ${N_THREADS} true_filtered.vcf
 tabix true_filtered.vcf.gz
-${TIME_COMMAND} truvari bench -b true_filtered.vcf.gz -c truvari_merge.vcf.gz -f ${REFERENCE_FA} -o ouput/
+${TIME_COMMAND} truvari bench -b true_filtered.vcf.gz -c truvari_merge.vcf.gz -f reference.fa -o ouput/
 grep "\"TP-call\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_MERGE}
 grep "\"FP\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_MERGE}
 grep "\"FN\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_MERGE}
@@ -164,7 +170,7 @@ if [ ${JOINT_CALLING_FILE} != null ]; then
     fi
     bgzip -@ ${N_THREADS} joint_filtered.vcf
     tabix joint_filtered.vcf.gz
-    ${TIME_COMMAND} truvari bench -b true_filtered.vcf.gz -c joint_filtered.vcf.gz -f ${REFERENCE_FA} -o ouput/
+    ${TIME_COMMAND} truvari bench -b true_filtered.vcf.gz -c joint_filtered.vcf.gz -f reference.fa -o ouput/
     grep "\"TP-call\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_JOINT}
     grep "\"FP\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_JOINT}
     grep "\"FN\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_JOINT}
