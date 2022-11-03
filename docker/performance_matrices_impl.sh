@@ -13,12 +13,12 @@
 # ground-truth variants in the population.
 #
 FILTER_STRING=$1  # Spaces are replaced with '+'. It equals '+' if empty.
-JOINT_CALLING_FILE=$2  # Absolute path or "null".
+JOINT_CALLING_FILE=$2  # Relative path or "null".
 REFERENCE_FA=$3
 N_THREADS=$4
 WORK_DIR=$5  # Absolute path
 CONFIGURATION_ID=$6  # Used just for storing the all-individuals merged VCF
-BUCKET_DIR_ALL_INDIVIDUALS_VCFS=$7
+BUCKET_DIR_ALLINDIVIDUALS_VCFS=$7
 
 # Per-individual matrices. The script appends many values (one value per
 # individual) to a single row of each matrix.
@@ -136,7 +136,7 @@ ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --output-type z --merge no
 truvari collapse --threads ${N_THREADS} --keep common --minhaplen 40 --sizemin 40 --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference ${REFERENCE_FA}
 bgzip -@ ${N_THREADS} truvari_merge.vcf
 tabix truvari_merge.vcf.gz
-gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALL_INDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz
+gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz
 if [ ${#FILTER_STRING} -ne 0 ]; then
     ${TIME_COMMAND} bcftools filter --include '${FILTER_STRING}' ground_truth_vcfs/groundTruth_joint.vcf > true_filtered.vcf
 else 

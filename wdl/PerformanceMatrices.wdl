@@ -125,6 +125,7 @@ task ProcessChunk {
         Int only_pass
         String bucket_dir_measured_vcfs
         String bucket_dir_ground_truth_vcfs
+        String bucket_dir_allIndividuals_vcfs
         String bucket_dir_matrices
         Int n_cpus
     }
@@ -209,39 +210,78 @@ task ProcessChunk {
             PRECISION_MATRIX="${PREFIX}_matrix_precision.txt"
             RECALL_MATRIX="${PREFIX}_matrix_recall.txt"
             F1_MATRIX="${PREFIX}_matrix_f1.txt"
+            TP_MATRIX_MERGE="${PREFIX}_matrix_merge_tp.txt"
+            FP_MATRIX_MERGE="${PREFIX}_matrix_merge_fp.txt"
+            FN_MATRIX_MERGE="${PREFIX}_matrix_merge_fn.txt"
+            PRECISION_MATRIX_MERGE="${PREFIX}_matrix_merge_precision.txt"
+            RECALL_MATRIX_MERGE="${PREFIX}_matrix_merge_recall.txt"
+            F1_MATRIX_MERGE="${PREFIX}_matrix_merge_f1.txt"
+            TP_MATRIX_JOINT="${PREFIX}_matrix_joint_tp.txt"
+            FP_MATRIX_JOINT="${PREFIX}_matrix_joint_fp.txt"
+            FN_MATRIX_JOINT="${PREFIX}_matrix_joint_fn.txt"
+            PRECISION_MATRIX_JOINT="${PREFIX}_matrix_joint_precision.txt"
+            RECALL_MATRIX_JOINT="${PREFIX}_matrix_joint_recall.txt"
+            F1_MATRIX_JOINT="${PREFIX}_matrix_joint_f1.txt"
             TEST1=$(gsutil -q stat ${TP_MATRIX} && echo 0 || echo 1)
             TEST2=$(gsutil -q stat ${FP_MATRIX} && echo 0 || echo 1)
             TEST3=$(gsutil -q stat ${FN_MATRIX} && echo 0 || echo 1)
             TEST4=$(gsutil -q stat ${PRECISION_MATRIX} && echo 0 || echo 1)
             TEST5=$(gsutil -q stat ${RECALL_MATRIX} && echo 0 || echo 1)
             TEST6=$(gsutil -q stat ${F1_MATRIX} && echo 0 || echo 1)
-            if [ ${TEST1} -eq 0 -a ${TEST2} -eq 0 -a ${TEST3} -eq 0 -a ${TEST4} -eq 0 -a ${TEST5} -eq 0 -a ${TEST6} -eq 0 ]; then
+            TEST7=$(gsutil -q stat ${TP_MATRIX_MERGE} && echo 0 || echo 1)
+            TEST8=$(gsutil -q stat ${FP_MATRIX_MERGE} && echo 0 || echo 1)
+            TEST9=$(gsutil -q stat ${FN_MATRIX_MERGE} && echo 0 || echo 1)
+            TEST10=$(gsutil -q stat ${PRECISION_MATRIX_MERGE} && echo 0 || echo 1)
+            TEST11=$(gsutil -q stat ${RECALL_MATRIX_MERGE} && echo 0 || echo 1)
+            TEST12=$(gsutil -q stat ${F1_MATRIX_MERGE} && echo 0 || echo 1)            
+            if [ ${TEST1} -eq 0 -a ${TEST2} -eq 0 -a ${TEST3} -eq 0 -a ${TEST4} -eq 0 -a ${TEST5} -eq 0 -a ${TEST6} -eq 0 -a ${TEST7} -eq 0 -a ${TEST8} -eq 0 -a ${TEST9} -eq 0 -a ${TEST10} -eq 0 -a ${TEST11} -eq 0 -a ${TEST12} -eq 0 ]; then
+                # We don't test the existence of JOINT matrices for simplicity.
                 continue
             fi
             for readLength in ~{read_lengths}; do
                 for coverage in ~{coverages}; do
+                    TEST=$(gsutil -q stat "${BUCKET_DIR_MEASURED_VCFS}/joint_${caller}_l${readLength}_c${coverage}.vcf" && echo 0 || echo 1)
+                    JOINT_CALLING_FILE="null"
+                    if [ ${TEST} -eq 0 ]; then
+                        ${TIME_COMMAND} gsutil -m cp "${BUCKET_DIR_MEASURED_VCFS}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/
+                        JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}.vcf"
+                    fi
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX}
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${FP_MATRIX}
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${FN_MATRIX}
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${PRECISION_MATRIX}
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX}
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX}
-                    rm -rf measured_vcfs/; mkdir -p measured_vcfs/
-                    ${TIME_COMMAND} gsutil -m cp "${BUCKET_DIR_MEASURED_VCFS}/${CALLER}_*_l${READ_LENGTH}_c${COVERAGE}.vcf" measured_vcfs/
-                    TEST=$(gsutil -q stat "${BUCKET_DIR_MEASURED_VCFS}/joint_${CALLER}_l${LENGTH}_c${COVERAGE}.vcf" && echo 0 || echo 1)
-                    if [ ${TEST} -eq 0 ]; then
-                        ${TIME_COMMAND} gsutil -m cp "${BUCKET_DIR_MEASURED_VCFS}/joint_${CALLER}_l${LENGTH}_c${COVERAGE}.vcf" measured_vcfs/
+                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX_MERGE}
+                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${FP_MATRIX_MERGE}
+                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${FN_MATRIX_MERGE}
+                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${PRECISION_MATRIX_MERGE}
+                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX_MERGE}
+                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX_MERGE}
+                    if [ ${JOINT_CALLING_FILE} != null ]; then
+                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX_JOINT}
+                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${FP_MATRIX_JOINT}
+                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${FN_MATRIX_JOINT}
+                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${PRECISION_MATRIX_JOINT}
+                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX_JOINT}
+                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX_JOINT}
                     fi
-                    bash ~{docker_dir}/performance_matrices_impl.sh ${FILTER_STRING} ~{reference_fa} ${N_THREADS} ~{work_dir} ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX}
-                    echo "" >> ${TP_MATRIX}
-                    echo "" >> ${FP_MATRIX}
-                    echo "" >> ${FN_MATRIX}
-                    echo "" >> ${PRECISION_MATRIX}
-                    echo "" >> ${RECALL_MATRIX}
-                    echo "" >> ${F1_MATRIX}
+                    rm -rf measured_vcfs/; mkdir -p measured_vcfs/
+                    ${TIME_COMMAND} gsutil -m cp "${BUCKET_DIR_MEASURED_VCFS}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/
+                    bash ~{docker_dir}/performance_matrices_impl.sh ${FILTER_STRING} ${JOINT_CALLING_FILE} ~{reference_fa} ${N_THREADS} ~{work_dir} "${PREFIX}_l${readLength}_c${coverage}" ~{bucket_dir_allIndividuals_vcfs} ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX}    ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE}    ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT}
+                    echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
+                    echo "" >> ${TP_MATRIX_MERGE}; echo "" >> ${FP_MATRIX_MERGE}; echo "" >> ${FN_MATRIX_MERGE}; echo "" >> ${PRECISION_MATRIX_MERGE}; echo "" >> ${RECALL_MATRIX_MERGE}; echo "" >> ${F1_MATRIX_MERGE}
+                    if [ ${JOINT_CALLING_FILE} != null ]; then
+                        echo "" >> ${TP_MATRIX_JOINT}; echo "" >> ${FP_MATRIX_JOINT}; echo "" >> ${FN_MATRIX_JOINT}; echo "" >> ${PRECISION_MATRIX_JOINT}; echo "" >> ${RECALL_MATRIX_JOINT}; echo "" >> ${F1_MATRIX_JOINT}
+                    fi
                 done
             done
             ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ~{bucket_dir_matrices}
+            ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE} ~{bucket_dir_matrices}
+            TEST=$(gsutil -q stat ${TP_MATRIX} && echo 0 || echo 1)
+            if [ -e ${TP_MATRIX_JOINT} ]; then
+                ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT} ~{bucket_dir_matrices}
+            fi
         done < ~{chunk_file}
     >>>
     
