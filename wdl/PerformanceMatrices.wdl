@@ -228,6 +228,10 @@ task ProcessChunk {
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX}
                     rm -rf measured_vcfs/; mkdir -p measured_vcfs/
                     ${TIME_COMMAND} gsutil -m cp "${BUCKET_DIR_MEASURED_VCFS}/${CALLER}_*_l${READ_LENGTH}_c${COVERAGE}.vcf" measured_vcfs/
+                    TEST=$(gsutil -q stat "${BUCKET_DIR_MEASURED_VCFS}/joint_${CALLER}_l${LENGTH}_c${COVERAGE}.vcf" && echo 0 || echo 1)
+                    if [ ${TEST} -eq 0 ]; then
+                        ${TIME_COMMAND} gsutil -m cp "${BUCKET_DIR_MEASURED_VCFS}/joint_${CALLER}_l${LENGTH}_c${COVERAGE}.vcf" measured_vcfs/
+                    fi
                     bash ~{docker_dir}/performance_matrices_impl.sh ${FILTER_STRING} ~{reference_fa} ${N_THREADS} ~{work_dir} ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX}
                     echo "" >> ${TP_MATRIX}
                     echo "" >> ${FP_MATRIX}
