@@ -4,20 +4,19 @@
 # to the reference. Then, for each coverage, merges a prefix of the chunks and
 # runs the callers on the merged BAM.
 #
-# Remark: for chr1 at 30x coverage, the procedure adds approx. 22 GB to the
-# current disk usage. Peak RAM with one thread and no hifiasm: 2 GB (from
-# minimap2).
+# Resource analysis for 20x coverage of one haplotype. Intel Xeon, 2.30GHz, 8
+# physical cores.
 #
-# Time analysis on a 2-core node:
-# minimap2 of one chunk: ~2 mins and 1.8 GB of RAM
-# samtools sort of one chunk: ~3 s and 400 MB of RAM
-# samtools merge: ~20 s and 10 MB of RAM
-# pbsv discover: 
-# pbsv call: 
-# sniffles1: 
-# sniffles2: 
-# hifiasm:
-# PAV: Max requirements from the original WDL: 8 threads, 32 GB of RAM, 1 GB of disk.
+# TASK                    | TIME   | RAM    | CORES | COMMENT
+# minimap2 one chunk      | 30 s   | 3 GB   |   7   |
+# samtools sort one chunk | 2 s    | 500 MB |   6   |
+# samtools merge          | 30 s   | 15 MB  |   6   |
+# pbsv discover           | 3 min  | 300 MB |   1   |
+# pbsv call               | 2 min  | 3 GB   |   1   |
+# sniffles1               | 4 min  | 100 MB |   4   |
+# sniffles2               | 3 min  | 150 MB |   1   |
+# hifiasm                 | 45 min | 20 GB  |   8   |
+# PAV                     | 1..8 h | 7 GB   | 2...8 | faster with high covg
 #
 READS_FILE=$1
 SAMPLE_ID=$2  # SM field in the .sam file (needed later for joint calling)

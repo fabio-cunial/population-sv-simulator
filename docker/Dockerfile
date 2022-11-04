@@ -97,7 +97,7 @@ RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_versi
     && bcftools --help
 
 # TRUVARI
-RUN conda install -c bioconda truvari=${truvari_version} \
+RUN pip install truvari==${truvari_version} \
     && truvari --help
 
 # MINIMAP2

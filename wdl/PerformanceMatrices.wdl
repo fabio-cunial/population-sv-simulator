@@ -51,7 +51,7 @@ workflow PerformanceMatrices {
             callers = callers,
             svTypes = svTypes,
             contextTypes = contextTypes,
-            repeatFractions = repeatFractions
+            repeatFractions = repeatFractions,
             n_chunks = n_nodes
     }
     scatter(chunk_file in GetChunks.chunks) {
@@ -83,6 +83,7 @@ workflow PerformanceMatrices {
 # contextTypeEnd
 #
 # and splits such a list into a given number of chunks.
+#
 task GetChunks {
     input {
         Array[String] callers
@@ -143,6 +144,10 @@ task GetChunks {
 
 
 # Processes every workpackage in a given chunk, sequentially.
+#
+# Remark: the task checkpoints by using performance matrices in 
+# <bucket_dir_matrices> and merged VCFs in <bucket_dir_allIndividuals_vcfs>.
+#
 task ProcessChunk {
     input {
         File chunk_file

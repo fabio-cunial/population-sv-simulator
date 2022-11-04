@@ -5,15 +5,13 @@
 # output, to make sure the two haplotypes are mixed when splitting the file
 # later.
 #
-# Remark: for chr1 at 30x coverage, the procedure adds approx. 26 GB to the
-# current disk usage, the output file is ~13 GB, and the peak RAM is ~13 GB
-# (from <shuf>, which loads the whole file in memory; <pbsim> takes just 240 MB
-# of RAM).
+# Resource analysis for 20x coverage of one haplotype (~10 GB). Intel Xeon,
+# 2.30GHz, 8 physical cores.
 #
-# Time analysis for ~3 GB reads:
-# pbsim: ~2 mins
-# shuf: ~30 s and ~3 GB of RAM
-# bucket upload/download: ~40 s
+# TASK  | TIME   | RAM    | CORES | COMMENT
+# pbsim | 7 mins | 250 MB |   1   |
+# shuf  | 1.5 m  | 10 GB  |   1   | loads the whole file in memory
+# bucket upload/download: ~3 m
 #
 ID1=$1
 ID2=$2
