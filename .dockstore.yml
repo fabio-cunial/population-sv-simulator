@@ -5,3 +5,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/SimulateHaplotypes.wdl
   testParameterFiles:
+- name: PerformanceMatrices
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/PerformanceMatrices.wdl
+  testParameterFiles:

@@ -9,6 +9,7 @@ ARG gcloud_version=405.0.1
 ARG htslib_version=1.16
 ARG samtools_version=1.16.1
 ARG bcftools_version=1.16
+ARG truvari_version=3.5.0
 ARG minimap2_version=2.24
 ARG pbsv_version=2.8.0
 ARG sniffles1_version=1.0.12
@@ -94,6 +95,10 @@ RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_versi
     && cd ${work_dir} \
     && rm -rf bcftools-${bcftools_version} \
     && bcftools --help
+
+# TRUVARI
+RUN conda install -c bioconda truvari=${truvari_version} \
+    && truvari --help
 
 # MINIMAP2
 RUN wget https://github.com/lh3/minimap2/releases/download/v${minimap2_version}/minimap2-${minimap2_version}_x64-linux.tar.bz2 \
@@ -219,5 +224,6 @@ COPY reads2svs.sh .
 COPY pav_state_files.txt .
 COPY pav_restoreCheckpoint.sh .
 COPY pav_checkpointDaemon.sh .
+COPY performance_matrices_impl.sh .
 COPY *.java .
 RUN javac *.java

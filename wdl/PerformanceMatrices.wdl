@@ -3,19 +3,14 @@ version 1.0
 
 # The program: (1) Compares each experimental VCF to its corresponding ground
 # truth, collecting per-individual performance measures. (2) Merges all
-# experimental VCFs and compares the result to the set of distinct ground-truth
-# variants in the population. (3) Compares the joint-calling files produced by
-# some callers to the set of distinct ground-truth variants in the population.
+# experimental VCFs and compares the merge to the set of distinct ground-truth
+# variants in the population. (3) Compares the joint-calling files (produced by
+# some callers) to the set of distinct ground-truth variants in the population.
 # To enable granular data analysis downstream, this is performed separately for
-# every combination of (caller, SV type, repeat context).
+# every tuple (caller, SV type, repeat context).
 #
 # Remark: this workflow can be run while the VCF files are being created by the
 # simulation workflow.
-#
-# svTypes = ["ANY", "DEL", "DUP", "INS", "INV"]
-# contextTypes = [0, 1, 2, 3, 4]
-# 
-# repeatFractions = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 #
 workflow PerformanceMatrices {
     input {        
@@ -40,7 +35,7 @@ workflow PerformanceMatrices {
     parameter_meta {
         contextTypes: "0=non-satellite repeat; 1=satellite repeat; 2=both of the above; 3=none of the above, but segmental duplication; 4=none of the above."
         repeatFractions: "Fractions of one."
-        only_pass: "Use only variants with FILTER=PASS."
+        only_pass: "(0/1) Use only variants with FILTER=PASS."
         n_nodes: "Number of machines over which to distribute the computation."
         reference_fa: "Address in a bucket"
         reference_fai: "Address in a bucket"
@@ -48,6 +43,7 @@ workflow PerformanceMatrices {
         bucket_dir_ground_truth_vcfs: "Input directory"
         bucket_dir_allIndividuals_vcfs: "Output directory: the merged VCFs over all individuals will be stored here."
         bucket_dir_matrices: "Output directory: the matrices with performance measures will be stored here."
+        max_vcf_size: "Max size of a single VCF file, in GB."
         n_individuals: "Total number of diploid individuals in the population. Used just to estimate space."
     }
     call GetChunks {
@@ -202,7 +198,7 @@ task ProcessChunk {
             contextTypeStart=$(echo ${LINE} | awk '{print $5}')
             contextTypeEnd=$(echo ${LINE} | awk '{print $6}')
             FILTER_STRING=""; PREFIX=""
-            if [ ${svType} -ne -1 ]; then
+            if [ ${svType} != "-1" ]; then
                 FILTER_STRING="SVTYPE=\"${svType}\""
                 PREFIX="${caller}_sv${svType}"
             else
@@ -281,7 +277,7 @@ task ProcessChunk {
                     JOINT_CALLING_FILE="null"
                     TEST=$(gsutil -q stat "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" && echo 0 || echo 1)
                     if [ ${TEST} -eq 0 ]; then
-                        ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/
+                        gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/
                         JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}.vcf"
                     fi
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX}
@@ -312,10 +308,10 @@ task ProcessChunk {
                     fi
                 done
             done
-            ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ~{bucket_dir_matrices}
-            ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE} ~{bucket_dir_matrices}
+            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ~{bucket_dir_matrices}
+            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE} ~{bucket_dir_matrices}
             if [ -e ${TP_MATRIX_JOINT} ]; then
-                ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT} ~{bucket_dir_matrices}
+                gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT} ~{bucket_dir_matrices}
             fi
         done < ~{chunk_file}
     >>>
@@ -327,6 +323,6 @@ task ProcessChunk {
         cpu: n_cpus
         memory: ram_size_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"
-        preemptible: 1
+        preemptible: 3
     }
 }

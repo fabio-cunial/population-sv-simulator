@@ -1,8 +1,8 @@
 version 1.0
 
 
-# Runs PBSV and Sniffles 2 in joint mode, on each (length,coverage) pair in
-# parallel.
+# Runs PBSV and Sniffles 2 in joint mode, on each (caller, length, coverage)
+# tuple in parallel.
 workflow JointCalling {
     input {
         String bucket_dir

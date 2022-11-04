@@ -1,0 +1,19 @@
+{
+    "PerformanceMatrices.callers": ["pbsv", "sniffles1", "sniffles2"],
+    "PerformanceMatrices.svTypes": ["DEL", "DUP", "INS", "INV"],
+    "PerformanceMatrices.contextTypes": [0, 1, 2, 3, 4],
+    "PerformanceMatrices.repeatFractions": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "PerformanceMatrices.read_lengths": [10000, 12500, 15000, 17500, 20000, 22500],
+    "PerformanceMatrices.coverages": [4, 8, 12, 16, 20],
+    "PerformanceMatrices.only_pass": 1,
+    "PerformanceMatrices.n_nodes": 2,
+    "PerformanceMatrices.n_cpus_per_node": 16,
+    "PerformanceMatrices.reference_fa": "gs://cunial-bucket-1/simulation-root/T2T/hs1_chr1.fa",
+    "PerformanceMatrices.reference_fai": "gs://cunial-bucket-1/simulation-root/T2T/hs1_chr1.fa.fai",
+    "PerformanceMatrices.bucket_dir_experimental_vcfs": "gs://cunial-bucket-1/simulation-root/run/vcfs",
+    "PerformanceMatrices.bucket_dir_ground_truth_vcfs": "gs://cunial-bucket-1/simulation-root/groundTruth",
+    "PerformanceMatrices.bucket_dir_allIndividuals_vcfs": "gs://cunial-bucket-1/simulation-root/performanceMatrices/vcfs_merged",
+    "PerformanceMatrices.bucket_dir_matrices": "gs://cunial-bucket-1/simulation-root/performanceMatrices/matrices",
+    "PerformanceMatrices.max_vcf_size": 0.004,
+    "PerformanceMatrices.n_individuals": 300
+}

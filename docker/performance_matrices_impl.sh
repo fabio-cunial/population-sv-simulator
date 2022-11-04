@@ -13,6 +13,8 @@
 # 3. Compares a filtered joint-calling file to the filtered set of distinct
 # ground-truth variants in the population.
 #
+# Remark: genotypes are not considered.
+#
 FILTER_STRING=$1  # Spaces are replaced with '+'. It equals '+' if empty.
 JOINT_CALLING_FILE=$2  # Relative path or "null".
 REFERENCE_FA_ADDRESS=$3  # Address in a bucket
@@ -59,6 +61,9 @@ if [ ${FILTER_STRING} = "+" ]; then
 else
     FILTER_STRING=$(echo ${FILTER_STRING} | tr '+' ' ')
 fi
+BCFTOOLS_MERGE_FLAGS="--force-samples --merge none"
+TRUVARI_BENCH_FLAGS=" "  # Default settings for now
+TRUVARI_COLLAPSE_FLAGS="--keep common --sizemin 40"
 
 
 # Filters every VCF file in a chunk of files using $FILTER_STRING$, filters the
@@ -77,27 +82,25 @@ function processChunk() {
     local RECALL_MATRIX="recall_${CHUNK_ID}.txt"
     local F1_MATRIX="f1_${CHUNK_ID}.txt"
     while read VCF_FILE; do
-        MEASURED_FILE="${VCF_FILE%.vcf}_filtered.vcf"
-        TRUE_FILE="true_${CHUNK_ID}.vcf"
+        MEASURED_FILE="${VCF_FILE%.vcf}_filtered.vcf.gz"
+        TRUE_FILE="true_${CHUNK_ID}.vcf.gz"
         OUTPUT_DIR="ouput_${CHUNK_ID}"
         if [ ${#FILTER_STRING} -ne 0 ]; then
-            bcftools filter --include '${FILTER_STRING}' ${VCF_FILE} > ${MEASURED_FILE}
-        else 
-            cp ${VCF_FILE} ${MEASURED_FILE}
+            bcftools filter --threads 0 --include '${FILTER_STRING}' --output-type z --output ${MEASURED_FILE} ${VCF_FILE}
+        else
+            bgzip --threads 1 --stdout ${VCF_FILE} > ${MEASURED_FILE}
         fi
-        bgzip -@ 1 ${MEASURED_FILE}
-        tabix ${MEASURED_FILE}.gz
+        tabix ${MEASURED_FILE}
         ID=$(basename ${VCF_FILE} .vcf)
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}}
         if [ ${#FILTER_STRING} -ne 0 ]; then
-            bcftools filter --include '${FILTER_STRING}' ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
+            bcftools filter --threads 0 --include '${FILTER_STRING}' --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
         else
-            cp ground_truth_vcfs/groundTruth_individual_${ID}.vcf ${TRUE_FILE}
+            bgzip --threads 1 --stdout ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
         fi
-        bgzip -@ 1 ${TRUE_FILE}
-        tabix ${TRUE_FILE}.gz
-        ${TIME_COMMAND} truvari bench -b ${TRUE_FILE}.gz -c ${MEASURED_FILE}.gz -f reference.fa -o ${OUTPUT_DIR}/
+        tabix ${TRUE_FILE}
+        ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base ${TRUE_FILE} --comp ${MEASURED_FILE} --reference reference.fa --output ${OUTPUT_DIR}/
         rm -f ${TRUE_FILE}*
         grep "\"TP-call\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
         grep "\"FP\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
@@ -111,7 +114,7 @@ function processChunk() {
 
 
 # Main program
-${TIME_COMMAND} gsutil cp ${REFERENCE_FA_ADDRESS} reference.fa
+gsutil cp ${REFERENCE_FA_ADDRESS} reference.fa
 gsutil cp ${REFERENCE_FAI_ADDRESS} reference.fai
 
 # 1. Per-individual matrices
@@ -136,21 +139,25 @@ rm -f chunk-* tp_*.txt fp_*.txt fn_*.txt precision_*.txt recall_*.txt f1_*.txt
 # 2. All-individuals matrices: merging filtered calls over all individuals, and
 # comparing the merge to the filtered set of distinct variants in the ground
 # truth.
-rm -f files.txt
-find experimental_vcfs/ -maxdepth 1 -name '*_filtered.vcf.gz' > files.txt
-${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --output-type z --merge none --file-list file.txt --output merge.vcf.gz 
-truvari collapse --threads ${N_THREADS} --keep common --minhaplen 40 --sizemin 40 --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference reference.fa
-bgzip -@ ${N_THREADS} truvari_merge.vcf
-tabix truvari_merge.vcf.gz
-gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz
-if [ ${#FILTER_STRING} -ne 0 ]; then
-    ${TIME_COMMAND} bcftools filter --include '${FILTER_STRING}' ground_truth_vcfs/groundTruth_joint.vcf > true_filtered.vcf
-else 
-    cp ground_truth_vcfs/groundTruth_joint.vcf true_filtered.vcf
+TEST=$(gsutil -q stat ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz && echo 0 || echo 1)
+if [ ${TEST} -eq 0 ]; then
+    ${TIME_COMMAND} gsutil cp ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz truvari_merge.vcf.gz
+else
+    rm -f files.txt
+    find experimental_vcfs/ -maxdepth 1 -name '*_filtered.vcf.gz' > files.txt
+    ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} --file-list file.txt --output-type z --output merge.vcf.gz 
+    ${TIME_COMMAND} truvari collapse --threads ${N_THREADS} ${TRUVARI_COLLAPSE_FLAGS} --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference reference.fa
+    ${TIME_COMMAND} bgzip --threads ${N_THREADS} truvari_merge.vcf
+    ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz
 fi
-bgzip -@ ${N_THREADS} true_filtered.vcf
-tabix true_filtered.vcf.gz
-${TIME_COMMAND} truvari bench -b true_filtered.vcf.gz -c truvari_merge.vcf.gz -f reference.fa -o ouput/
+${TIME_COMMAND} tabix truvari_merge.vcf.gz
+if [ ${#FILTER_STRING} -ne 0 ]; then
+    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include '${FILTER_STRING}' --output-type z --output true_filtered.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf
+else 
+    ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ground_truth_vcfs/groundTruth_joint.vcf > true_filtered.vcf.gz
+fi
+${TIME_COMMAND} tabix true_filtered.vcf.gz
+${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base true_filtered.vcf.gz --comp truvari_merge.vcf.gz --reference reference.fa --output ouput/
 grep "\"TP-call\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_MERGE}
 grep "\"FP\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_MERGE}
 grep "\"FN\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_MERGE}
@@ -164,13 +171,12 @@ rm -rf truvari_merge.vcf* ouput/
 # the ground truth.
 if [ ${JOINT_CALLING_FILE} != null ]; then
     if [ ${#FILTER_STRING} -ne 0 ]; then
-        ${TIME_COMMAND} bcftools filter --include '${FILTER_STRING}' ${JOINT_CALLING_FILE} > joint_filtered.vcf
+        ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include '${FILTER_STRING}' --output-type z --output joint_filtered.vcf.gz ${JOINT_CALLING_FILE}
     else 
-        cp ${JOINT_CALLING_FILE} joint_filtered.vcf
+        ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ${JOINT_CALLING_FILE} > joint_filtered.vcf.gz
     fi
-    bgzip -@ ${N_THREADS} joint_filtered.vcf
-    tabix joint_filtered.vcf.gz
-    ${TIME_COMMAND} truvari bench -b true_filtered.vcf.gz -c joint_filtered.vcf.gz -f reference.fa -o ouput/
+    ${TIME_COMMAND} tabix joint_filtered.vcf.gz
+    ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --base true_filtered.vcf.gz --comp joint_filtered.vcf.gz --reference reference.fa --output ouput/
     grep "\"TP-call\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_JOINT}
     grep "\"FP\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_JOINT}
     grep "\"FN\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_JOINT}
