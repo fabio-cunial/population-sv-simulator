@@ -39,8 +39,12 @@ rm -f ${IN_BUCKET_FILE}
 while read FILE; do
     TEST=$(gsutil -q stat ${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE} && echo 0 || echo 1)
     if [ ${TEST} -eq 0 ]; then
-        gsutil cp ${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE} ${FILE}
-        echo "1" >> ${IN_BUCKET_FILE}
+        TEST=$(gsutil cp ${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE} ${FILE} && echo 0 || echo 1)
+        if [ ${TEST} -eq 0 ]; then
+            echo "1" >> ${IN_BUCKET_FILE}
+        else 
+            echo "0" >> ${IN_BUCKET_FILE}
+        fi
     else
         echo "0" >> ${IN_BUCKET_FILE}
     fi

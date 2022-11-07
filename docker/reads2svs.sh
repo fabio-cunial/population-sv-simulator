@@ -40,6 +40,7 @@ DOCKER_DIR=${19}
 KEEP_ASSEMBLIES=${20}
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
+GSUTIL_DELAY_S="600"
 TIME_COMMAND="/usr/bin/time --verbose"
 COVERAGES=$(echo ${COVERAGES} | tr '-' ' ')
 N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
@@ -69,8 +70,12 @@ for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
     FILE_NAME="${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_$(basename ${CHUNK}).bam"
     TEST=$(gsutil -q stat ${FILE_NAME} && echo 0 || echo 1)
     if [ ${TEST} -eq 0 ]; then
-        gsutil cp ${FILE_NAME} ${CHUNK}.bam
-    else
+        TEST=$(gsutil cp ${FILE_NAME} ${CHUNK}.bam && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error downloading file <${FILE_NAME}>."
+        fi
+    fi
+    if [ ${TEST} -eq 1 ]; then
         mv ${CHUNK} ${CHUNK}.fa
     	${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_MMI} ${CHUNK}.fa > ${CHUNK}.sam
         mv ${CHUNK}.fa ${CHUNK}
@@ -78,7 +83,7 @@ for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
     	rm -f ${CHUNK}.sam
     	${TIME_COMMAND} samtools sort -@ ${N_THREADS} ${CHUNK}.1.bam > ${CHUNK}.bam
     	rm -f ${CHUNK}.1.bam
-        gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${CHUNK}.bam ${FILE_NAME}
+        gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${CHUNK}.bam ${FILE_NAME} || echo "Error uploading file <${CHUNK}.bam> to bucket."
     fi
 done
 
@@ -118,138 +123,227 @@ for COVERAGE in ${COVERAGES}; do
         PREVIOUS_COVERAGE=${COVERAGE}
         continue
     fi
+    INFIX="i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
     
 	# PBSV
-    INFIX="i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}"
+    PREFIX_PBSV="pbsv_${INFIX}"
     if [ ${USE_PBSV} -eq 1 ]; then
-        PREFIX="pbsv_${INFIX}"
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
-            ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/signatures/${PREFIX}.svsig.gz .
-        else 
+            while : ; do
+                TEST=$(${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz . && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error downloading file <${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
+        else
             # <discover> is sequential
-        	${TIME_COMMAND} pbsv discover --tandem-repeats ${REFERENCE_TANDEM_REPEATS} coverage_${COVERAGE}.bam ${PREFIX}.svsig.gz
-            gsutil cp ${PREFIX}.svsig.gz ${BUCKET_DIR}/signatures/
+        	${TIME_COMMAND} pbsv discover --tandem-repeats ${REFERENCE_TANDEM_REPEATS} coverage_${COVERAGE}.bam ${PREFIX_PBSV}.svsig.gz
+            while : ; do
+                TEST=$(gsutil cp ${PREFIX_PBSV}.svsig.gz ${BUCKET_DIR}/signatures/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_PBSV}.svsig.gz>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            fi
         fi
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX_PBSV}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
-        	${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ${REFERENCE_FA} ${PREFIX}.svsig.gz ${PREFIX}.vcf
-            gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
+        	${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ${REFERENCE_FA} ${PREFIX_PBSV}.svsig.gz ${PREFIX_PBSV}.vcf
+            while : ; do
+                TEST=$(gsutil cp ${PREFIX_PBSV}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_PBSV}.vcf>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
         fi
-        rm -f ${PREFIX}.*
     fi
+    rm -f ${PREFIX_PBSV}*
 	
 	# SNIFFLES 1
+    PREFIX_SNIFFLES1="sniffles1_${INFIX}"
     if [ ${USE_SNIFFLES1} -eq 1 ]; then 
-        PREFIX="sniffles1_${INFIX}"
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX_SNIFFLES1}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
-            ${TIME_COMMAND} sniffles1 -t ${N_THREADS} -m coverage_${COVERAGE}.bam -v ${PREFIX}.vcf
-            gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
-            rm -f ${PREFIX}.*
+            ${TIME_COMMAND} sniffles1 -t ${N_THREADS} -m coverage_${COVERAGE}.bam -v ${PREFIX_SNIFFLES1}.vcf
+            while : ; do
+                TEST=$(gsutil cp ${PREFIX_SNIFFLES1}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_SNIFFLES1}.vcf>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
         fi
     fi
+    rm -f ${PREFIX_SNIFFLES1}*
     
     # SNIFFLES 2
+    PREFIX_SNIFFLES2="sniffles2_${INFIX}"
     if [ ${USE_SNIFFLES2} -eq 1 ]; then 
-        PREFIX="sniffles2_${INFIX}"
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX}.vcf && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_SNIFFLES2}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
-    	    ${TIME_COMMAND} sniffles --threads ${N_THREADS} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} --reference ${REFERENCE_FA} --sample-id ${SAMPLE_ID} --input coverage_${COVERAGE}.bam --vcf ${PREFIX}.vcf --snf ${PREFIX}.snf
-            gsutil cp ${PREFIX}.snf ${BUCKET_DIR}/signatures/
-            gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
-            rm -f ${PREFIX}.*
+    	    ${TIME_COMMAND} sniffles --threads ${N_THREADS} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} --reference ${REFERENCE_FA} --sample-id ${SAMPLE_ID} --input coverage_${COVERAGE}.bam --vcf ${PREFIX_SNIFFLES2}.vcf --snf ${PREFIX_SNIFFLES2}.snf
+            while : ; do
+                TEST=$(gsutil cp ${PREFIX_SNIFFLES2}.snf ${BUCKET_DIR}/signatures/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_SNIFFLES2}.snf>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else 
+                    break
+                fi
+            done
+            while : ; do
+                TEST=$(gsutil cp ${PREFIX_SNIFFLES2}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_SNIFFLES2}.vcf>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
         fi
     fi
+    rm -f ${PREFIX_SNIFFLES2}*
     
     # HIFIASM + QUAST
-    PREFIX="assembly_${INFIX}"
+    PREFIX_ASSEMBLY="assembly_${INFIX}"
+    PREFIX_PAV="pav_${INFIX}"
+    PAV_VCF_PRESENT=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX_PAV}.vcf && echo 0 || echo 1)
     if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 ]; then 
-        TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa && echo 0 || echo 1)
-        TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa && echo 0 || echo 1)
-        if [ ${TEST1} -eq 1 -o ${TEST2} -eq 1 ]; then
-            ${TIME_COMMAND} hifiasm -t ${N_THREADS} --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm coverage_${COVERAGE}.fa
-            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX}_h1.fa
-            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX}_h2.fa
-            ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX}_h1.fa ${BUCKET_DIR}/assemblies/
-            ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX}_h2.fa ${BUCKET_DIR}/assemblies/
-            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.p_ctg.gfa > ${PREFIX}_primaryContigs.fa
-            quast --threads ${N_THREADS} --eukaryote --large --est-ref-size ${REFERENCE_LENGTH} --no-gc ${PREFIX}_primaryContigs.fa
-            rm -f ${PREFIX}_primaryContigs.fa
-            tar -czf ${PREFIX}_quast.tar.gz quast_results/ 
-            rm -rf quast_results/
-            gsutil cp ${PREFIX}_quast.tar.gz ${BUCKET_DIR}/assemblies/
-            rm -f ${PREFIX}_quast.tar.gz
-            rm -rf tmpasm*
-        elif [ ${USE_PAV} -eq 1 ]; then
-            TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/pav_i${ID1}_i${ID2}_l${LENGTH}_c${COVERAGE}.vcf && echo 0 || echo 1)
-            if [ ${TEST} -eq 1 ]; then
-                ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX}_h1.fa ${PREFIX}_h1.fa
-                ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX}_h2.fa ${PREFIX}_h2.fa
+        TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h1.fa && echo 0 || echo 1)
+        TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h2.fa && echo 0 || echo 1)
+        if [ ${TEST1} -eq 0 -a ${TEST2} -eq 0 ]; then
+            if [ ${USE_PAV} -eq 1 -a ${PAV_VCF_PRESENT} -eq 1 ]; then
+                while : ; do
+                    TEST=$(gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h1.fa ${PREFIX_ASSEMBLY}_h1.fa && echo 0 || echo 1)
+                    if [ ${TEST} -eq 1 ]; then
+                        echo "Error downloading file <${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h1.fa>. Trying again..."
+                        sleep ${GSUTIL_DELAY_S}
+                    else
+                        break
+                    fi
+                done
+                while : ; do
+                    TEST=$(gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h2.fa ${PREFIX_ASSEMBLY}_h2.fa && echo 0 || echo 1)
+                    if [ ${TEST} -eq 1 ]; then
+                        echo "Error downloading file <${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h2.fa>. Trying again..."
+                        sleep ${GSUTIL_DELAY_S}
+                    else
+                        break
+                    fi
+                done
             fi
+        else
+            ${TIME_COMMAND} hifiasm -t ${N_THREADS} --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm coverage_${COVERAGE}.fa
+            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX_ASSEMBLY}_h1.fa
+            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX_ASSEMBLY}_h2.fa
+            while : ; do
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_ASSEMBLY}_h1.fa ${BUCKET_DIR}/assemblies/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_ASSEMBLY}_h1.fa>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
+            while : ; do
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_ASSEMBLY}_h2.fa ${BUCKET_DIR}/assemblies/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_ASSEMBLY}_h2.fa>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else 
+                    break
+                fi
+            done
+            awk '/^S/{print ">"$2; print $3}' tmpasm.bp.p_ctg.gfa > ${PREFIX_ASSEMBLY}_primaryContigs.fa
+            quast --threads ${N_THREADS} --eukaryote --large --est-ref-size ${REFERENCE_LENGTH} --no-gc ${PREFIX_ASSEMBLY}_primaryContigs.fa
+            rm -f ${PREFIX_ASSEMBLY}_primaryContigs.fa
+            tar -czf ${PREFIX_ASSEMBLY}_quast.tar.gz quast_results/ 
+            rm -rf quast_results/
+            while : ; do
+                TEST=$(gsutil cp ${PREFIX_ASSEMBLY}_quast.tar.gz ${BUCKET_DIR}/assemblies/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_ASSEMBLY}_quast.tar.gz>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else 
+                    break
+                fi
+            done
+            rm -rf tmpasm*
         fi
     fi
     
     # PAV
-    if [ ${USE_PAV} -eq 1 ]; then
-        ASSEMBLY_PREFIX=${PREFIX}
-        PREFIX="pav_${INFIX}"
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX}.vcf && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
-            if [ ! -e config.json ]; then
-                echo "{" >> config.json
-                echo "\"reference\": \"asm/ref.fa\"," >> config.json
-                echo "\"asm_pattern\": \"asm/{asm_name}/{hap}.fa.gz\"," >> config.json
-                echo "\"aligner\": \"minimap2\"," >> config.json
-                echo "\"map_threads\": ${N_THREADS}," >> config.json
-                echo "\"merge_threads\": ${N_THREADS}," >> config.json
-                echo "\"inv_threads\": ${N_THREADS}," >> config.json
-                echo "\"inv_threads_lg\": ${N_THREADS}," >> config.json
-                echo "\"lg_batch_count\": 1," >> config.json
-                echo "\"inv_sig_batch_count\": 1" >> config.json
-                echo "}" >> config.json
-            fi
-            mkdir -p asm/sample
-            cp ${REFERENCE_FA} asm/ref.fa
-            cp ${REFERENCE_FAI} asm/ref.fa.fai
-            bgzip -@ ${N_THREADS} --compress-level 0 -c ${ASSEMBLY_PREFIX}_h1.fa > asm/sample/h1.fa.gz
-            bgzip -@ ${N_THREADS} --compress-level 0 -c ${ASSEMBLY_PREFIX}_h2.fa > asm/sample/h2.fa.gz
-            mkdir -p temp/sample/align/
-            cp asm/sample/h1.fa.gz temp/sample/align/contigs_h1.fa.gz
-            samtools faidx temp/sample/align/contigs_h1.fa.gz
-            cp asm/sample/h2.fa.gz temp/sample/align/contigs_h2.fa.gz
-            samtools faidx temp/sample/align/contigs_h2.fa.gz
-            bash ${DOCKER_DIR}/pav_restoreCheckpoint.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} ${DOCKER_DIR}
-            bash ${DOCKER_DIR}/pav_checkpointDaemon.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} ${DOCKER_DIR} &
-            DAEMON_ID=$!
-            source activate lr-pav
-            ${TIME_COMMAND} snakemake -s ${DOCKER_DIR}/pav/Snakefile --cores ${N_THREADS} pav_sample.vcf.gz
-            conda deactivate
-            kill -KILL ${DAEMON_ID} || echo "The process ID <${DAEMON_ID}> of <pav_checkpointDaemon.sh> cannot be found."
-            bcftools filter --exclude 'SVTYPE="SNV" || (SVLEN>-40 && SVLEN<40)' pav_sample.vcf.gz > ${PREFIX}.vcf
-            rm -f pav_sample.vcf.gz*
-            gsutil cp ${PREFIX}.vcf ${BUCKET_DIR}/vcfs/
-            rm -f ${PREFIX}.vcf
-            rm -rf asm/ data/ temp/ results/ log/
-            gsutil -m rm -rf "${BUCKET_DIR}/pav/${INFIX}" || echo "Cannot remove directory ${BUCKET_DIR}/pav/${INFIX}"
-            # Removing local assemblies as well
-            rm -f ${ASSEMBLY_PREFIX}*
+    if [ ${USE_PAV} -eq 1 -a ${PAV_VCF_PRESENT} -eq 1 ]; then
+        if [ ! -e config.json ]; then
+            echo "{" >> config.json
+            echo "\"reference\": \"asm/ref.fa\"," >> config.json
+            echo "\"asm_pattern\": \"asm/{asm_name}/{hap}.fa.gz\"," >> config.json
+            echo "\"aligner\": \"minimap2\"," >> config.json
+            echo "\"map_threads\": ${N_THREADS}," >> config.json
+            echo "\"merge_threads\": ${N_THREADS}," >> config.json
+            echo "\"inv_threads\": ${N_THREADS}," >> config.json
+            echo "\"inv_threads_lg\": ${N_THREADS}," >> config.json
+            echo "\"lg_batch_count\": 1," >> config.json
+            echo "\"inv_sig_batch_count\": 1" >> config.json
+            echo "}" >> config.json
         fi
+        mkdir -p asm/sample
+        cp ${REFERENCE_FA} asm/ref.fa
+        cp ${REFERENCE_FAI} asm/ref.fa.fai
+        bgzip -@ ${N_THREADS} --compress-level 0 -c ${PREFIX_ASSEMBLY}_h1.fa > asm/sample/h1.fa.gz
+        bgzip -@ ${N_THREADS} --compress-level 0 -c ${PREFIX_ASSEMBLY}_h2.fa > asm/sample/h2.fa.gz
+        mkdir -p temp/sample/align/
+        cp asm/sample/h1.fa.gz temp/sample/align/contigs_h1.fa.gz
+        samtools faidx temp/sample/align/contigs_h1.fa.gz
+        cp asm/sample/h2.fa.gz temp/sample/align/contigs_h2.fa.gz
+        samtools faidx temp/sample/align/contigs_h2.fa.gz
+        bash ${DOCKER_DIR}/pav_restoreCheckpoint.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} ${DOCKER_DIR}
+        bash ${DOCKER_DIR}/pav_checkpointDaemon.sh ${BUCKET_DIR} ${INFIX} ${WORK_DIR} ${DOCKER_DIR} &
+        DAEMON_ID=$!
+        source activate lr-pav
+        ${TIME_COMMAND} snakemake -s ${DOCKER_DIR}/pav/Snakefile --cores ${N_THREADS} pav_sample.vcf.gz
+        conda deactivate
+        kill -KILL ${DAEMON_ID} || echo "The process ID <${DAEMON_ID}> of <pav_checkpointDaemon.sh> cannot be found."
+        bcftools filter --exclude 'SVTYPE="SNV" || (SVLEN>-40 && SVLEN<40)' pav_sample.vcf.gz > ${PREFIX_PAV}.vcf
+        rm -f pav_sample.vcf.gz*
+        while : ; do
+            TEST=$(gsutil cp ${PREFIX_PAV}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error uploading file <${PREFIX_PAV}.vcf>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
+        rm -rf asm/ data/ temp/ results/ log/
+        gsutil -m rm -rf "${BUCKET_DIR}/pav/${INFIX}" || echo "Error removing directory ${BUCKET_DIR}/pav/${INFIX}"
     fi
-    
-    tree -L 2
-    df -h
+    rm -f ${PREFIX_ASSEMBLY}*
+    rm -f ${PREFIX_PAV}*
     
     # Next iteration
     echo "${SAMPLE_ID} ${LENGTH} ${COVERAGE}" >> ${CHECKPOINT_FILE}
     gsutil cp ${CHECKPOINT_FILE} ${BUCKET_DIR}/checkpoints/
     PREVIOUS_COVERAGE=${COVERAGE}
+    tree -L 2 || echo ""
+    df -h
 done
 rm -f coverage_* chunk-*
 
 # Cleaning the bucket
-gsutil rm -f ${BUCKET_DIR}/reads/${READS_FILE} || echo "Cannot remove file ${BUCKET_DIR}/reads/${READS_FILE}"
-gsutil -m rm -f "${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam" || echo "Cannot remove some of the files ${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam"
+gsutil rm -f ${BUCKET_DIR}/reads/${READS_FILE} || echo "Error removing file ${BUCKET_DIR}/reads/${READS_FILE}"
+gsutil -m rm -f "${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam" || echo "Error removing some of the files ${BUCKET_DIR}/alignments/${ALIGNMENTS_PREFIX}_chunk-*.bam"
 if [ ${KEEP_ASSEMBLIES} -ne 1 ]; then
-    gsutil -m rm -f "${BUCKET_DIR}/assemblies/assembly_i${ID1}_i${ID2}_l${LENGTH}_*" || echo "Cannot remove some of the files ${BUCKET_DIR}/assemblies/assembly_i${ID1}_i${ID2}_l${LENGTH}_*"
+    gsutil -m rm -f "${BUCKET_DIR}/assemblies/assembly_i${ID1}_i${ID2}_l${LENGTH}_*" || echo "Error removing some of the files ${BUCKET_DIR}/assemblies/assembly_i${ID1}_i${ID2}_l${LENGTH}_*"
 fi

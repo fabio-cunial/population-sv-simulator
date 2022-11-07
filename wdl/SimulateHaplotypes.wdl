@@ -110,12 +110,18 @@ task DeleteBucketDir {
     }    
     command <<<
         set -euxo pipefail
+        GSUTIL_DELAY_S="60"
+        
         TEST=$(gsutil -q stat ~{bucket_dir} && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
-            while ! gsutil -m rm -rf ~{bucket_dir}
-            do
-                sleep 3
-                echo "Trying again to delete ~{bucket_dir}"
+            while ; do
+                TEST=$(gsutil -m rm -rf ~{bucket_dir} && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]
+                    echo "Error deleting <~{bucket_dir}>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
             done
         fi
         echo "1" > force_sequentiality.txt
@@ -226,11 +232,20 @@ task ProcessChunkOfHaplotypes {
         mkdir -p ~{work_dir}
         cd ~{work_dir}
         ID_TO=$(( ~{id_from} + ~{chunk_size} - 1 ))
+        GSUTIL_DELAY_S="600"
         
         CHECKPOINT_FILE="checkpoint_i~{id_from}_i${ID_TO}.txt"
         TEST=$(gsutil -q stat ~{bucket_dir}/checkpoints/${CHECKPOINT_FILE} && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
-            gsutil cp ~{bucket_dir}/checkpoints/${CHECKPOINT_FILE} .
+            while : ; do
+                TEST=$(gsutil cp ~{bucket_dir}/checkpoints/${CHECKPOINT_FILE} . && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error downloading file <~{bucket_dir}/checkpoints/${CHECKPOINT_FILE}>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
         else
             echo "0 0 0" > ${CHECKPOINT_FILE}
         fi
@@ -259,7 +274,7 @@ task ProcessChunkOfHaplotypes {
     >>>
     
     output {
-        Int force_sequentiality = read_int("force_sequentiality.txt")
+        Int force_sequentiality = read_int(work_dir + "/force_sequentiality.txt")
     }
     runtime {
         docker: "fcunial/simulation"

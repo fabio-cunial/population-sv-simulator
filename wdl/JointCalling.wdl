@@ -106,6 +106,7 @@ task JointCallingImpl {
         set -euxo pipefail
         mkdir -p ~{work_dir}
         cd ~{work_dir}
+        GSUTIL_DELAY_S="600"
         
         GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
         TIME_COMMAND="/usr/bin/time --verbose"
@@ -121,18 +122,50 @@ task JointCallingImpl {
         COVERAGE=$(echo ~{task_description} | awk '{ print $3 }')
         if [ ${CALLER} -eq 1 ]; then
             # PBSV
-            ${TIME_COMMAND} gsutil -m cp "~{bucket_dir}/signatures/pbsv_*_*_l${LENGTH}_c${COVERAGE}.svsig.gz" .
+            while : ; do
+                TEST=$(gsutil -m cp "~{bucket_dir}/signatures/pbsv_*_*_l${LENGTH}_c${COVERAGE}.svsig.gz" . && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error downloading files <~{bucket_dir}/signatures/pbsv_*_*_l${LENGTH}_c${COVERAGE}.svsig.gz>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
             find . -maxdepth 1 -name "*.svsig.gz" > filenames.fofn
             VCF_FILE="joint_pbsv_l${LENGTH}_c${COVERAGE}.vcf"
             ${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ~{reference_fa} filenames.fofn ${VCF_FILE}
-            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${VCF_FILE} ~{bucket_dir}/vcfs/
+            while : ; do
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${VCF_FILE} ~{bucket_dir}/vcfs/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${VCF_FILE}>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
         else
             # Sniffles 2
-            ${TIME_COMMAND} gsutil -m cp "~{bucket_dir}/signatures/sniffles2_*_*_l${LENGTH}_c${COVERAGE}.snf" .
+            while : ; do
+                TEST=$(gsutil -m cp "~{bucket_dir}/signatures/sniffles2_*_*_l${LENGTH}_c${COVERAGE}.snf" . && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error downloading files <~{bucket_dir}/signatures/sniffles2_*_*_l${LENGTH}_c${COVERAGE}.snf>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
             find . -maxdepth 1 -name "*.snf" > filenames.tsv
             VCF_FILE="joint_sniffles2_l${LENGTH}_c${COVERAGE}.vcf"
             ${TIME_COMMAND} sniffles --threads ${N_THREADS} --input filenames.tsv --vcf ${VCF_FILE}
-            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${VCF_FILE} ~{bucket_dir}/vcfs/
+            while : ; do
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${VCF_FILE} ~{bucket_dir}/vcfs/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${VCF_FILE}>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
         fi
     >>>
     

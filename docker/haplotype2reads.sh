@@ -24,6 +24,7 @@ BUCKET_DIR=$8  # Root dir of the simulation in the bucket
 WORK_DIR=$9  # Absolute path
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
+GSUTIL_DELAY_S="600"
 TIME_COMMAND="/usr/bin/time --verbose"
 PBSIM1_MODEL="/simulation/pbsim_data/model_qc_ccs"
 PBSIM2_MODEL="/simulation/pbsim_data/P6C4.model"
@@ -39,7 +40,15 @@ cd ${WORK_DIR}
 OUTPUT_FILE="reads_i${ID1}_i${ID2}_l${LENGTH_MEAN}_c${MAX_COVERAGE}.fa"
 TEST=$(gsutil -q stat ${BUCKET_DIR}/reads/${OUTPUT_FILE} && echo 0 || echo 1)
 if [ ${TEST} -eq 0 ]; then
-    ${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/reads/${OUTPUT_FILE} .
+    while : ; do
+        TEST=$(gsutil cp ${BUCKET_DIR}/reads/${OUTPUT_FILE} . && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error downloading file <${BUCKET_DIR}/reads/${OUTPUT_FILE}>. Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
 else
     ${TIME_COMMAND} ${PBSIM2_COMMAND} --depth ${MAX_COVERAGE} --prefix reads_${ID1} haplotype_${ID1}.fa
     mv reads_${ID1}_0001.fastq reads_${ID1}.fa
@@ -53,5 +62,13 @@ else
     rm -f reads_${ID1}.fa
     tr 'Z' '\n' < reads_${ID1}_${ID2}.1 > ${OUTPUT_FILE}
     rm -f reads_${ID1}_${ID2}.1
-    ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${OUTPUT_FILE} ${BUCKET_DIR}/reads/
+    while : ; do
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${OUTPUT_FILE} ${BUCKET_DIR}/reads/ && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error uploading file <${OUTPUT_FILE}>. Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
 fi

@@ -48,8 +48,10 @@ while true; do
     while read FILE; do
         FILE_PRIME=$(echo ${FILE} | tr '/' '+').${SUFFIX}
         if [ -e ${FILE_PRIME} ]; then
-            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${FILE_PRIME} ${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE}
-            rm -f ${FILE_PRIME}
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${FILE_PRIME} ${BUCKET_DIR}/pav/${SAMPLE_ID}/${FILE} && echo 0 || echo 1)
+            if [ ${TEST} -eq 0 ]; then
+                rm -f ${FILE_PRIME}
+            fi
         fi
     done < ${STATE_FILES_LIST}
     sleep ${DELAY_S}
