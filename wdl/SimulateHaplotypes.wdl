@@ -44,10 +44,10 @@ workflow SimulateHaplotypes {
         coverages: "Of one haplotype, sorted in increasing order."
         length_means: "Mean read length values, in no particular order."
         n_nodes: "Number of compute nodes to process the population in parallel. Each node processes a chunk of diploid individuals."
-        bucket_dir: "The full address of the directory in a bucket to be used to store temporary files and output files. The directory is deleted if it already exists."
+        bucket_dir: "URL of a directory in a bucket. Stores both temporary files and output files."
         use_pbsv: "1=yes, 0=no."
         delete_bucket_dir: "Erases <bucket_dir> before running the simulation (1=yes, 0=no)."
-        keep_assemblies: "Stores two assemblies per individual and per configuration in the remote bucket. 1=yes, 0=no."
+        keep_assemblies: "Stores two assemblies per individual and per configuration in <bucket_dir>. 1=yes, 0=no."
     }
     if (delete_bucket_dir == 1) {
         call DeleteBucketDir {
