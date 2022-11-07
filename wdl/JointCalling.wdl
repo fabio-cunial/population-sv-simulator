@@ -5,7 +5,7 @@ version 1.0
 # tuple in parallel.
 #
 # Resource analysis for 20x coverage of one haplotype over 300 individuals.
-# Intel Xeon, 2.30GHz, 8 physical cores, 16 GB of RAM.
+# Intel Xeon, 2.30GHz, 8 physical cores, 64 GB of RAM.
 #
 # TASK                    | TIME   | RAM    | CORES | COMMENT
 # pbsv joint              | ? s    | >15 GB |   1   |
@@ -15,8 +15,7 @@ version 1.0
 #
 #
 #
-# Remark: for chr1 at 30x, for ~90 individuals (each <.svsig.gz> file takes ~15
-# MB, and each <.snf> file takes ~2.5 MB) and for 4 threads: joint calling with
+# Remark: for chr1 at 30x, for ~90 individuals, 4 threads: joint calling with
 # PBSV takes ~40 hours and 18 GB of RAM (and it uses <=3 cores rather than
 # the 4 assigned), and joint calling with Sniffles 2 takes just seconds.
 #
@@ -147,7 +146,7 @@ task JointCallingPbsv {
         done
         find . -maxdepth 1 -name "*.svsig.gz" > filenames.fofn
         VCF_FILE="joint_pbsv_l${LENGTH}_c${COVERAGE}.vcf"
-        ${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ~{reference_fa} filenames.fofn ${VCF_FILE}
+        ${TIME_COMMAND} pbsv call --log-level INFO -j ${N_THREADS} --ccs ~{reference_fa} filenames.fofn ${VCF_FILE}
         while : ; do
             TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${VCF_FILE} ~{bucket_dir}/vcfs/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
