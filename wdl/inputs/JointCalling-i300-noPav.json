@@ -4,7 +4,7 @@
     "JointCalling.lengths": [10000, 12500, 15000, 17500, 20000, 22500],
     "JointCalling.n_individuals": 300,
     "JointCalling.reference_fa": "gs://cunial-bucket-1/simulation-root/T2T/hs1_chr1.fa",
-    "JointCalling.n_cpus": 16,
+    "JointCalling.n_cpus": 32,
     "JointCalling.use_pbsv": 1,
     "JointCalling.use_sniffles2": 1,
     "JointCalling.force_sequentiality": [1]
