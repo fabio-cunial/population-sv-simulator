@@ -47,21 +47,25 @@ workflow JointCalling {
             lengths = lengths
     }
     scatter(description in CreateWorkpackages.tasks) {
-        call JointCallingPbsv { 
-            input:
-                task_description = description,
-                bucket_dir = bucket_dir,
-                reference_fa = reference_fa,
-                n_individuals = n_individuals,
-                max_signature_file_size = max_signature_file_size_pbsv,
-                n_cpus = n_cpus
+        if (use_pbsv == 1) {
+            call JointCallingPbsv { 
+                input:
+                    task_description = description,
+                    bucket_dir = bucket_dir,
+                    reference_fa = reference_fa,
+                    n_individuals = n_individuals,
+                    max_signature_file_size = max_signature_file_size_pbsv,
+                    n_cpus = n_cpus
+            }
         }
-        call JointCallingSniffles2 { 
-            input:
-                task_description = description,
-                bucket_dir = bucket_dir,
-                n_individuals = n_individuals,
-                max_signature_file_size = max_signature_file_size_sniffles2
+        if (use_sniffles2 == 1) {
+            call JointCallingSniffles2 { 
+                input:
+                    task_description = description,
+                    bucket_dir = bucket_dir,
+                    n_individuals = n_individuals,
+                    max_signature_file_size = max_signature_file_size_sniffles2
+            }
         }
     }
     output {
