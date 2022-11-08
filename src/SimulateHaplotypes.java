@@ -30,8 +30,8 @@ public class SimulateHaplotypes {
 	 * hotspots of variation that are not explained by repeat content alone 
 	 * cannot be captured.
 	 */
-	private static int[][] positions;
-	private static int[] positions_last;
+	public static int[][] positions;
+	public static int[] positions_last;
 	
 	/**
 	 * Set of realistic insertion sequences. The program never inserts random
