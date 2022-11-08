@@ -7,11 +7,16 @@ version 1.0
 # Resource analysis for 20x coverage of one haplotype over 300 individuals.
 # Intel Xeon, 2.30GHz, 8 physical cores, 64 GB of RAM.
 #
-# TASK                    | TIME   | RAM    | CORES | COMMENT
-# pbsv joint              | ? s    | >15 GB |   1   |
-# sniffles2 joint         | 2 m    | 1 GB   |   1   |
+# TASK            | TIME   | RAM    | CORES | COMMENT
+# pbsv joint      | 14 h   | 18 GB  |  3.5  | coverage 4
+#                 | ?? h   | ?? GB  |  ???  | coverage 8
+#                 | ?? h   | ?? GB  |  ???  | coverage 12
+#                 | ?? h   | ?? GB  |  ???  | coverage 16
+#                 | ?? h   | ?? GB  |  ???  | coverage 20
+# sniffles2 joint | 2 m    | 1 GB   |   1   | 
 #
-#
+# Remark: PBSV processes 1 Mbp chunk after another, in sequence rather than in
+# parallel.
 #
 #
 #
@@ -28,7 +33,6 @@ workflow JointCalling {
         File reference_fa
         Float max_signature_file_size_pbsv = 0.020
         Float max_signature_file_size_sniffles2 = 0.003
-        Int n_cpus
         Int use_pbsv
         Int use_sniffles2
         Array[Int]? force_sequentiality
@@ -53,8 +57,7 @@ workflow JointCalling {
                     bucket_dir = bucket_dir,
                     reference_fa = reference_fa,
                     n_individuals = n_individuals,
-                    max_signature_file_size = max_signature_file_size_pbsv,
-                    n_cpus = n_cpus
+                    max_signature_file_size = max_signature_file_size_pbsv
             }
         }
         if (use_sniffles2 == 1) {
@@ -105,7 +108,6 @@ task JointCallingPbsv {
         File reference_fa
         Int n_individuals
         Float max_signature_file_size
-        Int n_cpus
     }
     parameter_meta {
         task_description: "Format: <LENGTH COVERAGE>."
@@ -162,7 +164,7 @@ task JointCallingPbsv {
     }
     runtime {
         docker: "fcunial/simulation"
-        cpu: n_cpus
+        cpu: 6
         memory: ram_size_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0

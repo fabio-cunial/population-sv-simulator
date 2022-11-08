@@ -138,7 +138,7 @@ public class SimulateHaplotypes {
 	 * @param maxDistance positions at distance $<=maxDistance$ from an interval
 	 * of type X are assigned to type X.
 	 */
-	private static final void loadPositions(int chromosomeLength, int maxDistance) {
+	public static final void loadPositions(int chromosomeLength, int maxDistance) {
 		char c;
 		int i, j, k, p;
 		int type, last1, last2, from, to;
