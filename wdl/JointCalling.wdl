@@ -8,7 +8,7 @@ version 1.0
 # Intel Xeon, 2.30GHz, 8 physical cores, 64 GB of RAM.
 #
 # TASK            | TIME   | RAM    | CORES | COMMENT
-# pbsv joint      | 14 h   | 18 GB  |  3.5  | coverage 4
+# pbsv joint      | 14-23h | 18 GB  |  3.5  | coverage 4
 #                 | ?? h   | ?? GB  |  ???  | coverage 8
 #                 | ?? h   | ?? GB  |  ???  | coverage 12
 #                 | ?? h   | ?? GB  |  ???  | coverage 16
