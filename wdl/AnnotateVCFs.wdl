@@ -110,7 +110,7 @@ task ProcessChunk {
         cat /proc/meminfo
         
         MEMORY=$(grep 'MemAvailable:' /proc/meminfo | awk '{print $2}' )
-        MEMORY=$(( ${MEMORY} / 1000000 - 2 ))  # We leave 2 GB to the OS
+        MEMORY=$(( ${MEMORY} / 1000000 - 1 ))  # We leave 1 GB to the OS
         cat ~{chunk_file} | gsutil -m cp -I .
         find . -maxdepth 1 -name "*.vcf" > list.txt
         ${TIME_COMMAND} java -Xmx${MEMORY}G -cp ~{docker_dir} AnnotateVCF list.txt ~{min_distance} ~{max_distance} ~{reference_fa} ~{repeat_intervals} ~{segdups}
@@ -124,7 +124,7 @@ task ProcessChunk {
     runtime {
         docker: "fcunial/simulation"
         cpu: 1  # The program is sequential
-        memory: "16 GB"
+        memory: "24 GB"
         disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
