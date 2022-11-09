@@ -15,41 +15,42 @@
 #
 # Remark: genotypes are not considered.
 #
-FILTER_STRING=$1  # Spaces are replaced with '+'. It equals '+' if empty.
-JOINT_CALLING_FILE=$2  # Relative path or "null".
-REFERENCE_FA_ADDRESS=$3  # Address in a bucket
-REFERENCE_FAI_ADDRESS=$4  # Address in a bucket
-N_THREADS=$5
-WORK_DIR=$6  # Absolute path
-CONFIGURATION_ID=$7  # Used just for storing the all-individuals merged VCF
-BUCKET_DIR_ALLINDIVIDUALS_VCFS=$8
+FILTER_STRING=$1  # Spaces are replaced with '+'. Equals '+' if empty.
+FILTER_STRING_FREQUENCY=$2  # Spaces are replaced with '+'. Equals '+' if empty.
+JOINT_CALLING_FILE=$3  # Relative path or "null".
+REFERENCE_FA_ADDRESS=$4  # Address in a bucket
+REFERENCE_FAI_ADDRESS=$5  # Address in a bucket
+N_THREADS=$6
+WORK_DIR=$7  # Absolute path
+CONFIGURATION_ID=$8  # Used just for storing the all-individuals merged VCF
+BUCKET_DIR_ALLINDIVIDUALS_VCFS=$9
 
 # Per-individual matrices. The script appends many values (one value per
 # individual) to a single row of each matrix.
-TP_MATRIX=$9
-FP_MATRIX=${10}
-FN_MATRIX=${11}
-PRECISION_MATRIX=${12}
-RECALL_MATRIX=${13}
-F1_MATRIX=${14}
+TP_MATRIX=${10}
+FP_MATRIX=${11}
+FN_MATRIX=${12}
+PRECISION_MATRIX=${13}
+RECALL_MATRIX=${14}
+F1_MATRIX=${15}
 
 # All-individuals matrices. The script appends one aggregated value to a single
 # row of each matrix.
-TP_MATRIX_MERGE=${15}
-FP_MATRIX_MERGE=${16}
-FN_MATRIX_MERGE=${17}
-PRECISION_MATRIX_MERGE=${18}
-RECALL_MATRIX_MERGE=${19}
-F1_MATRIX_MERGE=${20}
+TP_MATRIX_MERGE=${16}
+FP_MATRIX_MERGE=${17}
+FN_MATRIX_MERGE=${18}
+PRECISION_MATRIX_MERGE=${19}
+RECALL_MATRIX_MERGE=${20}
+F1_MATRIX_MERGE=${21}
 
 # Joint-calling matrices (ignored if there is no joint calling file). The
 # script appends one aggregated value to a single row of each matrix.
-TP_MATRIX_JOINT=${21}
-FP_MATRIX_JOINT=${22}
-FN_MATRIX_JOINT=${23}
-PRECISION_MATRIX_JOINT=${24}
-RECALL_MATRIX_JOINT=${25}
-F1_MATRIX_JOINT=${26}
+TP_MATRIX_JOINT=${22}
+FP_MATRIX_JOINT=${23}
+FN_MATRIX_JOINT=${24}
+PRECISION_MATRIX_JOINT=${25}
+RECALL_MATRIX_JOINT=${26}
+F1_MATRIX_JOINT=${27}
 
 
 set -euxo pipefail
@@ -61,6 +62,19 @@ if [ ${FILTER_STRING} = "+" ]; then
 else
     FILTER_STRING=$(echo ${FILTER_STRING} | tr '+' ' ')
 fi
+if [ ${FILTER_STRING_FREQUENCY} = "+" ]; then
+    FILTER_STRING_FREQUENCY=""
+else
+    FILTER_STRING_FREQUENCY=$(echo ${FILTER_STRING_FREQUENCY} | tr '+' ' ')
+fi
+FILTER_STRING_TRUTH=${FILTER_STRING}
+if [ ${#FILTER_STRING_FREQUENCY} -ne 0  ]; then
+    if [ ${#FILTER_STRING_TRUTH} -ne 0  ]; then
+        FILTER_STRING_TRUTH="${FILTER_STRING_TRUTH} && ${FILTER_STRING_FREQUENCY}"
+    else
+        FILTER_STRING_TRUTH=${FILTER_STRING_FREQUENCY}
+    fi
+fi
 BCFTOOLS_MERGE_FLAGS="--force-samples --merge none"
 TRUVARI_BENCH_FLAGS=" "  # Default settings for now
 TRUVARI_COLLAPSE_FLAGS="--keep common --sizemin 40"
@@ -69,7 +83,7 @@ TRUVARI_COLLAPSE_FLAGS="--keep common --sizemin 40"
 # Filters every VCF file in a chunk of files using $FILTER_STRING$, filters the
 # corresponding ground truth as well, and compares the two, sequentially.
 #
-# Remark: ground truth VCFs must be indexed every time, since we are filtering
+# Remark: ground truth VCFs must be reindexed every time, since we are filtering
 # them by different criteria every time.
 #
 function processChunk() {
@@ -94,8 +108,8 @@ function processChunk() {
         ID=$(basename ${VCF_FILE} .vcf)
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}}
-        if [ ${#FILTER_STRING} -ne 0 ]; then
-            bcftools filter --threads 0 --include '${FILTER_STRING}' --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
+        if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
+            bcftools filter --threads 0 --include '${FILTER_STRING_TRUTH}' --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
         else
             bgzip --threads 1 --stdout ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
         fi
@@ -118,7 +132,8 @@ gsutil cp ${REFERENCE_FA_ADDRESS} reference.fa
 gsutil cp ${REFERENCE_FAI_ADDRESS} reference.fai
 
 # 1. Per-individual matrices
-find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*.vcf' > files.txt
+find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*.vcf' > tmp.txt
+shuf tmp.txt > files.txt  # For better balancing
 split -d -n ${N_THREADS} files.txt chunk-
 rm -f files.txt
 for CHUNK_FILE in $(ls chunk-*); do
@@ -151,8 +166,8 @@ else
     ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz
 fi
 ${TIME_COMMAND} tabix truvari_merge.vcf.gz
-if [ ${#FILTER_STRING} -ne 0 ]; then
-    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include '${FILTER_STRING}' --output-type z --output true_filtered.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf
+if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
+    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include '${FILTER_STRING_TRUTH}' --output-type z --output true_filtered.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf
 else 
     ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ground_truth_vcfs/groundTruth_joint.vcf > true_filtered.vcf.gz
 fi
@@ -166,10 +181,9 @@ grep "\"recall\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${REC
 grep "\"f1\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX_MERGE}
 rm -rf truvari_merge.vcf* ouput/
 
-# 3. Joint-calling matrices (if any): filtering the joint calling file with
-# $FILTER_STRING$, and comparing it to the filtered set of distinct variants in
-# the ground truth.
-if [ ${JOINT_CALLING_FILE} != null ]; then
+# 3. Joint-calling matrices (if any): filtering the joint calling file and
+# comparing it to the filtered set of distinct variants in the ground truth.
+if [ ${JOINT_CALLING_FILE} != "null" ]; then
     if [ ${#FILTER_STRING} -ne 0 ]; then
         ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include '${FILTER_STRING}' --output-type z --output joint_filtered.vcf.gz ${JOINT_CALLING_FILE}
     else 
