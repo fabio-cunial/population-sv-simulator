@@ -94,7 +94,6 @@ workflow SimulateHaplotypes {
             lengths = length_means,
             n_individuals = n_haplotypes/2,
             reference_fa = reference_fa,
-            n_cpus = n_cpus_joint,
             use_pbsv = use_pbsv,
             use_sniffles2 = use_sniffles2,
             force_sequentiality = ProcessChunkOfHaplotypes.force_sequentiality

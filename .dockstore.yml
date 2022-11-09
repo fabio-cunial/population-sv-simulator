@@ -10,6 +10,11 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/JointCalling.wdl
   testParameterFiles:
+- name: AnnotateVCFs
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/AnnotateVCFs.wdl
+  testParameterFiles:
 - name: PerformanceMatrices
   subclass: wdl
   publish: True
