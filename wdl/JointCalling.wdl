@@ -9,7 +9,7 @@ version 1.0
 #
 # TASK            | TIME   | RAM    | CORES | COMMENT
 # pbsv joint      | 14-23h | 18 GB  |  3.5  | coverage 4
-#                 | ?? h   | ?? GB  |  ???  | coverage 8
+#                 | 40 h   | 27 GB  |  3.7  | coverage 8
 #                 | ?? h   | ?? GB  |  ???  | coverage 12
 #                 | ?? h   | ?? GB  |  ???  | coverage 16
 #                 | ?? h   | ?? GB  |  ???  | coverage 20

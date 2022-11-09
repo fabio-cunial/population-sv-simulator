@@ -59,7 +59,8 @@ task GetChunks {
     }
     command <<<
         set -euxo pipefail
-        gsutil ls ~{bucket_dir} > workpackages.txt
+        gsutil ls ~{bucket_dir} > tmp.txt
+        shuf tmp.txt > workpackages.txt  # For better balancing
         N_FILES=$(wc -l < workpackages.txt)
         N_FILES_PER_CHUNK=$(( ${N_FILES} / ~{n_chunks} ))
         if [ ${N_FILES} -ge ~{min_files_per_chunk} -a ${N_FILES_PER_CHUNK} -lt ~{min_files_per_chunk} ]; then

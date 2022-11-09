@@ -7,7 +7,7 @@ import java.text.NumberFormat;
  * Adds fields REPEATS_START, REPEATS_END, REPEATS_FRACTION (defined in 
  * $SimulateHaplotypes.java$) to every VCF record.
  *
- * Remark: the program takes ~11 GB of RAM.
+ * Remark: the program takes <=22 GB of RAM.
  */
 public class AnnotateVCF {
     /**
@@ -128,7 +128,7 @@ public class AnnotateVCF {
 		BufferedReader br;
         BufferedWriter bw;
         boolean[] tmpBoolean = new boolean[(1+maxDistance*2)*5];
-        int[] tmpInt = new int[10000];  // Arbitrary
+        int[] tmpInt = new int[20000];  // Arbitrary
 		int[] out = new int[2];
 		String[] tokens;
         
