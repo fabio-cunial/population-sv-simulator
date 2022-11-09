@@ -1,0 +1,10 @@
+{
+    "AnnotateVCFs.bucket_dir": "gs://cunial-bucket-1/simulation-root/run/vcfs",
+    "AnnotateVCFs.max_vcf_size": 0.008,
+    "AnnotateVCFs.min_distance": 10,
+    "AnnotateVCFs.max_distance": 100,
+    "AnnotateVCFs.reference_fa": "gs://cunial-bucket-1/simulation-root/T2T/hs1_chr1.fa",
+    "AnnotateVCFs.repeat_intervals": "gs://cunial-bucket-1/simulation-root/T2T/repeatIntervals.txt",
+    "AnnotateVCFs.segdups": "gs://cunial-bucket-1/simulation-root/T2T/segdups.txt",
+    "AnnotateVCFs.n_nodes": 50
+}

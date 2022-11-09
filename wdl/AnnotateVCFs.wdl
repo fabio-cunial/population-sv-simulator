@@ -73,7 +73,7 @@ task GetChunks {
         Int n_files_per_chunk = read_int("n_files_per_chunk.txt")
     }
     runtime {
-        docker: "ubuntu:latest"
+        docker: "fcunial/simulation"
     }
 }
 
