@@ -400,7 +400,7 @@ task ProcessChunk {
                 for coverage in ${COVERAGES}; do
                     rm -rf measured_vcfs/; mkdir -p measured_vcfs/
                     while : ; do
-                        TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/ && echo 0 || echo 1)
+                        TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}_annotated.vcf" measured_vcfs/ && echo 0 || echo 1)
                         if [ ${TEST} -eq 1 ]; then
                             echo "Error downloading experimental VCFs from <~{bucket_dir_experimental_vcfs}>. Trying again..."
                             sleep ${GSUTIL_DELAY_S}
@@ -409,18 +409,18 @@ task ProcessChunk {
                         fi
                     done
                     JOINT_CALLING_FILE="null"
-                    TEST=$(gsutil -q stat "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" && echo 0 || echo 1)
+                    TEST=$(gsutil -q stat "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf" && echo 0 || echo 1)
                     if [ ${TEST} -eq 0 ]; then
                         while : ; do
-                            TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/ && echo 0 || echo 1)
+                            TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf" measured_vcfs/ && echo 0 || echo 1)
                             if [ ${TEST} -eq 1 ]; then
-                                echo "Error downloading file <~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf>. Trying again..."
+                                echo "Error downloading file <~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf>. Trying again..."
                                 sleep ${GSUTIL_DELAY_S}
                             else
                                 break
                             fi
                         done
-                        JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}.vcf"
+                        JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf"
                     fi
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX}
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${FP_MATRIX}

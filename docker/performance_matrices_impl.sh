@@ -150,7 +150,7 @@ while : ; do
 done
 
 # 1. Per-individual matrices
-find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*.vcf' > tmp.txt
+find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*_annotated.vcf' > tmp.txt
 shuf tmp.txt > files.txt  # For better balancing
 split -d -n ${N_THREADS} files.txt chunk-
 rm -f files.txt
