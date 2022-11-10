@@ -11,7 +11,7 @@ version 1.0
 # sniffles2 joint | 2 m    | 1 GB   |   1   | 
 # pbsv joint      | 14-23h | 18 GB  |  3.5  | coverage 4
 #                 | 43 h   | 28 GB  |  3.7  | coverage 8
-#                 | 50 h   | 33 GB  |  3.6  | coverage 12
+#                 | 56 h   | 35 GB  |  3.6  | coverage 12
 #                 | ?? h   | ?? GB  |  ???  | coverage 16
 #                 | ?? h   | ?? GB  |  ???  | coverage 20
 #
