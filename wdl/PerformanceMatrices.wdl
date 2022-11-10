@@ -398,9 +398,9 @@ task ProcessChunk {
             fi
             for readLength in ${READ_LENGTHS}; do
                 for coverage in ${COVERAGES}; do
-                    rm -rf measured_vcfs/; mkdir -p measured_vcfs/
+                    rm -rf experimental_vcfs/; mkdir -p experimental_vcfs/
                     while : ; do
-                        TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}_annotated.vcf" measured_vcfs/ && echo 0 || echo 1)
+                        TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}_annotated.vcf" experimental_vcfs/ && echo 0 || echo 1)
                         if [ ${TEST} -eq 1 ]; then
                             echo "Error downloading experimental VCFs from <~{bucket_dir_experimental_vcfs}>. Trying again..."
                             sleep ${GSUTIL_DELAY_S}
@@ -412,7 +412,7 @@ task ProcessChunk {
                     TEST=$(gsutil -q stat "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf" && echo 0 || echo 1)
                     if [ ${TEST} -eq 0 ]; then
                         while : ; do
-                            TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf" measured_vcfs/ && echo 0 || echo 1)
+                            TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf" experimental_vcfs/ && echo 0 || echo 1)
                             if [ ${TEST} -eq 1 ]; then
                                 echo "Error downloading file <~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf>. Trying again..."
                                 sleep ${GSUTIL_DELAY_S}
@@ -420,7 +420,7 @@ task ProcessChunk {
                                 break
                             fi
                         done
-                        JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf"
+                        JOINT_CALLING_FILE="experimental_vcfs/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf"
                     fi
                     echo -n "${readLength},${coverage}," >> ${TP_MATRIX}
                     echo -n "${readLength},${coverage}," >> ${FP_MATRIX}
