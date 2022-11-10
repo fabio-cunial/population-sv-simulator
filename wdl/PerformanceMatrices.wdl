@@ -208,14 +208,14 @@ task GetChunks {
             echo "${caller} -1 -1 -1 -1 -1 -1 -1 -1 -1" >> tmp.txt
         done
         shuf tmp.txt > workpackages.txt  # For better balancing
-        N_CHUNKS_PRIME="0"
+        N_LINES_PER_CHUNK="0"
         N_LINES=$(wc -l < workpackages.txt)
-        if [ ~{n_chunks} -gt ${N_LINES} ]; then
-            N_CHUNKS_PRIME=${N_LINES}
+        if [ ~{n_chunks} -ge ${N_LINES} ]; then
+            N_LINES_PER_CHUNK="1"
         else
-            N_CHUNKS_PRIME=~{n_chunks}
+            N_LINES_PER_CHUNK=$(( ${N_LINES} / ~{n_chunks} ))
         fi
-        split -d -n ${N_CHUNKS_PRIME} workpackages.txt chunk-
+        split -d -l ${N_LINES_PER_CHUNK} workpackages.txt chunk-
     >>>
     output {
         Array[File] chunks = glob("chunk-*")
