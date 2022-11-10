@@ -24,34 +24,35 @@ REFERENCE_FAI_ADDRESS=$5  # Address in a bucket
 N_THREADS=$6
 WORK_DIR=$7  # Absolute path
 CONFIGURATION_ID=$8  # Used just for storing the all-individuals merged VCF
-BUCKET_DIR_ALLINDIVIDUALS_VCFS=$9
+CALLER=$9
+BUCKET_DIR_ALLINDIVIDUALS_VCFS=${10}
 
 # Per-individual matrices. The script appends many values (one value per
 # individual) to a single row of each matrix.
-TP_MATRIX=${10}
-FP_MATRIX=${11}
-FN_MATRIX=${12}
-PRECISION_MATRIX=${13}
-RECALL_MATRIX=${14}
-F1_MATRIX=${15}
+TP_MATRIX=${11}
+FP_MATRIX=${12}
+FN_MATRIX=${13}
+PRECISION_MATRIX=${14}
+RECALL_MATRIX=${15}
+F1_MATRIX=${16}
 
 # All-individuals matrices. The script appends one aggregated value to a single
 # row of each matrix.
-TP_MATRIX_MERGE=${16}
-FP_MATRIX_MERGE=${17}
-FN_MATRIX_MERGE=${18}
-PRECISION_MATRIX_MERGE=${19}
-RECALL_MATRIX_MERGE=${20}
-F1_MATRIX_MERGE=${21}
+TP_MATRIX_MERGE=${17}
+FP_MATRIX_MERGE=${18}
+FN_MATRIX_MERGE=${19}
+PRECISION_MATRIX_MERGE=${20}
+RECALL_MATRIX_MERGE=${21}
+F1_MATRIX_MERGE=${22}
 
 # Joint-calling matrices (ignored if there is no joint calling file). The
 # script appends one aggregated value to a single row of each matrix.
-TP_MATRIX_JOINT=${22}
-FP_MATRIX_JOINT=${23}
-FN_MATRIX_JOINT=${24}
-PRECISION_MATRIX_JOINT=${25}
-RECALL_MATRIX_JOINT=${26}
-F1_MATRIX_JOINT=${27}
+TP_MATRIX_JOINT=${23}
+FP_MATRIX_JOINT=${24}
+FN_MATRIX_JOINT=${25}
+PRECISION_MATRIX_JOINT=${26}
+RECALL_MATRIX_JOINT=${27}
+F1_MATRIX_JOINT=${28}
 
 
 set -euxo pipefail
@@ -86,6 +87,27 @@ fi
 BCFTOOLS_MERGE_FLAGS="--force-samples --merge none"
 TRUVARI_BENCH_FLAGS=" "  # Default settings for now
 TRUVARI_COLLAPSE_FLAGS="--keep common --sizemin 40"
+rm -f new_headers.txt
+echo "##INFO=<ID=REPEATS_START,Number=1,Type=Integer,Description=\"Repetitive context around the first position\">" >> new_headers.txt
+echo "##INFO=<ID=REPEATS_END,Number=1,Type=Integer,Description=\"Repetitive context around the last position\">" >> new_headers.txt
+echo "##INFO=<ID=REPEATS_FRACTION,Number=1,Type=Float,Description=\"Fraction of the SV covered by repeats of any type\">" >> new_headers.txt
+
+
+# Appends <new_headers.txt> to a VCF file. This is needed by <bcftools filter>.
+#
+function reheader() {
+    local INPUT_FILE=$1
+    
+    bcftools view -h ${INPUT_FILE} > headers_old.txt
+    N_LINES=$(wc -l < headers_old.txt)
+    head -n $((${N_LINES} - 1)) headers_old.txt > headers_new.txt
+    cat new_headers.txt >> headers_new.txt
+    tail -n 1 headers_old.txt >> headers_new.txt
+    bcftools reheader -h headers_new.txt -o ${INPUT_FILE}.newHeaders ${INPUT_FILE}
+    rm -f ${INPUT_FILE}
+    mv ${INPUT_FILE}.newHeaders ${INPUT_FILE}
+    rm -f headers_old.txt headers_new.txt
+}
 
 
 # Filters every VCF file in a chunk of files using $FILTER_STRING$, filters the
@@ -108,7 +130,8 @@ function processChunk() {
         TRUE_FILE="true_${CHUNK_ID}.vcf.gz"
         OUTPUT_DIR="ouput_${CHUNK_ID}"
         if [ ${#FILTER_STRING} -ne 0 ]; then
-            bcftools filter --threads 0 --include ${FILTER_STRING} --output-type z --output ${MEASURED_FILE} ${VCF_FILE}
+            reheader ${VCF_FILE}
+            bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type z --output ${MEASURED_FILE} ${VCF_FILE}
         else
             bgzip --threads 1 --stdout ${VCF_FILE} > ${MEASURED_FILE}
         fi
@@ -117,7 +140,7 @@ function processChunk() {
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}}
         if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-            bcftools filter --threads 0 --include ${FILTER_STRING_TRUTH} --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
+            bcftools filter --threads 0 --include "${FILTER_STRING_TRUTH}" --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
         else
             bgzip --threads 1 --stdout ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
         fi
@@ -215,7 +238,7 @@ else
 fi
 ${TIME_COMMAND} tabix truvari_merge.vcf.gz
 if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include ${FILTER_STRING_TRUTH} --output-type z --output true_filtered.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf
+    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include "${FILTER_STRING_TRUTH}" --output-type z --output true_filtered.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf
 else 
     ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ground_truth_vcfs/groundTruth_joint.vcf > true_filtered.vcf.gz
 fi
@@ -233,7 +256,8 @@ rm -rf truvari_merge.vcf* ouput/
 # comparing it to the filtered set of distinct variants in the ground truth.
 if [ ${JOINT_CALLING_FILE} != "null" ]; then
     if [ ${#FILTER_STRING} -ne 0 ]; then
-        ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include ${FILTER_STRING} --output-type z --output joint_filtered.vcf.gz ${JOINT_CALLING_FILE}
+        reheader ${JOINT_CALLING_FILE}
+        ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include "${FILTER_STRING}" --output-type z --output joint_filtered.vcf.gz ${JOINT_CALLING_FILE}
     else 
         ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ${JOINT_CALLING_FILE} > joint_filtered.vcf.gz
     fi
