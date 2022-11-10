@@ -143,7 +143,7 @@ function processChunk() {
         tabix ${MEASURED_FILE}
         ID=$(basename ${VCF_FILE} .vcf)
         ID=${ID#${CALLER}_i}
-        ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}}
+        ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}_annotated}
         if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
             TMP_FILE="ground_truth_vcfs/groundTruth_individual_${ID}.vcf"
             bgzip --threads 1 --stdout ${TMP_FILE} > ${TMP_FILE}.gz
@@ -232,7 +232,7 @@ if [ ${TEST} -eq 0 ]; then
 else
     rm -f files.txt
     find experimental_vcfs/ -maxdepth 1 -name '*_filtered.vcf.gz' > files.txt
-    ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} --file-list file.txt --output-type z --output merge.vcf.gz
+    ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} --file-list files.txt --output-type z --output merge.vcf.gz
     tabix merge.vcf.gz
     ${TIME_COMMAND} truvari collapse --threads ${N_THREADS} ${TRUVARI_COLLAPSE_FLAGS} --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference reference.fa
     ${TIME_COMMAND} bgzip --threads ${N_THREADS} truvari_merge.vcf
@@ -248,9 +248,9 @@ else
 fi
 ${TIME_COMMAND} tabix truvari_merge.vcf.gz
 if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include "${FILTER_STRING_TRUTH}" --output-type z --output true_filtered.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf
+    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include "${FILTER_STRING_TRUTH}" --output-type z --output true_filtered.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf.gz
 else 
-    ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ground_truth_vcfs/groundTruth_joint.vcf > true_filtered.vcf.gz
+    cp ground_truth_vcfs/groundTruth_joint.vcf.gz true_filtered.vcf.gz
 fi
 ${TIME_COMMAND} tabix true_filtered.vcf.gz
 ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base true_filtered.vcf.gz --comp truvari_merge.vcf.gz --reference reference.fa --output ouput/

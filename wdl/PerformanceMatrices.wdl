@@ -286,7 +286,18 @@ task ProcessChunk {
             else
                 break
             fi
+        done        
+        while : ; do
+            TEST=$(gsutil -m cp "~{bucket_dir_ground_truth_vcfs}/groundTruth_joint.vcf" ground_truth_vcfs/ && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error downloading ground truth file <~{bucket_dir_ground_truth_vcfs}/groundTruth_joint.vcf>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
         done
+        ${TIME_COMMAND} bgzip --threads ${N_THREADS} ground_truth_vcfs/groundTruth_joint.vcf
+        tabix ground_truth_vcfs/groundTruth_joint.vcf.gz
         READ_LENGTHS=~{sep='-' read_lengths}
         READ_LENGTHS=$(echo ${READ_LENGTHS} | tr '-' ' ')
         COVERAGES=~{sep='-' coverages}
