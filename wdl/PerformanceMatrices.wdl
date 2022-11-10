@@ -127,12 +127,18 @@ task GetChunks {
     command <<<
         set -euxo pipefail
         
-        CALLERS=~{sep=' ' callers}
-        SV_TYPES=~{sep=' ' svTypes}
-        SV_LENGTHS=~{sep=' ' svLengths}
-        SV_FREQUENCIES=~{sep=' ' svFrequencies}
-        CONTEXT_TYPES=~{sep=' ' contextTypes}
-        REPEAT_FRACTIONS=~{sep=' ' repeatFractions}
+        CALLERS=~{sep='-' callers}
+        CALLERS=$(echo ${CALLERS} | tr '-' ' ')
+        SV_TYPES=~{sep='-' svTypes}
+        SV_TYPES=$(echo ${SV_TYPES} | tr '-' ' ')
+        SV_LENGTHS=~{sep='-' svLengths}
+        SV_LENGTHS=$(echo ${SV_LENGTHS} | tr '-' ' ')
+        SV_FREQUENCIES=~{sep='-' svFrequencies}
+        SV_FREQUENCIES=$(echo ${SV_FREQUENCIES} | tr '-' ' ')
+        CONTEXT_TYPES=~{sep='-' contextTypes}
+        CONTEXT_TYPES=$(echo ${CONTEXT_TYPES} | tr '-' ' ')
+        REPEAT_FRACTIONS=~{sep='-' repeatFractions}
+        REPEAT_FRACTIONS=$(echo ${REPEAT_FRACTIONS} | tr '-' ' ')
         for caller in ${CALLERS}; do
             # 1. SV TYPE
             for svType in ${SV_TYPES}; do
@@ -281,6 +287,10 @@ task ProcessChunk {
                 break
             fi
         done
+        READ_LENGTHS=~{sep='-' read_lengths}
+        READ_LENGTHS=$(echo ${READ_LENGTHS} | tr '-' ' ')
+        COVERAGES=~{sep='-' coverages}
+        COVERAGES=$(echo ${COVERAGES} | tr '-' ' ')
         while read LINE; do
             caller=$(echo ${LINE} | awk '{print $1}')
             svType=$(echo ${LINE} | awk '{print $2}')
@@ -386,8 +396,8 @@ task ProcessChunk {
                 # We do not test the existence of JOINT matrices for simplicity.
                 continue
             fi
-            for readLength in ~{sep=' ' read_lengths}; do
-                for coverage in ~{sep=' ' coverages}; do
+            for readLength in ${READ_LENGTHS}; do
+                for coverage in ${COVERAGES}; do
                     rm -rf measured_vcfs/; mkdir -p measured_vcfs/
                     while : ; do
                         TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/ && echo 0 || echo 1)
