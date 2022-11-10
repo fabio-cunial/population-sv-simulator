@@ -25,34 +25,36 @@ N_THREADS=$6
 WORK_DIR=$7  # Absolute path
 CONFIGURATION_ID=$8  # Used just for storing the all-individuals merged VCF
 CALLER=$9
-BUCKET_DIR_ALLINDIVIDUALS_VCFS=${10}
+READ_LENGTH=${10}
+COVERAGE=${11}
+BUCKET_DIR_ALLINDIVIDUALS_VCFS=${12}
 
 # Per-individual matrices. The script appends many values (one value per
 # individual) to a single row of each matrix.
-TP_MATRIX=${11}
-FP_MATRIX=${12}
-FN_MATRIX=${13}
-PRECISION_MATRIX=${14}
-RECALL_MATRIX=${15}
-F1_MATRIX=${16}
+TP_MATRIX=${13}
+FP_MATRIX=${14}
+FN_MATRIX=${15}
+PRECISION_MATRIX=${16}
+RECALL_MATRIX=${17}
+F1_MATRIX=${18}
 
 # All-individuals matrices. The script appends one aggregated value to a single
 # row of each matrix.
-TP_MATRIX_MERGE=${17}
-FP_MATRIX_MERGE=${18}
-FN_MATRIX_MERGE=${19}
-PRECISION_MATRIX_MERGE=${20}
-RECALL_MATRIX_MERGE=${21}
-F1_MATRIX_MERGE=${22}
+TP_MATRIX_MERGE=${19}
+FP_MATRIX_MERGE=${20}
+FN_MATRIX_MERGE=${21}
+PRECISION_MATRIX_MERGE=${22}
+RECALL_MATRIX_MERGE=${23}
+F1_MATRIX_MERGE=${24}
 
 # Joint-calling matrices (ignored if there is no joint calling file). The
 # script appends one aggregated value to a single row of each matrix.
-TP_MATRIX_JOINT=${23}
-FP_MATRIX_JOINT=${24}
-FN_MATRIX_JOINT=${25}
-PRECISION_MATRIX_JOINT=${26}
-RECALL_MATRIX_JOINT=${27}
-F1_MATRIX_JOINT=${28}
+TP_MATRIX_JOINT=${25}
+FP_MATRIX_JOINT=${26}
+FN_MATRIX_JOINT=${27}
+PRECISION_MATRIX_JOINT=${28}
+RECALL_MATRIX_JOINT=${29}
+F1_MATRIX_JOINT=${30}
 
 
 set -euxo pipefail
@@ -98,15 +100,15 @@ echo "##INFO=<ID=REPEATS_FRACTION,Number=1,Type=Float,Description=\"Fraction of 
 function reheader() {
     local INPUT_FILE=$1
     
-    bcftools view -h ${INPUT_FILE} > headers_old.txt
-    N_LINES=$(wc -l < headers_old.txt)
-    head -n $((${N_LINES} - 1)) headers_old.txt > headers_new.txt
-    cat new_headers.txt >> headers_new.txt
-    tail -n 1 headers_old.txt >> headers_new.txt
-    bcftools reheader -h headers_new.txt -o ${INPUT_FILE}.newHeaders ${INPUT_FILE}
+    bcftools view -h ${INPUT_FILE} > ${INPUT_FILE}_headers_old.txt
+    N_LINES=$(wc -l < ${INPUT_FILE}_headers_old.txt)
+    head -n $((${N_LINES} - 1)) ${INPUT_FILE}_headers_old.txt > ${INPUT_FILE}_headers_new.txt
+    cat new_headers.txt >> ${INPUT_FILE}_headers_new.txt
+    tail -n 1 ${INPUT_FILE}_headers_old.txt >> ${INPUT_FILE}_headers_new.txt
+    bcftools reheader -h ${INPUT_FILE}_headers_new.txt -o ${INPUT_FILE}.newHeaders ${INPUT_FILE}
     rm -f ${INPUT_FILE}
     mv ${INPUT_FILE}.newHeaders ${INPUT_FILE}
-    rm -f headers_old.txt headers_new.txt
+    rm -f ${INPUT_FILE}_headers_old.txt ${INPUT_FILE}_headers_new.txt
 }
 
 
@@ -131,7 +133,10 @@ function processChunk() {
         OUTPUT_DIR="ouput_${CHUNK_ID}"
         if [ ${#FILTER_STRING} -ne 0 ]; then
             reheader ${VCF_FILE}
-            bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type z --output ${MEASURED_FILE} ${VCF_FILE}
+            bgzip --threads 1 --stdout ${VCF_FILE} > ${VCF_FILE}.gz
+            tabix ${VCF_FILE}.gz
+            bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type z --output ${MEASURED_FILE} ${VCF_FILE}.gz
+            rm -f ${VCF_FILE}.gz
         else
             bgzip --threads 1 --stdout ${VCF_FILE} > ${MEASURED_FILE}
         fi
@@ -140,7 +145,11 @@ function processChunk() {
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}}
         if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-            bcftools filter --threads 0 --include "${FILTER_STRING_TRUTH}" --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
+            TMP_FILE="ground_truth_vcfs/groundTruth_individual_${ID}.vcf"
+            bgzip --threads 1 --stdout ${TMP_FILE} > ${TMP_FILE}.gz
+            tabix ${TMP_FILE}.gz
+            bcftools filter --threads 0 --include "${FILTER_STRING_TRUTH}" --output-type z --output ${TRUE_FILE} ${TMP_FILE}.gz
+            rm -f ${TMP_FILE}.gz
         else
             bgzip --threads 1 --stdout ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
         fi
@@ -223,7 +232,8 @@ if [ ${TEST} -eq 0 ]; then
 else
     rm -f files.txt
     find experimental_vcfs/ -maxdepth 1 -name '*_filtered.vcf.gz' > files.txt
-    ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} --file-list file.txt --output-type z --output merge.vcf.gz 
+    ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} --file-list file.txt --output-type z --output merge.vcf.gz
+    tabix merge.vcf.gz
     ${TIME_COMMAND} truvari collapse --threads ${N_THREADS} ${TRUVARI_COLLAPSE_FLAGS} --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference reference.fa
     ${TIME_COMMAND} bgzip --threads ${N_THREADS} truvari_merge.vcf
     while : ; do
@@ -257,6 +267,8 @@ rm -rf truvari_merge.vcf* ouput/
 if [ ${JOINT_CALLING_FILE} != "null" ]; then
     if [ ${#FILTER_STRING} -ne 0 ]; then
         reheader ${JOINT_CALLING_FILE}
+        bgzip --threads ${N_THREADS} ${JOINT_CALLING_FILE}
+        tabix ${JOINT_CALLING_FILE}
         ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include "${FILTER_STRING}" --output-type z --output joint_filtered.vcf.gz ${JOINT_CALLING_FILE}
     else 
         ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ${JOINT_CALLING_FILE} > joint_filtered.vcf.gz
