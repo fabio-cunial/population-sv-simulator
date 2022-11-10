@@ -152,7 +152,15 @@ done
 # 1. Per-individual matrices
 find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*_annotated.vcf' > tmp.txt
 shuf tmp.txt > files.txt  # For better balancing
-split -d -n ${N_THREADS} files.txt chunk-
+rm -f tmp.txt
+N_CHUNKS="0"
+N_LINES=$(wc -l < files.txt)
+if [ ${N_THREADS} -gt ${N_LINES} ]; then
+    N_CHUNKS=${N_LINES}
+else
+    N_CHUNKS=${N_THREADS}
+fi
+split -d -n ${N_CHUNKS} files.txt chunk-
 rm -f files.txt
 for CHUNK_FILE in $(ls chunk-*); do
     processChunk ${CHUNK_FILE#chunk-} &
