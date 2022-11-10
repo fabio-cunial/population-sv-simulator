@@ -422,25 +422,25 @@ task ProcessChunk {
                         done
                         JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}_annotated.vcf"
                     fi
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${FP_MATRIX}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${FN_MATRIX}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${PRECISION_MATRIX}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX_MERGE}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${FP_MATRIX_MERGE}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${FN_MATRIX_MERGE}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${PRECISION_MATRIX_MERGE}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX_MERGE}
-                    echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX_MERGE}
+                    echo -n "${readLength},${coverage}," >> ${TP_MATRIX}
+                    echo -n "${readLength},${coverage}," >> ${FP_MATRIX}
+                    echo -n "${readLength},${coverage}," >> ${FN_MATRIX}
+                    echo -n "${readLength},${coverage}," >> ${PRECISION_MATRIX}
+                    echo -n "${readLength},${coverage}," >> ${RECALL_MATRIX}
+                    echo -n "${readLength},${coverage}," >> ${F1_MATRIX}
+                    echo -n "${readLength},${coverage}," >> ${TP_MATRIX_MERGE}
+                    echo -n "${readLength},${coverage}," >> ${FP_MATRIX_MERGE}
+                    echo -n "${readLength},${coverage}," >> ${FN_MATRIX_MERGE}
+                    echo -n "${readLength},${coverage}," >> ${PRECISION_MATRIX_MERGE}
+                    echo -n "${readLength},${coverage}," >> ${RECALL_MATRIX_MERGE}
+                    echo -n "${readLength},${coverage}," >> ${F1_MATRIX_MERGE}
                     if [ ${JOINT_CALLING_FILE} != "null" ]; then
-                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX_JOINT}
-                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${FP_MATRIX_JOINT}
-                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${FN_MATRIX_JOINT}
-                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${PRECISION_MATRIX_JOINT}
-                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${RECALL_MATRIX_JOINT}
-                        echo -n "${READ_LENGTH},${COVERAGE}," >> ${F1_MATRIX_JOINT}
+                        echo -n "${readLength},${coverage}," >> ${TP_MATRIX_JOINT}
+                        echo -n "${readLength},${coverage}," >> ${FP_MATRIX_JOINT}
+                        echo -n "${readLength},${coverage}," >> ${FN_MATRIX_JOINT}
+                        echo -n "${readLength},${coverage}," >> ${PRECISION_MATRIX_JOINT}
+                        echo -n "${readLength},${coverage}," >> ${RECALL_MATRIX_JOINT}
+                        echo -n "${readLength},${coverage}," >> ${F1_MATRIX_JOINT}
                     fi
                     bash ~{docker_dir}/performance_matrices_impl.sh ${FILTER_STRING} ${FILTER_STRING_FREQUENCY} ${JOINT_CALLING_FILE} ~{reference_fa} ~{reference_fai} ${N_THREADS} ~{work_dir} "${PREFIX}_l${readLength}_c${coverage}" ~{bucket_dir_allIndividuals_vcfs} ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX}    ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE}    ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT}
                     echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
