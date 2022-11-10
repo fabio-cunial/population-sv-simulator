@@ -127,12 +127,12 @@ task GetChunks {
     command <<<
         set -euxo pipefail
         
-        CALLERS=~{sep='-' callers}
-        SV_TYPES=~{sep='-' svTypes}
-        SV_LENGTHS=~{sep='-' svLengths}
-        SV_FREQUENCIES=~{sep='-' svFrequencies}
-        CONTEXT_TYPES=~{sep='-' contextTypes}
-        REPEAT_FRACTIONS=~{sep='-' repeatFractions}
+        CALLERS=~{sep=' ' callers}
+        SV_TYPES=~{sep=' ' svTypes}
+        SV_LENGTHS=~{sep=' ' svLengths}
+        SV_FREQUENCIES=~{sep=' ' svFrequencies}
+        CONTEXT_TYPES=~{sep=' ' contextTypes}
+        REPEAT_FRACTIONS=~{sep=' ' repeatFractions}
         for caller in ${CALLERS}; do
             # 1. SV TYPE
             for svType in ${SV_TYPES}; do
@@ -386,8 +386,8 @@ task ProcessChunk {
                 # We do not test the existence of JOINT matrices for simplicity.
                 continue
             fi
-            for readLength in ~{read_lengths}; do
-                for coverage in ~{coverages}; do
+            for readLength in ~{sep=' ' read_lengths}; do
+                for coverage in ~{sep=' ' coverages}; do
                     rm -rf measured_vcfs/; mkdir -p measured_vcfs/
                     while : ; do
                         TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/ && echo 0 || echo 1)
