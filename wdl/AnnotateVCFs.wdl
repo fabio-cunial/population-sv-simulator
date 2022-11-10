@@ -1,7 +1,7 @@
 version 1.0
 
 
-# Adds repet annotations to every VCF file in a bucket.
+# Adds repeat annotations to every VCF file in a bucket.
 #
 # Remark: this workflow can be run while the VCF files are being created by the
 # simulation workflow.
@@ -44,6 +44,7 @@ workflow AnnotateVCFs {
         }
     }
     output {
+        Array[Int] force_sequentiality = ProcessChunk.force_sequentiality
     }
 }
 
@@ -62,12 +63,17 @@ task GetChunks {
         gsutil ls ~{bucket_dir} > tmp.txt
         shuf tmp.txt > workpackages.txt  # For better balancing
         N_FILES=$(wc -l < workpackages.txt)
-        N_FILES_PER_CHUNK=$(( ${N_FILES} / ~{n_chunks} ))
-        if [ ${N_FILES} -ge ~{min_files_per_chunk} -a ${N_FILES_PER_CHUNK} -lt ~{min_files_per_chunk} ]; then
-            N_FILES_PER_CHUNK=~{min_files_per_chunk}
+        if [ ${N_FILES} -le ~{min_files_per_chunk} ]; then
+            cp workpackages.txt chunk-00
+            echo ${N_FILES} > n_files_per_chunk.txt
+        else
+            N_FILES_PER_CHUNK=$(( ${N_FILES} / ~{n_chunks} ))
+            if [ ${N_FILES_PER_CHUNK} -lt ~{min_files_per_chunk} ]; then
+                N_FILES_PER_CHUNK=~{min_files_per_chunk}
+            fi
+            split -d -l ${N_FILES_PER_CHUNK} workpackages.txt chunk-
+            echo ${N_FILES_PER_CHUNK} > n_files_per_chunk.txt
         fi
-        split -d -l ${N_FILES_PER_CHUNK} workpackages.txt chunk-
-        echo ${N_FILES_PER_CHUNK} > n_files_per_chunk.txt
     >>>
     output {
         Array[File] chunks = glob("chunk-*")
@@ -118,9 +124,11 @@ task ProcessChunk {
         find . -maxdepth 1 -name "*_annotated.vcf" > list.txt
         gsutil cp list.txt ~{bucket_dir}/annotated/list.txt
         cat list.txt | gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp -I ~{bucket_dir}/annotated/
+        echo "1" > force_sequentiality.txt
     >>>
     
     output {
+        Int force_sequentiality = read_int("~{work_dir}/force_sequentiality.txt")
     }
     runtime {
         docker: "fcunial/simulation"

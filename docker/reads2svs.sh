@@ -131,7 +131,7 @@ for COVERAGE in ${COVERAGES}; do
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
             while : ; do
-                TEST=$(${TIME_COMMAND} gsutil cp ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz . && echo 0 || echo 1)
+                TEST=$(gsutil cp ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz . && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     echo "Error downloading file <${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
@@ -327,14 +327,14 @@ for COVERAGE in ${COVERAGES}; do
             fi
         done
         rm -rf asm/ data/ temp/ results/ log/
-        gsutil -m rm -rf "${BUCKET_DIR}/pav/${INFIX}" || echo "Error removing directory ${BUCKET_DIR}/pav/${INFIX}"
+        gsutil -m rm -rf "${BUCKET_DIR}/pav/${INFIX}" || echo "Error removing directory <${BUCKET_DIR}/pav/${INFIX}>"
     fi
     rm -f ${PREFIX_ASSEMBLY}*
     rm -f ${PREFIX_PAV}*
     
     # Next iteration
     echo "${SAMPLE_ID} ${LENGTH} ${COVERAGE}" >> ${CHECKPOINT_FILE}
-    gsutil cp ${CHECKPOINT_FILE} ${BUCKET_DIR}/checkpoints/
+    gsutil cp ${CHECKPOINT_FILE} ${BUCKET_DIR}/checkpoints/ || echo "Cannot upload checkpoint file to <${BUCKET_DIR}/checkpoints/>"
     PREVIOUS_COVERAGE=${COVERAGE}
     tree -L 2 || echo ""
     df -h

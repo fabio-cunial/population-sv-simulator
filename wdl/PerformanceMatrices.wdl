@@ -1,5 +1,7 @@
 version 1.0
 
+import "AnnotateVCFs.wdl"
+
 
 # The program: 
 # 1. Compares each experimental VCF to its corresponding ground truth,
@@ -9,7 +11,8 @@ version 1.0
 # 3. Compares the joint-calling files (produced by some callers) to the set of
 #    distinct ground-truth variants in the population.
 # To enable granular data analysis downstream, this is performed separately for
-# every tuple (caller, SV type, repeat context) and .......................
+# every tuple (caller, X, repeat context), where X is an SV type, an SV length,
+# or an SV frequency.
 #
 # Remark: this workflow can be run while the VCF files are being created by the
 # simulation workflow.
@@ -35,6 +38,11 @@ workflow PerformanceMatrices {
         String bucket_dir_matrices
         Float max_vcf_size
         Int n_individuals
+        Int annotate_vcfs
+        Int annotate_vcfs_min_distance
+        Int annotate_vcfs_max_distance
+        File annotate_vcfs_repeat_intervals
+        File annotate_vcfs_segdups
     }
     parameter_meta {
         contextTypes: "0=non-satellite repeat; 1=satellite repeat; 2=both of the above; 3=none of the above, but segmental duplication; 4=none of the above."
@@ -50,6 +58,19 @@ workflow PerformanceMatrices {
         max_vcf_size: "Max size of a single VCF file, in GB."
         n_individuals: "Total number of diploid individuals in the population. Used just to estimate space."
     }
+    if (annotate_vcfs == 1) {
+        call AnnotateVCFs.AnnotateVCFs {
+            input:
+                bucket_dir = bucket_dir_experimental_vcfs,
+                max_vcf_size = max_vcf_size,
+                min_distance = annotate_vcfs_min_distance,
+                max_distance = annotate_vcfs_max_distance,
+                reference_fa = reference_fa,
+                repeat_intervals = annotate_vcfs_repeat_intervals,
+                segdups = annotate_vcfs_segdups,
+                n_nodes = n_nodes
+        }
+    }
     call GetChunks {
         input:
             callers = callers,
@@ -58,7 +79,8 @@ workflow PerformanceMatrices {
             svFrequencies = svFrequencies,
             contextTypes = contextTypes,
             repeatFractions = repeatFractions,
-            n_chunks = n_nodes
+            n_chunks = n_nodes,
+            force_sequentiality = if annotate_vcfs==1 then AnnotateVCFs.force_sequentiality else [1]
     }
     scatter(chunk_file in GetChunks.chunks) {
         call ProcessChunk { 
@@ -71,7 +93,7 @@ workflow PerformanceMatrices {
                 max_vcf_size = max_vcf_size,
                 n_individuals = n_individuals,
                 only_pass = only_pass,
-                bucket_dir_experimental_vcfs = bucket_dir_experimental_vcfs,
+                bucket_dir_experimental_vcfs = if annotate_vcfs==1 then bucket_dir_experimental_vcfs+"/annotated" else bucket_dir_experimental_vcfs,
                 bucket_dir_ground_truth_vcfs = bucket_dir_ground_truth_vcfs,
                 bucket_dir_allIndividuals_vcfs = bucket_dir_allIndividuals_vcfs,
                 bucket_dir_matrices = bucket_dir_matrices,
@@ -96,10 +118,11 @@ task GetChunks {
         Array[String] callers
         Array[String] svTypes
         Array[Int] svLengths
-        Array[Int] svFrequencies
+        Array[Float] svFrequencies
         Array[Int] contextTypes
         Array[Float] repeatFractions
         Int n_chunks
+        Array[Int]? force_sequentiality
     }
     command <<<
         set -euxo pipefail
@@ -179,7 +202,14 @@ task GetChunks {
             echo "${caller} -1 -1 -1 -1 -1 -1 -1 -1 -1" >> tmp.txt
         done
         shuf tmp.txt > workpackages.txt  # For better balancing
-        split -d -n ~{n_chunks} workpackages.txt chunk-
+        N_CHUNKS_PRIME="0"
+        N_LINES=$(wc -l < workpackages.txt)
+        if [ ~{n_chunks} > ${N_LINES} ]; then
+            N_CHUNKS_PRIME=${N_LINES}
+        else
+            N_CHUNKS_PRIME=~{n_chunks}
+        fi
+        split -d -n ${N_CHUNKS_PRIME} workpackages.txt chunk-
     >>>
     output {
         Array[File] chunks = glob("chunk-*")
@@ -232,6 +262,7 @@ task ProcessChunk {
         cd ~{work_dir}
         
         GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
+        GSUTIL_DELAY_S="600"
         TIME_COMMAND="/usr/bin/time --verbose"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
@@ -241,7 +272,15 @@ task ProcessChunk {
         cat /proc/meminfo
         
         mkdir -p ground_truth_vcfs/
-        ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_ground_truth_vcfs}/groundTruth_individual_*.vcf" ground_truth_vcfs/
+        while : ; do
+            TEST=$(gsutil -m cp "~{bucket_dir_ground_truth_vcfs}/groundTruth_individual_*.vcf" ground_truth_vcfs/ && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error downloading ground truth files from <~{bucket_dir_ground_truth_vcfs}>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
         while read LINE; do
             caller=$(echo ${LINE} | awk '{print $1}')
             svType=$(echo ${LINE} | awk '{print $2}')
@@ -350,11 +389,27 @@ task ProcessChunk {
             for readLength in ~{read_lengths}; do
                 for coverage in ~{coverages}; do
                     rm -rf measured_vcfs/; mkdir -p measured_vcfs/
-                    ${TIME_COMMAND} gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/
+                    while : ; do
+                        TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/${caller}_*_l${readLength}_c${coverage}.vcf" measured_vcfs/ && echo 0 || echo 1)
+                        if [ ${TEST} -eq 1 ]; then
+                            echo "Error downloading experimental VCFs from <~{bucket_dir_experimental_vcfs}>. Trying again..."
+                            sleep ${GSUTIL_DELAY_S}
+                        else
+                            break
+                        fi
+                    done
                     JOINT_CALLING_FILE="null"
                     TEST=$(gsutil -q stat "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" && echo 0 || echo 1)
                     if [ ${TEST} -eq 0 ]; then
-                        gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/
+                        while : ; do
+                            TEST=$(gsutil -m cp "~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf" measured_vcfs/ && echo 0 || echo 1)
+                            if [ ${TEST} -eq 1 ]; then
+                                echo "Error downloading file <~{bucket_dir_experimental_vcfs}/joint_${caller}_l${readLength}_c${coverage}.vcf>. Trying again..."
+                                sleep ${GSUTIL_DELAY_S}
+                            else
+                                break
+                            fi
+                        done
                         JOINT_CALLING_FILE="measured_vcfs/joint_${caller}_l${readLength}_c${coverage}.vcf"
                     fi
                     echo -n "${READ_LENGTH},${COVERAGE}," >> ${TP_MATRIX}
@@ -385,10 +440,34 @@ task ProcessChunk {
                     fi
                 done
             done
-            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ~{bucket_dir_matrices}
-            gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE} ~{bucket_dir_matrices}
+            while : ; do
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ~{bucket_dir_matrices} && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading per-individual matrices. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
+            while : ; do
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_MERGE} ${FP_MATRIX_MERGE} ${FN_MATRIX_MERGE} ${PRECISION_MATRIX_MERGE} ${RECALL_MATRIX_MERGE} ${F1_MATRIX_MERGE} ~{bucket_dir_matrices} && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading merged matrices. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
             if [ -e ${TP_MATRIX_JOINT} ]; then
-                gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT} ~{bucket_dir_matrices}
+                while : ; do
+                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_JOINT} ${FP_MATRIX_JOINT} ${FN_MATRIX_JOINT} ${PRECISION_MATRIX_JOINT} ${RECALL_MATRIX_JOINT} ${F1_MATRIX_JOINT} ~{bucket_dir_matrices} && echo 0 || echo 1)
+                    if [ ${TEST} -eq 1 ]; then
+                        echo "Error uploading joint matrices. Trying again..."
+                        sleep ${GSUTIL_DELAY_S}
+                    else
+                        break
+                    fi
+                done
             fi
         done < ~{chunk_file}
     >>>

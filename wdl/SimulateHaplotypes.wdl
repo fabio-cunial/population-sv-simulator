@@ -55,17 +55,17 @@ workflow SimulateHaplotypes {
                 bucket_dir = bucket_dir
         }
     }
-    call GetHaplotypeChunks {
+    call GetChunks {
         input:
             n_haplotypes = n_haplotypes,
             n_chunks = n_nodes,
             force_sequentiality = DeleteBucketDir.force_sequentiality
     }
-    scatter(i in GetHaplotypeChunks.chunks) {
-        call ProcessChunkOfHaplotypes {
+    scatter(i in GetChunks.chunks) {
+        call ProcessChunk {
             input:
                  id_from = i,
-                 chunk_size = GetHaplotypeChunks.chunk_size,
+                 chunk_size = GetChunks.chunk_size,
                  reference_fa = reference_fa,
                  reference_fai = reference_fai,
                  reference_mmi = reference_mmi,
@@ -96,7 +96,7 @@ workflow SimulateHaplotypes {
             reference_fa = reference_fa,
             use_pbsv = use_pbsv,
             use_sniffles2 = use_sniffles2,
-            force_sequentiality = ProcessChunkOfHaplotypes.force_sequentiality
+            force_sequentiality = ProcessChunk.force_sequentiality
     }
     output {
     }
@@ -137,7 +137,7 @@ task DeleteBucketDir {
 # Returns an array with the ID of the first haplotype to be processed by each
 # chunk (zero-based).
 #
-task GetHaplotypeChunks {
+task GetChunks {
     input { 
         Int n_haplotypes
         Int n_chunks
@@ -179,7 +179,7 @@ task GetHaplotypeChunks {
 # .snf     | sniffles2 | 2.5 MB
 # .vcf     | any       | 8 MB 
 #
-task ProcessChunkOfHaplotypes {
+task ProcessChunk {
     input {
         Int id_from
         Int chunk_size

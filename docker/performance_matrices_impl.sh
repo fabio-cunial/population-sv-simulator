@@ -13,7 +13,8 @@
 # 3. Compares a filtered joint-calling file to the filtered set of distinct
 # ground-truth variants in the population.
 #
-# Remark: genotypes are not considered.
+# Remark: genotypes are not considered. BNDs are not interpreted (this might
+# penalize some callers).
 #
 FILTER_STRING=$1  # Spaces are replaced with '+'. Equals '+' if empty.
 FILTER_STRING_FREQUENCY=$2  # Spaces are replaced with '+'. Equals '+' if empty.
@@ -56,6 +57,7 @@ F1_MATRIX_JOINT=${27}
 set -euxo pipefail
 cd ${WORK_DIR}
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
+GSUTIL_DELAY_S="600"
 TIME_COMMAND="/usr/bin/time --verbose"
 if [ ${FILTER_STRING} = "+" ]; then
     FILTER_STRING=""
@@ -128,8 +130,24 @@ function processChunk() {
 
 
 # Main program
-gsutil cp ${REFERENCE_FA_ADDRESS} reference.fa
-gsutil cp ${REFERENCE_FAI_ADDRESS} reference.fai
+while : ; do
+    TEST=$(gsutil cp ${REFERENCE_FA_ADDRESS} reference.fa && echo 0 || echo 1)
+    if [ ${TEST} -eq 1 ]; then
+        echo "Error downloading file <${REFERENCE_FA_ADDRESS}>. Trying again..."
+        sleep ${GSUTIL_DELAY_S}
+    else
+        break
+    fi
+done
+while : ; do
+    TEST=$(gsutil cp ${REFERENCE_FAI_ADDRESS} reference.fai && echo 0 || echo 1)
+    if [ ${TEST} -eq 1 ]; then
+        echo "Error downloading file <${REFERENCE_FAI_ADDRESS}>. Trying again..."
+        sleep ${GSUTIL_DELAY_S}
+    else
+        break
+    fi
+done
 
 # 1. Per-individual matrices
 find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*.vcf' > tmp.txt
@@ -156,14 +174,30 @@ rm -f chunk-* tp_*.txt fp_*.txt fn_*.txt precision_*.txt recall_*.txt f1_*.txt
 # truth.
 TEST=$(gsutil -q stat ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz && echo 0 || echo 1)
 if [ ${TEST} -eq 0 ]; then
-    ${TIME_COMMAND} gsutil cp ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz truvari_merge.vcf.gz
+    while : ; do
+        TEST=$(gsutil cp ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz truvari_merge.vcf.gz && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error downloading file <${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz>. Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
 else
     rm -f files.txt
     find experimental_vcfs/ -maxdepth 1 -name '*_filtered.vcf.gz' > files.txt
     ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} --file-list file.txt --output-type z --output merge.vcf.gz 
     ${TIME_COMMAND} truvari collapse --threads ${N_THREADS} ${TRUVARI_COLLAPSE_FLAGS} --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference reference.fa
     ${TIME_COMMAND} bgzip --threads ${N_THREADS} truvari_merge.vcf
-    ${TIME_COMMAND} gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz
+    while : ; do
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error uploading file <truvari_merge.vcf.gz>. Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
 fi
 ${TIME_COMMAND} tabix truvari_merge.vcf.gz
 if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
