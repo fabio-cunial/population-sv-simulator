@@ -296,6 +296,15 @@ task ProcessChunk {
                 break
             fi
         done
+        # Adding the SAMPLE column to joint file
+        bcftools view --threads 0 -h ground_truth_vcfs/groundTruth_joint.vcf > header.txt
+        N_ROWS=$(wc -l < ${INPUT_FILE}_header.txt)
+        head -n $((${N_ROWS} - 1)) header.txt > new.vcf
+        rm -f header.txt
+        echo "#CHROM""\t""POS""\t""ID""\t""REF""\t""ALT""\t""QUAL""\t""FILTER""\t""INFO""\t""FORMAT""\t""SAMPLE" >> new.vcf
+        bcftools view --threads 0 -H ground_truth_vcfs/groundTruth_joint.vcf | awk '{printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\tGT\t.\n", $1, $2, $3, $4, $5, $6, $7, $8)}' >> new.vcf
+        rm -f ground_truth_vcfs/groundTruth_joint.vcf
+        mv new.vcf ground_truth_vcfs/groundTruth_joint.vcf
         ${TIME_COMMAND} bgzip --threads ${N_THREADS} ground_truth_vcfs/groundTruth_joint.vcf
         tabix ground_truth_vcfs/groundTruth_joint.vcf.gz
         READ_LENGTHS=~{sep='-' read_lengths}
