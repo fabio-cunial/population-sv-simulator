@@ -296,9 +296,9 @@ task ProcessChunk {
                 break
             fi
         done
-        # Adding the SAMPLE column to joint file
+        # Adding the SAMPLE column to the joint file
         bcftools view --threads 0 -h ground_truth_vcfs/groundTruth_joint.vcf > header.txt
-        N_ROWS=$(wc -l < ${INPUT_FILE}_header.txt)
+        N_ROWS=$(wc -l < header.txt)
         head -n $((${N_ROWS} - 1)) header.txt > new.vcf
         rm -f header.txt
         echo "#CHROM""\t""POS""\t""ID""\t""REF""\t""ALT""\t""QUAL""\t""FILTER""\t""INFO""\t""FORMAT""\t""SAMPLE" >> new.vcf
