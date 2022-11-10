@@ -250,7 +250,7 @@ task ProcessChunk {
         only_pass: "Use only calls with FILTER=PASS (0/1)."
         n_cpus: "The program proceeds sequentially, but in each iteration it processes the VCF files from all individuals using all the cores of the machine."
     }
-    Int ram_size_gb_pre = max_vcf_size*2*n_cpus
+    Int ram_size_gb_pre = ceil(max_vcf_size*2*n_cpus)
     Int ram_size_gb = if 16 > ram_size_gb_pre then 16 else ram_size_gb_pre
     Int disk_size_gb = ceil(max_vcf_size*n_individuals*2) + ceil((size(reference_fa, "GB")))
     String docker_dir = "/simulation"

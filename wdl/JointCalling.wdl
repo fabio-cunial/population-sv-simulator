@@ -8,12 +8,12 @@ version 1.0
 # Intel Xeon, 2.30GHz, 8 physical cores, 64 GB of RAM.
 #
 # TASK            | TIME   | RAM    | CORES | COMMENT
+# sniffles2 joint | 2 m    | 1 GB   |   1   | 
 # pbsv joint      | 14-23h | 18 GB  |  3.5  | coverage 4
 #                 | 43 h   | 28 GB  |  3.7  | coverage 8
-#                 | ?? h   | ?? GB  |  ???  | coverage 12
+#                 | 50 h   | 33 GB  |  3.6  | coverage 12
 #                 | ?? h   | ?? GB  |  ???  | coverage 16
 #                 | ?? h   | ?? GB  |  ???  | coverage 20
-# sniffles2 joint | 2 m    | 1 GB   |   1   | 
 #
 # Remark: PBSV processes 1 Mbp chunk after another, in sequence rather than in
 # parallel.
