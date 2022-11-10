@@ -210,7 +210,7 @@ task GetChunks {
         shuf tmp.txt > workpackages.txt  # For better balancing
         N_CHUNKS_PRIME="0"
         N_LINES=$(wc -l < workpackages.txt)
-        if [ ~{n_chunks} > ${N_LINES} ]; then
+        if [ ~{n_chunks} -gt ${N_LINES} ]; then
             N_CHUNKS_PRIME=${N_LINES}
         else
             N_CHUNKS_PRIME=~{n_chunks}
