@@ -95,6 +95,18 @@ echo "##INFO=<ID=REPEATS_END,Number=1,Type=Integer,Description=\"Repetitive cont
 echo "##INFO=<ID=REPEATS_FRACTION,Number=1,Type=Float,Description=\"Fraction of the SV covered by repeats of any type\">" >> new_headers.txt
 
 
+# Removes every column except the basics from a VCF file.
+#
+function removeVCFColumns() {
+    local INPUT_FILE=$1
+    
+    bcftools view --threads 0 -h ${INPUT_FILE} > ${INPUT_FILE}_new.vcf
+    bcftools view --threads 0 -H ${INPUT_FILE} | awk '{print $1 '\t' $2 '\t' $3 '\t' $4 '\t' $5 '\t' $6 '\t' $7 '\t' $8}' >> ${INPUT_FILE}_new.vcf
+    rm -f ${INPUT_FILE}
+    mv ${INPUT_FILE}_new.vcf ${INPUT_FILE}
+}
+
+
 # Appends <new_headers.txt> to a VCF file. This is needed by <bcftools filter>.
 #
 function reheader() {
@@ -235,6 +247,7 @@ else
     ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} --file-list files.txt --output-type z --output merge.vcf.gz
     tabix merge.vcf.gz
     ${TIME_COMMAND} truvari collapse --threads ${N_THREADS} ${TRUVARI_COLLAPSE_FLAGS} --input merge.vcf.gz --output truvari_merge.vcf --collapsed-output truvari_collapsed.vcf --reference reference.fa
+    removeVCFColumns truvari_merge.vcf
     ${TIME_COMMAND} bgzip --threads ${N_THREADS} truvari_merge.vcf
     while : ; do
         TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truvari_merge.vcf.gz ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz && echo 0 || echo 1)
@@ -265,6 +278,7 @@ rm -rf truvari_merge.vcf* ouput/
 # 3. Joint-calling matrices (if any): filtering the joint calling file and
 # comparing it to the filtered set of distinct variants in the ground truth.
 if [ ${JOINT_CALLING_FILE} != "null" ]; then
+    removeVCFColumns ${JOINT_CALLING_FILE}
     if [ ${#FILTER_STRING} -ne 0 ]; then
         reheader ${JOINT_CALLING_FILE}
         bgzip --threads ${N_THREADS} ${JOINT_CALLING_FILE}
