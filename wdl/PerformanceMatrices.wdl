@@ -324,7 +324,7 @@ task ProcessChunk {
         rm -f ground_truth_vcfs/groundTruth_joint.vcf
         cat new.vcf | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ground_truth_vcfs/groundTruth_joint.vcf
         rm -f new.vcf
-        ${TIME_COMMAND} bgzip --threads ${N_THREADS} ground_truth_vcfs/groundTruth_joint.vcf
+        ${TIME_COMMAND} bcftools sort --output-type z --output ground_truth_vcfs/groundTruth_joint.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf
         tabix ground_truth_vcfs/groundTruth_joint.vcf.gz
         READ_LENGTHS=~{sep='-' read_lengths}
         READ_LENGTHS=$(echo ${READ_LENGTHS} | tr '-' ' ')
