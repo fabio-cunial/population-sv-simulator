@@ -148,7 +148,7 @@ function processChunk() {
     while read VCF_FILE; do
         MEASURED_FILE="${VCF_FILE%.vcf}_filtered.vcf.gz"
         TRUE_FILE="true_${CHUNK_ID}.vcf.gz"
-        OUTPUT_DIR="ouput_${CHUNK_ID}"
+        OUTPUT_DIR="output_${CHUNK_ID}"
         if [ ${#FILTER_STRING} -ne 0 ]; then
             reheader ${VCF_FILE}
             bgzip --threads 1 --stdout ${VCF_FILE} > ${VCF_FILE}.gz
@@ -248,7 +248,8 @@ else
 fi
 ${TIME_COMMAND} tabix truvari_merge.vcf.gz
 if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include "${FILTER_STRING_TRUTH}" --output-type z --output true_filtered.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf.gz
+    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include "${FILTER_STRING_TRUTH}" -O v ground_truth_vcfs/groundTruth_joint.vcf.gz | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > true_filtered.vcf
+    bgzip --threads ${N_THREADS} true_filtered.vcf
 else 
     cp ground_truth_vcfs/groundTruth_joint.vcf.gz true_filtered.vcf.gz
 fi
@@ -266,14 +267,14 @@ bcftools view truvari_merge.vcf.gz
 
 
 
-${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base true_filtered.vcf.gz --comp truvari_merge.vcf.gz --reference reference.fa --output ouput/    
+${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base true_filtered.vcf.gz --comp truvari_merge.vcf.gz --reference reference.fa --output output/    
 grep "\"TP-call\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_MERGE}
 grep "\"FP\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_MERGE}
 grep "\"FN\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_MERGE}
 grep "\"precision\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX_MERGE}
 grep "\"recall\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX_MERGE}
 grep "\"f1\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX_MERGE}
-rm -rf truvari_merge.vcf* ouput/
+rm -rf truvari_merge.vcf* output/
 
 # 3. Joint-calling matrices (if any): filtering the joint calling file and
 # comparing it to the filtered set of distinct variants in the ground truth.
@@ -288,13 +289,13 @@ if [ ${JOINT_CALLING_FILE} != "null" ]; then
         ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ${JOINT_CALLING_FILE} > joint_filtered.vcf.gz
     fi
     ${TIME_COMMAND} tabix joint_filtered.vcf.gz
-    ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --base true_filtered.vcf.gz --comp joint_filtered.vcf.gz --reference reference.fa --output ouput/
+    ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --base true_filtered.vcf.gz --comp joint_filtered.vcf.gz --reference reference.fa --output output/
     grep "\"TP-call\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_JOINT}
     grep "\"FP\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_JOINT}
     grep "\"FN\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_JOINT}
     grep "\"precision\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX_JOINT}
     grep "\"recall\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX_JOINT}
     grep "\"f1\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX_JOINT}
-    rm -rf joint_filtered.vcf* ouput/
+    rm -rf joint_filtered.vcf* output/
 fi
 rm -rf true_filtered.vcf*
