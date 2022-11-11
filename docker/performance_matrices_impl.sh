@@ -100,7 +100,7 @@ echo "##INFO=<ID=REPEATS_FRACTION,Number=1,Type=Float,Description=\"Fraction of 
 function removeVCFColumns() {
     local INPUT_FILE=$1
     
-    bcftools view --threads 0 -h ${INPUT_FILE} | sed '/contig=<ID=0>/d' | sed '/bcftools_/d'  > ${INPUT_FILE}_header.txt
+    bcftools view --threads 0 -h ${INPUT_FILE} > ${INPUT_FILE}_header.txt
     N_ROWS=$(wc -l < ${INPUT_FILE}_header.txt)
     head -n $((${N_ROWS} - 1)) ${INPUT_FILE}_header.txt > ${INPUT_FILE}_new.vcf
     rm -f ${INPUT_FILE}_header.txt
@@ -108,7 +108,8 @@ function removeVCFColumns() {
     echo "#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE" >> ${INPUT_FILE}_new.vcf
     bcftools view --threads 0 -H ${INPUT_FILE} | awk '{printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\tGT\t.\n", $1, $2, $3, $4, $5, $6, $7, $8)}' >> ${INPUT_FILE}_new.vcf
     rm -f ${INPUT_FILE}
-    mv ${INPUT_FILE}_new.vcf ${INPUT_FILE}
+    cat ${INPUT_FILE}_new.vcf | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ${INPUT_FILE}
+    rm -f ${INPUT_FILE}_new.vcf
 }
 
 
@@ -117,12 +118,12 @@ function removeVCFColumns() {
 function reheader() {
     local INPUT_FILE=$1
     
-    bcftools view -h ${INPUT_FILE} | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ${INPUT_FILE}_headers_old.txt
+    bcftools view -h ${INPUT_FILE} > ${INPUT_FILE}_headers_old.txt
     N_LINES=$(wc -l < ${INPUT_FILE}_headers_old.txt)
     head -n $((${N_LINES} - 1)) ${INPUT_FILE}_headers_old.txt > ${INPUT_FILE}_headers_new.txt
     cat new_headers.txt >> ${INPUT_FILE}_headers_new.txt
     tail -n 1 ${INPUT_FILE}_headers_old.txt >> ${INPUT_FILE}_headers_new.txt
-    bcftools reheader -h ${INPUT_FILE}_headers_new.txt -o ${INPUT_FILE}.newHeaders ${INPUT_FILE}
+    bcftools reheader -h ${INPUT_FILE}_headers_new.txt | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ${INPUT_FILE}.newHeaders
     rm -f ${INPUT_FILE}
     mv ${INPUT_FILE}.newHeaders ${INPUT_FILE}
     rm -f ${INPUT_FILE}_headers_old.txt ${INPUT_FILE}_headers_new.txt
