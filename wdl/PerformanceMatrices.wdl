@@ -277,6 +277,24 @@ task ProcessChunk {
         lscpu
         cat /proc/meminfo
         
+        while : ; do
+            TEST=$(gsutil cp ~{reference_fa} reference.fa && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error downloading file <~{reference_fa}>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
+        while : ; do
+            TEST=$(gsutil cp ~{reference_fai} reference.fai && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error downloading file <~{reference_fai}>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
         mkdir -p ground_truth_vcfs/
         while : ; do
             TEST=$(gsutil -m cp "~{bucket_dir_ground_truth_vcfs}/groundTruth_individual_*.vcf" ground_truth_vcfs/ && echo 0 || echo 1)
@@ -297,7 +315,7 @@ task ProcessChunk {
             fi
         done
         # Adding the SAMPLE column to the joint file
-        bcftools view --threads 0 -h ground_truth_vcfs/groundTruth_joint.vcf > header.txt
+        bcftools view --threads 0 -h ground_truth_vcfs/groundTruth_joint.vcf | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > header.txt
         N_ROWS=$(wc -l < header.txt)
         head -n $((${N_ROWS} - 1)) header.txt > new.vcf
         rm -f header.txt

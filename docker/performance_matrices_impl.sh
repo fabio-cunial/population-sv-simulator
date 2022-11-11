@@ -95,12 +95,12 @@ echo "##INFO=<ID=REPEATS_END,Number=1,Type=Integer,Description=\"Repetitive cont
 echo "##INFO=<ID=REPEATS_FRACTION,Number=1,Type=Float,Description=\"Fraction of the SV covered by repeats of any type\">" >> new_headers.txt
 
 
-# Removes every column except the basics from a VCF file.
+# Ensures that a VCF file contains all and only the basic columns.
 #
 function removeVCFColumns() {
     local INPUT_FILE=$1
     
-    bcftools view --threads 0 -h ${INPUT_FILE} > ${INPUT_FILE}_header.txt
+    bcftools view --threads 0 -h ${INPUT_FILE} | sed '/contig=<ID=0>/d' | sed '/bcftools_/d'  > ${INPUT_FILE}_header.txt
     N_ROWS=$(wc -l < ${INPUT_FILE}_header.txt)
     head -n $((${N_ROWS} - 1)) ${INPUT_FILE}_header.txt > ${INPUT_FILE}_new.vcf
     rm -f ${INPUT_FILE}_header.txt
@@ -117,7 +117,7 @@ function removeVCFColumns() {
 function reheader() {
     local INPUT_FILE=$1
     
-    bcftools view -h ${INPUT_FILE} > ${INPUT_FILE}_headers_old.txt
+    bcftools view -h ${INPUT_FILE} | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ${INPUT_FILE}_headers_old.txt
     N_LINES=$(wc -l < ${INPUT_FILE}_headers_old.txt)
     head -n $((${N_LINES} - 1)) ${INPUT_FILE}_headers_old.txt > ${INPUT_FILE}_headers_new.txt
     cat new_headers.txt >> ${INPUT_FILE}_headers_new.txt
@@ -185,25 +185,6 @@ function processChunk() {
 
 
 # Main program
-while : ; do
-    TEST=$(gsutil cp ${REFERENCE_FA_ADDRESS} reference.fa && echo 0 || echo 1)
-    if [ ${TEST} -eq 1 ]; then
-        echo "Error downloading file <${REFERENCE_FA_ADDRESS}>. Trying again..."
-        sleep ${GSUTIL_DELAY_S}
-    else
-        break
-    fi
-done
-while : ; do
-    TEST=$(gsutil cp ${REFERENCE_FAI_ADDRESS} reference.fai && echo 0 || echo 1)
-    if [ ${TEST} -eq 1 ]; then
-        echo "Error downloading file <${REFERENCE_FAI_ADDRESS}>. Trying again..."
-        sleep ${GSUTIL_DELAY_S}
-    else
-        break
-    fi
-done
-
 # 1. Per-individual matrices
 find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*_annotated.vcf' > tmp.txt
 shuf tmp.txt > files.txt  # For better balancing
@@ -271,7 +252,20 @@ else
     cp ground_truth_vcfs/groundTruth_joint.vcf.gz true_filtered.vcf.gz
 fi
 ${TIME_COMMAND} tabix true_filtered.vcf.gz
-${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base true_filtered.vcf.gz --comp truvari_merge.vcf.gz --reference reference.fa --output ouput/
+
+
+
+
+echo "Here is <true_filtered.vcf.gz>:"
+bcftools view true_filtered.vcf.gz
+echo "Here is <truvari_merge.vcf.gz>:"
+bcftools view truvari_merge.vcf.gz
+
+
+
+
+
+${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base true_filtered.vcf.gz --comp truvari_merge.vcf.gz --reference reference.fa --output ouput/    
 grep "\"TP-call\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_MERGE}
 grep "\"FP\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_MERGE}
 grep "\"FN\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_MERGE}
