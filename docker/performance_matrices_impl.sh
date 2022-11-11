@@ -100,7 +100,7 @@ function removeVCFColumns() {
     rm -f ${INPUT_FILE}_header.txt
     echo "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" >> ${INPUT_FILE}_new.vcf
     echo "#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE" >> ${INPUT_FILE}_new.vcf
-    bcftools view --threads 0 -H ${INPUT_FILE} | awk '{printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\tGT\t.\n", $1, $2, $3, $4, $5, $6, $7, $8)}' >> ${INPUT_FILE}_new.vcf
+    bcftools view --threads 0 -H ${INPUT_FILE} | awk '{printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tGT\t.\n", $1, $2, $3, $4, $5, $6, $7, $8)}' >> ${INPUT_FILE}_new.vcf
     rm -f ${INPUT_FILE}
     cat ${INPUT_FILE}_new.vcf | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ${INPUT_FILE}
     rm -f ${INPUT_FILE}_new.vcf
