@@ -351,9 +351,9 @@ task ProcessChunk {
             fi
             if [ ${svLength} != "-1" ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
-                    FILTER_STRING="SVLENGTH>${previousSvLength} && SVLENGTH<=${svLength}"
+                    FILTER_STRING="(SVLEN>${previousSvLength} && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<-${previousSvLength})"
                 else
-                    FILTER_STRING="${FILTER_STRING} && SVLENGTH>${previousSvLength} && SVLENGTH<=${svLength}"
+                    FILTER_STRING="${FILTER_STRING} && ((SVLEN>${previousSvLength} && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<-${previousSvLength}))"
                 fi
                 PREFIX="${PREFIX}_svl${svLength}"
             else
