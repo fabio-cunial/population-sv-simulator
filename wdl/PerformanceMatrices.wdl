@@ -319,13 +319,12 @@ task ProcessChunk {
         N_ROWS=$(wc -l < header.txt)
         head -n $((${N_ROWS} - 1)) header.txt > new.vcf
         rm -f header.txt
+        echo "##INFO=<ID=HAPLOTYPES,Type=String,Description=\"haplotypes\">" >> new.vcf
         echo "#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE" >> new.vcf
         bcftools view --threads 0 -H ground_truth_vcfs/groundTruth_joint.vcf | awk '{printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tGT\t.\n", $1, $2, $3, $4, $5, $6, $7, $8)}' >> new.vcf
         rm -f ground_truth_vcfs/groundTruth_joint.vcf
         cat new.vcf | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ground_truth_vcfs/groundTruth_joint.vcf
         rm -f new.vcf
-        echo "File to be sorted: ground_truth_vcfs/groundTruth_joint.vcf"
-        cat ground_truth_vcfs/groundTruth_joint.vcf
         ${TIME_COMMAND} bcftools sort --output-type z --output ground_truth_vcfs/groundTruth_joint.vcf.gz ground_truth_vcfs/groundTruth_joint.vcf
         tabix ground_truth_vcfs/groundTruth_joint.vcf.gz
         READ_LENGTHS=~{sep='-' read_lengths}
