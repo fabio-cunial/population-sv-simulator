@@ -151,7 +151,7 @@ function processChunk() {
         OUTPUT_DIR="output_${CHUNK_ID}"
         if [ ${#FILTER_STRING} -ne 0 ]; then
             reheader ${VCF_FILE}
-            bcftools filter --threads 0 --include ${FILTER_STRING} --output-type z --output ${MEASURED_FILE} ${VCF_FILE}
+            bcftools filter --threads 0 --include '${FILTER_STRING}' --output-type z --output ${MEASURED_FILE} ${VCF_FILE}
         else
             bgzip --threads 1 --stdout ${VCF_FILE} > ${MEASURED_FILE}
         fi
@@ -160,7 +160,7 @@ function processChunk() {
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}_annotated}
         if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-            bcftools filter --threads 0 --include ${FILTER_STRING_TRUTH} --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
+            bcftools filter --threads 0 --include '${FILTER_STRING_TRUTH}' --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
         else
             bgzip --threads 1 --stdout ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
         fi
@@ -241,7 +241,7 @@ else
 fi
 ${TIME_COMMAND} tabix truvari_merge.vcf.gz
 if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include ${FILTER_STRING_TRUTH} -O v ground_truth_vcfs/groundTruth_joint.vcf.gz | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > true_filtered.vcf
+    ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include '${FILTER_STRING_TRUTH}' -O v ground_truth_vcfs/groundTruth_joint.vcf.gz | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > true_filtered.vcf
     bgzip --threads ${N_THREADS} true_filtered.vcf
 else 
     cp ground_truth_vcfs/groundTruth_joint.vcf.gz true_filtered.vcf.gz
@@ -262,7 +262,7 @@ if [ ${JOINT_CALLING_FILE} != "null" ]; then
     removeVCFColumns ${JOINT_CALLING_FILE}
     if [ ${#FILTER_STRING} -ne 0 ]; then
         reheader ${JOINT_CALLING_FILE}
-        ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include ${FILTER_STRING} --output-type z --output joint_filtered.vcf.gz ${JOINT_CALLING_FILE}
+        ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include '${FILTER_STRING}' --output-type z --output joint_filtered.vcf.gz ${JOINT_CALLING_FILE}
     else 
         ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ${JOINT_CALLING_FILE} > joint_filtered.vcf.gz
     fi
