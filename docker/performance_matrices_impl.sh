@@ -123,7 +123,7 @@ function reheader() {
     head -n $((${N_LINES} - 1)) ${INPUT_FILE}_headers_old.txt > ${INPUT_FILE}_headers_new.txt
     cat new_headers.txt >> ${INPUT_FILE}_headers_new.txt
     tail -n 1 ${INPUT_FILE}_headers_old.txt >> ${INPUT_FILE}_headers_new.txt
-    bcftools reheader -h ${INPUT_FILE}_headers_new.txt | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ${INPUT_FILE}.newHeaders
+    bcftools reheader -h ${INPUT_FILE}_headers_new.txt ${INPUT_FILE} | sed '/contig=<ID=0>/d' | sed '/bcftools_/d' > ${INPUT_FILE}.newHeaders
     rm -f ${INPUT_FILE}
     mv ${INPUT_FILE}.newHeaders ${INPUT_FILE}
     rm -f ${INPUT_FILE}_headers_old.txt ${INPUT_FILE}_headers_new.txt
