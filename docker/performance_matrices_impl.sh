@@ -81,10 +81,10 @@ if [ ${#FILTER_STRING_FREQUENCY} -ne 0  ]; then
     fi
 fi
 if [ ${#FILTER_STRING} -ne 0  ]; then
-    FILTER_STRING="'"${FILTER_STRING}"'"
+    FILTER_STRING=$(printf "'%s'" ${FILTER_STRING})
 fi
 if [ ${#FILTER_STRING_TRUTH} -ne 0  ]; then
-    FILTER_STRING_TRUTH="'"${FILTER_STRING_TRUTH}"'"
+    FILTER_STRING_TRUTH=$(printf "'%s'" ${FILTER_STRING_TRUTH})
 fi
 BCFTOOLS_MERGE_FLAGS="--force-samples --merge none"
 TRUVARI_BENCH_FLAGS=" "  # Default settings for now
