@@ -151,10 +151,7 @@ function processChunk() {
         OUTPUT_DIR="output_${CHUNK_ID}"
         if [ ${#FILTER_STRING} -ne 0 ]; then
             reheader ${VCF_FILE}
-            bgzip --threads 1 --stdout ${VCF_FILE} > ${VCF_FILE}.gz
-            tabix ${VCF_FILE}.gz
-            bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type z --output ${MEASURED_FILE} ${VCF_FILE}.gz
-            rm -f ${VCF_FILE}.gz
+            bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type z --output ${MEASURED_FILE} ${VCF_FILE}
         else
             bgzip --threads 1 --stdout ${VCF_FILE} > ${MEASURED_FILE}
         fi
@@ -163,11 +160,7 @@ function processChunk() {
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}_annotated}
         if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-            TMP_FILE="ground_truth_vcfs/groundTruth_individual_${ID}.vcf"
-            bgzip --threads 1 --stdout ${TMP_FILE} > ${TMP_FILE}.gz
-            tabix ${TMP_FILE}.gz
-            bcftools filter --threads 0 --include "${FILTER_STRING_TRUTH}" --output-type z --output ${TRUE_FILE} ${TMP_FILE}.gz
-            rm -f ${TMP_FILE}.gz
+            bcftools filter --threads 0 --include "${FILTER_STRING_TRUTH}" --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
         else
             bgzip --threads 1 --stdout ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
         fi
@@ -282,8 +275,6 @@ if [ ${JOINT_CALLING_FILE} != "null" ]; then
     removeVCFColumns ${JOINT_CALLING_FILE}
     if [ ${#FILTER_STRING} -ne 0 ]; then
         reheader ${JOINT_CALLING_FILE}
-        bgzip --threads ${N_THREADS} ${JOINT_CALLING_FILE}
-        tabix ${JOINT_CALLING_FILE}
         ${TIME_COMMAND} bcftools filter --threads ${N_THREADS} --include "${FILTER_STRING}" --output-type z --output joint_filtered.vcf.gz ${JOINT_CALLING_FILE}
     else 
         ${TIME_COMMAND} bgzip --threads ${N_THREADS} --stdout ${JOINT_CALLING_FILE} > joint_filtered.vcf.gz
