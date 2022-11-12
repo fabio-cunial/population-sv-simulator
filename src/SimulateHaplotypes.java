@@ -1066,6 +1066,10 @@ public class SimulateHaplotypes {
 	
 	
 	/**
+     * Remark: the procedure does not add the HAPLOTYPES field to a joint VCF,
+     * nor the SAMPLE column to any VCF. This is currently handled by bash
+     * scripts downstream.
+     *
 	 * @param sampleName discarded if $printGenotype=FALSE$.
 	 */
 	private static final void printVcfHeader(boolean printGenotype, String sampleName, BufferedWriter bw) throws IOException {

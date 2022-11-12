@@ -127,8 +127,8 @@ function reheader() {
 # Filters every VCF file in a chunk of files using $FILTER_STRING$, filters the
 # corresponding ground truth as well, and compares the two, sequentially.
 #
-# Remark: ground truth VCFs must be reindexed every time, since we are filtering
-# them by different criteria every time.
+# Remark: we sort experimental VCFs since there is no guarantee they are sorted.
+# Ground truth VCFs are assumed to be sorted.
 #
 function processChunk() {
     local CHUNK_ID=$1
@@ -154,9 +154,9 @@ function processChunk() {
         ID=${ID#${CALLER}_i}
         ID=${ID%_i*_l${READ_LENGTH}_c${COVERAGE}_annotated}
         if [ ${#FILTER_STRING_TRUTH} -ne 0 ]; then
-            bcftools filter --threads 0 --include "${FILTER_STRING_TRUTH}" --output-type v ground_truth_vcfs/groundTruth_individual_${ID}.vcf | bcftools sort --output-type z --output ${TRUE_FILE}
+            bcftools filter --threads 0 --include "${FILTER_STRING_TRUTH}" --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
         else
-            bcftools sort --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
+            bgzip --threads 1 --stdout ground_truth_vcfs/groundTruth_individual_${ID}.vcf > ${TRUE_FILE}
         fi
         tabix ${TRUE_FILE}
         truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base ${TRUE_FILE} --comp ${MEASURED_FILE} --reference reference.fa --output ${OUTPUT_DIR}/
@@ -204,6 +204,10 @@ rm -f chunk-* tp_*.txt fp_*.txt fn_*.txt precision_*.txt recall_*.txt f1_*.txt
 # 2. All-individuals matrices: merging filtered calls over all individuals, and
 # comparing the merge to the filtered set of distinct variants in the ground
 # truth.
+#
+# Remark: we sort the experimental VCF to be absolutely sure it is correct
+# (this might be unnecessary). The ground truth VCF is assumed to be sorted.
+#
 TEST=$(gsutil -q stat ${BUCKET_DIR_ALLINDIVIDUALS_VCFS}/${CONFIGURATION_ID}_mergedIndividuals.vcf.gz && echo 0 || echo 1)
 if [ ${TEST} -eq 0 ]; then
     while : ; do
@@ -252,6 +256,10 @@ rm -rf truvari_merge.vcf* output/
 
 # 3. Joint-calling matrices (if any): filtering the joint calling file and
 # comparing it to the filtered set of distinct variants in the ground truth.
+#
+# Remark: we sort the experimental VCF since there is no guarantee that it is
+# sorted. The ground truth VCF is assumed to be sorted.
+#
 if [ ${JOINT_CALLING_FILE} != "null" ]; then
     removeVCFColumns ${JOINT_CALLING_FILE}
     if [ ${#FILTER_STRING} -ne 0 ]; then

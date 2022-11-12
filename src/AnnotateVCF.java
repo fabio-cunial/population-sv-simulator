@@ -7,6 +7,12 @@ import java.text.NumberFormat;
  * Adds fields REPEATS_START, REPEATS_END, REPEATS_FRACTION (defined in 
  * $SimulateHaplotypes.java$) to every VCF record.
  *
+ * Remark: the program should also add headers for the new fields, but currently
+ * it does not and they are handled by bash scripts downstream.
+ *
+ * Remark: we could think of making the program also sort the VCF, but $bcftools
+ * sort$ might be faster in practice.
+ *
  * Remark: the program takes <=22 GB of RAM.
  */
 public class AnnotateVCF {
