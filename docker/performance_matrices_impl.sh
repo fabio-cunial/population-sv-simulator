@@ -159,8 +159,8 @@ function processChunk() {
             bcftools sort --output-type z --output ${TRUE_FILE} ground_truth_vcfs/groundTruth_individual_${ID}.vcf
         fi
         tabix ${TRUE_FILE}
-        ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base ${TRUE_FILE} --comp ${MEASURED_FILE} --reference reference.fa --output ${OUTPUT_DIR}/
-        rm -f ${TRUE_FILE}*
+        mkdir truvari_${CHUNK_ID}/
+        truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base ${TRUE_FILE} --comp ${MEASURED_FILE} --reference reference.fa --output ${OUTPUT_DIR}/
         grep "\"TP-call\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
         grep "\"FP\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
         grep "\"FN\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX}
@@ -168,6 +168,7 @@ function processChunk() {
         grep "\"recall\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX}
         grep "\"f1\":" ${OUTPUT_DIR}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX}
         rm -rf ${OUTPUT_DIR}/
+        rm -f ${TRUE_FILE}*
     done < chunk-${CHUNK_ID}
 }
 

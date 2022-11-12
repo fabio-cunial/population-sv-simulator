@@ -258,7 +258,7 @@ task ProcessChunk {
     }
     Int ram_size_gb_pre = ceil(max_vcf_size*2*n_cpus)
     Int ram_size_gb = if 16 > ram_size_gb_pre then 16 else ram_size_gb_pre
-    Int disk_size_gb = ceil(max_vcf_size*n_individuals*2) + ceil((size(reference_fa, "GB")))
+    Int disk_size_gb = ceil(max_vcf_size*n_individuals*8) + ceil((size(reference_fa, "GB")))
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/simulation"
     
