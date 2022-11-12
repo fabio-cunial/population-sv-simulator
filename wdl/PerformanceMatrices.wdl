@@ -288,7 +288,7 @@ task ProcessChunk {
             fi
         done
         while : ; do
-            TEST=$(gsutil cp ~{reference_fai} reference.fai && echo 0 || echo 1)
+            TEST=$(gsutil cp ~{reference_fai} reference.fa.fai && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error downloading file <~{reference_fai}>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
