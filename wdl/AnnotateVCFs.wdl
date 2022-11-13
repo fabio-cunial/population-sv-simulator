@@ -128,7 +128,7 @@ task ProcessChunk {
     >>>
     
     output {
-        Int force_sequentiality = read_int("~{work_dir}/force_sequentiality.txt")
+        Int force_sequentiality = read_int(work_dir + "/force_sequentiality.txt")
     }
     runtime {
         docker: "fcunial/simulation"

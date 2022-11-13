@@ -141,69 +141,91 @@ task GetChunks {
         REPEAT_FRACTIONS=$(echo ${REPEAT_FRACTIONS} | tr '-' ' ')
         for caller in ${CALLERS}; do
             # 1. SV TYPE
-            for svType in ${SV_TYPES}; do
-                # 1.1 Specific context
-                for contextTypeStart in ${CONTEXT_TYPES}; do
-                    for contextTypeEnd in ${CONTEXT_TYPES}; do
-                        echo "${caller} ${svType} -1 -1 -1 -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
-                    done
+            if [ ${#SV_TYPES} -ne 0 ]; then
+                for svType in ${SV_TYPES}; do
+                    # 1.1 Specific context
+                    if [ ${#CONTEXT_TYPES} -ne 0 ]; then
+                        for contextTypeStart in ${CONTEXT_TYPES}; do
+                            for contextTypeEnd in ${CONTEXT_TYPES}; do
+                                echo "${caller} ${svType} -1 -1 -1 -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
+                            done
+                        done
+                    fi
+                    if [ ${#REPEAT_FRACTIONS} -ne 0 ]; then
+                        previousRepeatFraction="0"
+                        for repeatFraction in ${REPEAT_FRACTIONS}; do
+                            echo "${caller} ${svType} -1 -1 -1 -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
+                            previousRepeatFraction=${repeatFraction}
+                        done
+                    fi
+                    # 1.2 Any context
+                    echo "${caller} ${svType} -1 -1 -1 -1 -1 -1 -1 -1" >> tmp.txt
                 done
-                previousRepeatFraction="0"
-                for repeatFraction in ${REPEAT_FRACTIONS}; do
-                    echo "${caller} ${svType} -1 -1 -1 -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
-                    previousRepeatFraction=${repeatFraction}
-                done
-                # 1.2 Any context
-                echo "${caller} ${svType} -1 -1 -1 -1 -1 -1 -1 -1" >> tmp.txt
-            done
+            fi
             # 2. SV LENGTH
-            previousSvLength="0"
-            for svLength in ${SV_LENGTHS}; do
-                # 2.1 Specific context
-                for contextTypeStart in ${CONTEXT_TYPES}; do
-                    for contextTypeEnd in ${CONTEXT_TYPES}; do
-                        echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
-                    done
+            if [ ${#SV_LENGTHS} -ne 0 ]; then
+                previousSvLength="0"
+                for svLength in ${SV_LENGTHS}; do
+                    # 2.1 Specific context
+                    if [ ${#CONTEXT_TYPES} -ne 0 ]; then
+                        for contextTypeStart in ${CONTEXT_TYPES}; do
+                            for contextTypeEnd in ${CONTEXT_TYPES}; do
+                                echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
+                            done
+                        done
+                    fi
+                    if [ ${#REPEAT_FRACTIONS} -ne 0 ]; then
+                        previousRepeatFraction="0"
+                        for repeatFraction in ${REPEAT_FRACTIONS}; do
+                            echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
+                            previousRepeatFraction=${repeatFraction}
+                        done
+                    fi
+                    # 2.2 Any context
+                    echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 -1 -1 -1 -1" >> tmp.txt
+                    previousSvLength=${svLength}
                 done
-                previousRepeatFraction="0"
-                for repeatFraction in ${REPEAT_FRACTIONS}; do
-                    echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
-                    previousRepeatFraction=${repeatFraction}
-                done
-                # 2.2 Any context
-                echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 -1 -1 -1 -1" >> tmp.txt
-                previousSvLength=${svLength}
-            done
+            fi
             # 3. SV FREQUENCY
-            previousSvFrequency="0"
-            for svFrequency in ${SV_FREQUENCIES}; do
-                # 3.1 Specific context
-                for contextTypeStart in ${CONTEXT_TYPES}; do
-                    for contextTypeEnd in ${CONTEXT_TYPES}; do
-                        echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
-                    done
+            if [ ${#SV_FREQUENCIES} -ne 0 ]; then
+                previousSvFrequency="0"
+                for svFrequency in ${SV_FREQUENCIES}; do
+                    # 3.1 Specific context
+                    if [ ${#CONTEXT_TYPES} -ne 0 ]; then
+                        for contextTypeStart in ${CONTEXT_TYPES}; do
+                            for contextTypeEnd in ${CONTEXT_TYPES}; do
+                                echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
+                            done
+                        done
+                    fi
+                    if [ ${#REPEAT_FRACTIONS} -ne 0 ]; then
+                        previousRepeatFraction="0"
+                        for repeatFraction in ${REPEAT_FRACTIONS}; do
+                            echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
+                            previousRepeatFraction=${repeatFraction}
+                        done
+                    fi
+                    # 3.2 Any context
+                    echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} -1 -1 -1 -1" >> tmp.txt
+                    previousSvFrequency=${svFrequency}
                 done
-                previousRepeatFraction="0"
-                for repeatFraction in ${REPEAT_FRACTIONS}; do
-                    echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
-                    previousRepeatFraction=${repeatFraction}
-                done
-                # 3.2 Any context
-                echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} -1 -1 -1 -1" >> tmp.txt
-                previousSvFrequency=${svFrequency}
-            done
+            fi
             # 4. NO (TYPE,LENGTH,FREQUENCY) CONSTRAINT
             # 4.1 Specific context
-            for contextTypeStart in ${CONTEXT_TYPES}; do
-                for contextTypeEnd in ${CONTEXT_TYPES}; do
-                    echo "${caller} -1 -1 -1 -1 -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
+            if [ ${#CONTEXT_TYPES} -ne 0 ]; then
+                for contextTypeStart in ${CONTEXT_TYPES}; do
+                    for contextTypeEnd in ${CONTEXT_TYPES}; do
+                        echo "${caller} -1 -1 -1 -1 -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
+                    done
                 done
-            done
-            previousRepeatFraction="0"
-            for repeatFraction in ${REPEAT_FRACTIONS}; do
-                echo "${caller} -1 -1 -1 -1 -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
-                previousRepeatFraction=${repeatFraction}
-            done
+            fi
+            if [ ${#REPEAT_FRACTIONS} -ne 0 ]; then
+                previousRepeatFraction="0"
+                for repeatFraction in ${REPEAT_FRACTIONS}; do
+                    echo "${caller} -1 -1 -1 -1 -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
+                    previousRepeatFraction=${repeatFraction}
+                done
+            fi
             # 4.2 Any context
             echo "${caller} -1 -1 -1 -1 -1 -1 -1 -1 -1" >> tmp.txt
         done
@@ -353,9 +375,9 @@ task ProcessChunk {
             fi
             if [ ${svLength} != "-1" ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
-                    FILTER_STRING="((SVLEN>${previousSvLength} && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<-${previousSvLength}))"
+                    FILTER_STRING="((SVLEN>0 && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<0))"
                 else
-                    FILTER_STRING="${FILTER_STRING} && ((SVLEN>${previousSvLength} && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<-${previousSvLength}))"
+                    FILTER_STRING="${FILTER_STRING} && ((SVLEN>0 && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<0))"
                 fi
                 PREFIX="${PREFIX}_svl${svLength}"
             else
@@ -377,9 +399,9 @@ task ProcessChunk {
                 fi
             else
                 if [ ${#FILTER_STRING} -eq 0 ]; then
-                    FILTER_STRING="REPEATS_FRACTION>${previousRepeatFraction} && REPEATS_FRACTION<=${repeatFraction}"
+                    FILTER_STRING="REPEATS_FRACTION>=${repeatFraction}"
                 else
-                    FILTER_STRING="${FILTER_STRING} && REPEATS_FRACTION>${previousRepeatFraction} && REPEATS_FRACTION<=${repeatFraction}"
+                    FILTER_STRING="${FILTER_STRING} && REPEATS_FRACTION>=${repeatFraction}"
                 fi
                 PREFIX="${PREFIX}_rf${repeatFraction}"
             fi
@@ -391,7 +413,7 @@ task ProcessChunk {
                 fi
             fi
             if [ ${svFrequency} != "-1" ]; then
-                FILTER_STRING_FREQUENCY="AF>${previousSvFrequency} && AF<=${svFrequency}"
+                FILTER_STRING_FREQUENCY="AF<=${svFrequency}"
             fi
             if [ ${#FILTER_STRING} -eq 0 ]; then
                 FILTER_STRING="+"
