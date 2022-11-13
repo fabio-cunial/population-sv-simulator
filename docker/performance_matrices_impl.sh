@@ -16,6 +16,15 @@
 # Remark: genotypes are not considered. BNDs are not interpreted (this might
 # penalize some callers).
 #
+# Resource analysis. Intel Xeon, 2.30GHz, 16 physical cores.
+#
+# TASK                    | TIME   | RAM    | CORES | COMMENT
+# bcftools merge          | 1 s    | 100 MB |   1   |
+# truvari collapse        | 2 s    | 100 MB |  3-4  |
+# bcftools sort merged    | 1 s    | 10 MB  |   1   |
+# bcftools filter truth   | 1 s    | 20 MB  |   1   |
+# truvari bench merged    | 1 s    | 100 MB |  4.5  |
+#
 FILTER_STRING=$1  # Spaces are replaced with '+'. Equals '+' if empty.
 FILTER_STRING_FREQUENCY=$2  # Spaces are replaced with '+'. Equals '+' if empty.
 JOINT_CALLING_FILE=$3  # Relative path or "null".
