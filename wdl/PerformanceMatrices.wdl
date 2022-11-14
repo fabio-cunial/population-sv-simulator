@@ -253,6 +253,11 @@ task GetChunks {
 # Remark: the task checkpoints by using performance matrices in 
 # <bucket_dir_matrices> and merged VCFs in <bucket_dir_allIndividuals_vcfs>.
 #
+# Resource analysis. Intel Xeon, 2.30GHz, 16 physical cores.
+#
+# TASK                    | TIME   | RAM    | CORES | COMMENT
+# bcftools sort joint     | 5 s    | 130 MB |   1   |
+#
 task ProcessChunk {
     input {
         File chunk_file

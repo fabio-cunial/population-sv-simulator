@@ -20,10 +20,11 @@
 #
 # TASK                    | TIME   | RAM    | CORES | COMMENT
 # bcftools merge          | 1 s    | 100 MB |   1   |
-# truvari collapse        | 2 s    | 100 MB |  3-4  |
+# truvari collapse        | 2 s    | 100 MB |  3-5  |
 # bcftools sort merged    | 1 s    | 10 MB  |   1   |
 # bcftools filter truth   | 1 s    | 20 MB  |   1   |
-# truvari bench merged    | 1 s    | 100 MB |  4.5  |
+# truvari bench merged    | 1 s    | 100 MB |   5   |
+# truvari bench joint     | 1 s    | 100 MB |   5   |
 #
 FILTER_STRING=$1  # Spaces are replaced with '+'. Equals '+' if empty.
 FILTER_STRING_FREQUENCY=$2  # Spaces are replaced with '+'. Equals '+' if empty.
