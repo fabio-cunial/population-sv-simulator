@@ -1,5 +1,5 @@
 
-MATRIX_DIR='/Users/fcunial/Downloads/performanceMatrices_svType';
+MATRIX_DIR='/Users/fcunial/Downloads/performanceMatrices_svTypes';
 CALLERS={'pbsv', 'sniffles1', 'sniffles2'};
 SVTYPES={'DEL', 'DUP', 'INS', 'INV'};
 READ_LENGTHS=[10000, 12500, 15000, 17500, 20000, 22500];
