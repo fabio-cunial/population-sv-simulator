@@ -17,7 +17,6 @@ for clr = [1:length(CALLERS)]
     for svt = [1:length(SVTYPES)]
         figure((clr-1)*(1+length(SVTYPES))+1+svt);
         for ms = [1:length(MEASURES)]
-            % Individuals
             x=zeros(length(COVERAGES),N_INDIVIDUALS*length(READ_LENGTHS));
             y=zeros(length(COVERAGES),N_INDIVIDUALS*length(READ_LENGTHS));
             lastX=zeros(length(COVERAGES),1);
@@ -102,7 +101,6 @@ for clr = [1:length(CALLERS)]
     for svt = [1:length(SVTYPES)]
         figure(lastFigure+(clr-1)*(1+length(SVTYPES))+1+svt);
         for ms = [1:length(MEASURES)]
-            % Individuals
             x=zeros(length(COVERAGES),length(READ_LENGTHS));
             y=zeros(length(COVERAGES),length(READ_LENGTHS));
             lastX=zeros(length(COVERAGES),1);
@@ -133,7 +131,7 @@ for clr = [1:length(CALLERS)]
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
             xlabel('avg read length'); axis square; grid on;
-            title(sprintf('%s MERGE AND JOINT %s %s',CALLERS{clr},SVTYPES(svt),MEASURES{ms}));
+            title(sprintf('%s MERGE AND JOINT %s %s',CALLERS{clr},SVTYPES{svt},MEASURES{ms}));
         endfor
     endfor
     % Any SV type
@@ -182,7 +180,6 @@ for clr = [1:length(CALLERS)]
     for svt = [1:length(SVTYPES)]
         figure(lastFigure+(clr-1)*(1+length(SVTYPES))+1+svt);
         for ms = [1:length(MEASURES)]
-            % Individuals
             x=zeros(length(COVERAGES),length(READ_LENGTHS));
             y=zeros(length(COVERAGES),length(READ_LENGTHS));
             lastX=zeros(length(COVERAGES),1);
@@ -217,6 +214,7 @@ for clr = [1:length(CALLERS)]
         endfor
     endfor
     % Any SV type
+    figure(lastFigure+(clr-1)*(1+length(SVTYPES))+1);
     for ms = [1:length(MEASURES)]
         x=zeros(length(CALLERS)*length(COVERAGES),N_INDIVIDUALS*length(READ_LENGTHS));
         y=zeros(length(CALLERS)*length(COVERAGES),N_INDIVIDUALS*length(READ_LENGTHS));

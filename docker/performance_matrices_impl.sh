@@ -189,13 +189,8 @@ function processChunk() {
 find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*_annotated.vcf' > tmp.txt
 shuf tmp.txt > files.txt  # For better balancing
 rm -f tmp.txt
-N_LINES_PER_CHUNK="0"
 N_LINES=$(wc -l < files.txt)
-if [ ${N_THREADS} -ge ${N_LINES} ]; then
-    N_LINES_PER_CHUNK="1"
-else
-    N_LINES_PER_CHUNK=$(( ${N_LINES} / ${N_THREADS} ))
-fi
+N_LINES_PER_CHUNK=$(( (${N_LINES} + ${N_THREADS} - 1) / ${N_THREADS} ))
 split -d -l ${N_LINES_PER_CHUNK} files.txt chunk-
 rm -f files.txt
 for CHUNK_FILE in $(ls chunk-*); do

@@ -1,7 +1,7 @@
 
-MATRIX_DIR='/Users/fcunial/Downloads/performanceMatrices_svLengths';
+MATRIX_DIR='/Users/fcunial/Downloads/performanceMatrices_repeats';
 CALLERS={'pbsv', 'sniffles1', 'sniffles2'};
-SVLENGTHS=[50, 100, 500, 1000, 2500, 5000, 10000];
+CONTEXT_TYPES=[0,0; 1,1; 4,4;];
 READ_LENGTHS=[10000, 12500, 15000, 17500, 20000, 22500];
 COVERAGES=[4, 8, 12, 16, 20];
 MEASURES={'tp', 'fp', 'fn', 'precision', 'recall', 'f1'};
@@ -12,16 +12,18 @@ DELTA=1000;
 % 1. Per-individual plots
 COVERAGE_LINES={'.b','.c','.y','.m','.r'};
 LEGEND={'4', '8', '12', '16', '20'};
+[nRows,nColumns]=size(CONTEXT_TYPES);
 for clr = [1:length(CALLERS)]
-    for svl = [1:length(SVLENGTHS)]
-        figure((clr-1)*(1+length(SVLENGTHS))+1+svl);
+    for row = [1:nRows]
+        figure((clr-1)*(1+nRows)+1+row);
+        ct1=CONTEXT_TYPES(row,1); ct2=CONTEXT_TYPES(row,2);
         for ms = [1:length(MEASURES)]
             x=zeros(length(COVERAGES),N_INDIVIDUALS*length(READ_LENGTHS));
             y=zeros(length(COVERAGES),N_INDIVIDUALS*length(READ_LENGTHS));
             lastX=zeros(length(COVERAGES),1);
             fid=-1;
             try
-                fid=fopen(sprintf('%s/%s_svl%d_matrix_%s.txt',MATRIX_DIR,CALLERS{clr},SVLENGTHS(svl),MEASURES{ms}));
+                fid=fopen(sprintf('%s/%s_rs%d_re%d_matrix_%s.txt',MATRIX_DIR,CALLERS{clr},ct1,ct2,MEASURES{ms}));
             catch
                 % NOP
             end_try_catch
@@ -47,8 +49,8 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
-            title(sprintf('%s <=%d %s',CALLERS{clr},SVLENGTHS(svl),MEASURES{ms}));
+            xlabel('avg read length'); axis square; grid on;
+            title(sprintf('%s start=%d end=%d %s',CALLERS{clr},ct1,ct2,MEASURES{ms}));
         endfor
     endfor
 endfor
@@ -59,15 +61,16 @@ lastFigure=100;
 COVERAGE_LINES={'-.b','-.c','-.y','-.m','-.r'};
 LEGEND={'4 merge', '8 merge', '12 merge', '16 merge', '20 merge'};
 for clr = [1:length(CALLERS)]
-    for svl = [1:length(SVLENGTHS)]
-        figure(lastFigure+(clr-1)*(1+length(SVLENGTHS))+1+svl);
+    for row = [1:nRows]
+        figure(lastFigure+(clr-1)*(1+nRows)+1+row);
+        ct1=CONTEXT_TYPES(row,1); ct2=CONTEXT_TYPES(row,2);
         for ms = [1:length(MEASURES)]
             x=zeros(length(COVERAGES),length(READ_LENGTHS));
             y=zeros(length(COVERAGES),length(READ_LENGTHS));
             lastX=zeros(length(COVERAGES),1);
             fid=-1;
             try
-                fid=fopen(sprintf('%s/%s_svl%d_matrix_merge_%s.txt',MATRIX_DIR,CALLERS{clr},SVLENGTHS(svl),MEASURES{ms}));
+                fid=fopen(sprintf('%s/%s_rs%d_re%d_matrix_merge_%s.txt',MATRIX_DIR,CALLERS{clr},ct1,ct2,MEASURES{ms}));
             catch
                 % NOP
             end_try_catch
@@ -91,8 +94,8 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
-            title(sprintf('%s MERGE AND JOINT <=%d %s',CALLERS{clr},SVLENGTHS(svl),MEASURES{ms}));
+            xlabel('avg read length'); axis square; grid on;
+            title(sprintf('%s MERGE AND JOINT start=%d end=%d %s',CALLERS{clr},ct1,ct2,MEASURES{ms}));
         endfor
     endfor
 endfor
@@ -102,15 +105,16 @@ endfor
 COVERAGE_LINES={'-*b','-*c','-*y','-*m','-*r'};
 LEGEND={'4 merge', '8 merge', '12 merge', '16 merge', '20 merge', '4 joint', '8 joint', '12 joint', '16 joint', '20 joint'};
 for clr = [1:length(CALLERS)]
-    for svl = [1:length(SVLENGTHS)]
-        figure(lastFigure+(clr-1)*(1+length(SVLENGTHS))+1+svl);
+    for row = [1:nRows]
+        figure(lastFigure+(clr-1)*(1+nRows)+1+row);
+        ct1=CONTEXT_TYPES(row,1); ct2=CONTEXT_TYPES(row,2);
         for ms = [1:length(MEASURES)]
             x=zeros(length(COVERAGES),length(READ_LENGTHS));
             y=zeros(length(COVERAGES),length(READ_LENGTHS));
             lastX=zeros(length(COVERAGES),1);
             fid=-1;
             try
-                fid=fopen(sprintf('%s/%s_svl%d_matrix_joint_%s.txt',MATRIX_DIR,CALLERS{clr},SVLENGTHS(svl),MEASURES{ms}));
+                fid=fopen(sprintf('%s/%s_rs%d_re%d_matrix_joint_%s.txt',MATRIX_DIR,CALLERS{clr},ct1,ct2,MEASURES{ms}));
             catch
                 % NOP
             end_try_catch
@@ -119,7 +123,7 @@ for clr = [1:length(CALLERS)]
                     str=fgetl(fid);
                     if (str==-1)
                         break
-                    endif 
+                    endif
                     A=str2num(str);
                     readLength=A(1); coverage=A(2);
                     j=find(COVERAGES==coverage);
@@ -134,8 +138,8 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
-            title(sprintf('%s MERGE AND JOINT <=%d %s',CALLERS{clr},SVLENGTHS(svl),MEASURES{ms}));
+            xlabel('avg read length'); axis square; grid on;
+            title(sprintf('%s MERGE AND JOINT start=%d end=%d %s',CALLERS{clr},ct1,ct2,MEASURES{ms}));
         endfor
     endfor
 endfor

@@ -182,13 +182,8 @@ task GetChunks {
             echo "${caller} -1 -1 -1 -1 -1 -1 -1 -1 -1" >> tmp.txt
         done
         shuf tmp.txt > workpackages.txt  # For better balancing
-        N_LINES_PER_CHUNK="0"
         N_LINES=$(wc -l < workpackages.txt)
-        if [ ~{n_chunks} -ge ${N_LINES} ]; then
-            N_LINES_PER_CHUNK="1"
-        else
-            N_LINES_PER_CHUNK=$(( ${N_LINES} / ~{n_chunks} ))
-        fi
+        N_LINES_PER_CHUNK=$(( (${N_LINES} + ~{n_chunks} - 1) / ~{n_chunks} ))
         split -d -l ${N_LINES_PER_CHUNK} workpackages.txt chunk-
     >>>
     output {
@@ -318,7 +313,7 @@ task ProcessChunk {
             previousSvLength=$(echo ${LINE} | awk '{print $4}')
             svFrequency=$(echo ${LINE} | awk '{print $5}')
             previousSvFrequency=$(echo ${LINE} | awk '{print $6}')
-            repeatFraction=$(echo ${LINE} | awk '{print $7}')
+            repeatsFraction=$(echo ${LINE} | awk '{print $7}')
             previousRepeatFraction=$(echo ${LINE} | awk '{print $8}')
             contextTypeStart=$(echo ${LINE} | awk '{print $9}')
             contextTypeEnd=$(echo ${LINE} | awk '{print $10}')
@@ -351,13 +346,13 @@ task ProcessChunk {
                 fi
                 PREFIX="${PREFIX}_rs${contextTypeStart}_re${contextTypeEnd}"
             fi
-            if [ ${repeatFraction} -ne -1 ]; then
+            if [ ${repeatsFraction} -ne -1 ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
-                    FILTER_STRING="REPEATS_FRACTION>=${repeatFraction}"
+                    FILTER_STRING="REPEATS_FRACTION>=${repeatsFraction}"
                 else
-                    FILTER_STRING="${FILTER_STRING} && REPEATS_FRACTION>=${repeatFraction}"
+                    FILTER_STRING="${FILTER_STRING} && REPEATS_FRACTION>=${repeatsFraction}"
                 fi
-                PREFIX="${PREFIX}_rf${repeatFraction}"
+                PREFIX="${PREFIX}_rf${repeatsFraction}"
             fi
             if [ ~{only_pass} -eq 1 ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
