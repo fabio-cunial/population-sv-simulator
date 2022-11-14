@@ -11,11 +11,11 @@ import "AnnotateVCFs.wdl"
 # 3. Compares the joint-calling files (produced by some callers) to the set of
 #    distinct ground-truth variants in the population.
 # To enable granular data analysis downstream, this is performed separately for
-# every tuple (caller, X, repeat context), where X is an SV type, an SV length,
-# or an SV frequency.
+# every pair (caller, X), where X is an SV type, an SV length, an SV frequency,
+# or a repeat context.
 #
-# Remark: this workflow can be run while the VCF files are being created by the
-# simulation workflow.
+# Remark: this workflow can be executed while the VCF files are being created
+# by the simulation workflow.
 #
 workflow PerformanceMatrices {
     input {        
@@ -105,13 +105,14 @@ workflow PerformanceMatrices {
 }
 
 
-# Collects all workpackage IDs into the rows of a file with format:
+# Collects all workpackage IDs into the rows of a file with the following
+# format, and splits such a list into a given number of chunks.
 #
 # caller svType svLength previousSvLength svFrequency previousSvFrequency
 # repeatFraction previousRepeatFraction contextTypeStart contextTypeEnd
 #
-# where only one of {svType,svLength,svFrequency} can be non-null. Then, splits
-# such a list into a given number of chunks.
+# This procedure decides which combinations of filters are used (for now they
+# are very simple).
 #
 task GetChunks {
     input {
@@ -143,22 +144,6 @@ task GetChunks {
             # 1. SV TYPE
             if [ ${#SV_TYPES} -ne 0 ]; then
                 for svType in ${SV_TYPES}; do
-                    # 1.1 Specific context
-                    if [ ${#CONTEXT_TYPES} -ne 0 ]; then
-                        for contextTypeStart in ${CONTEXT_TYPES}; do
-                            for contextTypeEnd in ${CONTEXT_TYPES}; do
-                                echo "${caller} ${svType} -1 -1 -1 -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
-                            done
-                        done
-                    fi
-                    if [ ${#REPEAT_FRACTIONS} -ne 0 ]; then
-                        previousRepeatFraction="0"
-                        for repeatFraction in ${REPEAT_FRACTIONS}; do
-                            echo "${caller} ${svType} -1 -1 -1 -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
-                            previousRepeatFraction=${repeatFraction}
-                        done
-                    fi
-                    # 1.2 Any context
                     echo "${caller} ${svType} -1 -1 -1 -1 -1 -1 -1 -1" >> tmp.txt
                 done
             fi
@@ -166,22 +151,6 @@ task GetChunks {
             if [ ${#SV_LENGTHS} -ne 0 ]; then
                 previousSvLength="0"
                 for svLength in ${SV_LENGTHS}; do
-                    # 2.1 Specific context
-                    if [ ${#CONTEXT_TYPES} -ne 0 ]; then
-                        for contextTypeStart in ${CONTEXT_TYPES}; do
-                            for contextTypeEnd in ${CONTEXT_TYPES}; do
-                                echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
-                            done
-                        done
-                    fi
-                    if [ ${#REPEAT_FRACTIONS} -ne 0 ]; then
-                        previousRepeatFraction="0"
-                        for repeatFraction in ${REPEAT_FRACTIONS}; do
-                            echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
-                            previousRepeatFraction=${repeatFraction}
-                        done
-                    fi
-                    # 2.2 Any context
                     echo "${caller} -1 ${svLength} ${previousSvLength} -1 -1 -1 -1 -1 -1" >> tmp.txt
                     previousSvLength=${svLength}
                 done
@@ -190,28 +159,11 @@ task GetChunks {
             if [ ${#SV_FREQUENCIES} -ne 0 ]; then
                 previousSvFrequency="0"
                 for svFrequency in ${SV_FREQUENCIES}; do
-                    # 3.1 Specific context
-                    if [ ${#CONTEXT_TYPES} -ne 0 ]; then
-                        for contextTypeStart in ${CONTEXT_TYPES}; do
-                            for contextTypeEnd in ${CONTEXT_TYPES}; do
-                                echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} -1 -1 ${contextTypeStart} ${contextTypeEnd}" >> tmp.txt
-                            done
-                        done
-                    fi
-                    if [ ${#REPEAT_FRACTIONS} -ne 0 ]; then
-                        previousRepeatFraction="0"
-                        for repeatFraction in ${REPEAT_FRACTIONS}; do
-                            echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} ${repeatFraction} ${previousRepeatFraction} -1 -1" >> tmp.txt
-                            previousRepeatFraction=${repeatFraction}
-                        done
-                    fi
-                    # 3.2 Any context
                     echo "${caller} -1 -1 -1 ${svFrequency} ${previousSvFrequency} -1 -1 -1 -1" >> tmp.txt
                     previousSvFrequency=${svFrequency}
                 done
             fi
-            # 4. NO (TYPE,LENGTH,FREQUENCY) CONSTRAINT
-            # 4.1 Specific context
+            # 4. REPEAT CONTEXT
             if [ ${#CONTEXT_TYPES} -ne 0 ]; then
                 for contextTypeStart in ${CONTEXT_TYPES}; do
                     for contextTypeEnd in ${CONTEXT_TYPES}; do
@@ -226,7 +178,7 @@ task GetChunks {
                     previousRepeatFraction=${repeatFraction}
                 done
             fi
-            # 4.2 Any context
+            # 5. NO FILTER
             echo "${caller} -1 -1 -1 -1 -1 -1 -1 -1 -1" >> tmp.txt
         done
         shuf tmp.txt > workpackages.txt  # For better balancing
@@ -370,13 +322,15 @@ task ProcessChunk {
             previousRepeatFraction=$(echo ${LINE} | awk '{print $8}')
             contextTypeStart=$(echo ${LINE} | awk '{print $9}')
             contextTypeEnd=$(echo ${LINE} | awk '{print $10}')
-            FILTER_STRING=""; FILTER_STRING_FREQUENCY=""; PREFIX=""
+            FILTER_STRING=""; FILTER_STRING_FREQUENCY=""; 
+            PREFIX="${caller}"
             if [ ${svType} != "-1" ]; then
-                FILTER_STRING="SVTYPE=\"${svType}\""
-                PREFIX="${caller}_svt${svType}"
-            else
-                FILTER_STRING=""
-                PREFIX="${caller}"
+                if [ ${#FILTER_STRING} -eq 0 ]; then
+                    FILTER_STRING="SVTYPE=\"${svType}\""
+                else
+                    FILTER_STRING="${FILTER_STRING} && SVTYPE=\"${svType}\""
+                fi
+                PREFIX="${PREFIX}_svt${svType}"
             fi
             if [ ${svLength} != "-1" ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
@@ -385,24 +339,19 @@ task ProcessChunk {
                     FILTER_STRING="${FILTER_STRING} && ((SVLEN>0 && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<0))"
                 fi
                 PREFIX="${PREFIX}_svl${svLength}"
-            else
-                :  # NOP
             fi
             if [ ${svFrequency} != "-1" ]; then
                 PREFIX="${PREFIX}_svf${svFrequency}"
             fi
-            if [ ${repeatFraction} -eq -1 ]; then
-                if [ ${contextTypeStart} -ne -1 ]; then
-                    if [ ${#FILTER_STRING} -eq 0 ]; then
-                        FILTER_STRING="REPEATS_START=${contextTypeStart} && REPEATS_END=${contextTypeEnd}"
-                    else
-                        FILTER_STRING="${FILTER_STRING} && REPEATS_START=${contextTypeStart} && REPEATS_END=${contextTypeEnd}"
-                    fi
-                    PREFIX="${PREFIX}_rs${contextTypeStart}_re${contextTypeEnd}"
+            if [ ${contextTypeStart} -ne -1 ]; then
+                if [ ${#FILTER_STRING} -eq 0 ]; then
+                    FILTER_STRING="REPEATS_START=${contextTypeStart} && REPEATS_END=${contextTypeEnd}"
                 else
-                    :  # NOP
+                    FILTER_STRING="${FILTER_STRING} && REPEATS_START=${contextTypeStart} && REPEATS_END=${contextTypeEnd}"
                 fi
-            else
+                PREFIX="${PREFIX}_rs${contextTypeStart}_re${contextTypeEnd}"
+            fi
+            if [ ${repeatFraction} -ne -1 ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
                     FILTER_STRING="REPEATS_FRACTION>=${repeatFraction}"
                 else

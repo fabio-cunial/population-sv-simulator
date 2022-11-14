@@ -10,7 +10,7 @@ DELTA=1000;
 
 
 % 1. Per-individual plots
-COVERAGE_LINES={'.','.','.','.','.'};
+COVERAGE_LINES={'.b','.c','.y','.m','.r'};
 LEGEND={'4', '8', '12', '16', '20'};
 for clr = [1:length(CALLERS)]
     % Specific SV type
@@ -49,7 +49,7 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; legend(LEGEND);
+            xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
             title(sprintf('%s %s %s',CALLERS{clr},SVTYPES{svt},MEASURES{ms}));
         endfor
     endfor
@@ -87,7 +87,7 @@ for clr = [1:length(CALLERS)]
             WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
             plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
         endfor
-        xlabel('avg read length'); axis square; grid on; legend(LEGEND);
+        xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
         title(sprintf('%s ALL %s', CALLERS{clr}, MEASURES{ms}));
     endfor
 endfor
@@ -95,7 +95,8 @@ lastFigure=100;
 
 
 % 2. Merged plots
-COVERAGE_LINES={'-o','-o','-o','-o','-o'};
+COVERAGE_LINES={'-.b','-.c','-.y','-.m','-.r'};
+LEGEND={'4 merge', '8 merge', '12 merge', '16 merge', '20 merge'};
 for clr = [1:length(CALLERS)]
     % Specific SV type
     for svt = [1:length(SVTYPES)]
@@ -131,7 +132,8 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; 
+            xlabel('avg read length'); axis square; grid on;
+            title(sprintf('%s MERGE AND JOINT %s %s',CALLERS{clr},SVTYPES(svt),MEASURES{ms}));
         endfor
     endfor
     % Any SV type
@@ -167,12 +169,13 @@ for clr = [1:length(CALLERS)]
             plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
         endfor
         xlabel('avg read length'); axis square; grid on;
+        title(sprintf('%s MERGE AND JOINT %s',CALLERS{clr},MEASURES{ms}));
     endfor
 endfor
 
 
 % 3. Joint plots
-COVERAGE_LINES={'-s','-s','-s','-s','-s'};
+COVERAGE_LINES={'-*b','-*c','-*y','-*m','-*r'};
 LEGEND={'4 merge', '8 merge', '12 merge', '16 merge', '20 merge', '4 joint', '8 joint', '12 joint', '16 joint', '20 joint'};
 for clr = [1:length(CALLERS)]
     % Specific SV type
@@ -209,7 +212,7 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; legend(LEGEND);
+            xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
             title(sprintf('%s MERGE AND JOINT %s %s',CALLERS{clr},SVTYPES{svt},MEASURES{ms}));
         endfor
     endfor
@@ -244,7 +247,7 @@ for clr = [1:length(CALLERS)]
             WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
             plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
         endfor
-        xlabel('avg read length'); axis square; grid on; legend(LEGEND);
+        xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
         title(sprintf('%s MERGE AND JOINT ALL %s',CALLERS{clr},MEASURES{ms}));
     endfor
 endfor

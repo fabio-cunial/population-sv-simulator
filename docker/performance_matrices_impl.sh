@@ -182,6 +182,8 @@ function processChunk() {
 }
 
 
+
+
 # Main program
 # 1. Per-individual matrices
 find experimental_vcfs/ -maxdepth 1 -name '*_i*_i*_l*_c*_annotated.vcf' > tmp.txt
@@ -210,6 +212,7 @@ for CHUNK_FILE in $(ls chunk-*); do
     cat f1_${PREFIX}.txt >> ${F1_MATRIX}
 done
 rm -f chunk-* tp_*.txt fp_*.txt fn_*.txt precision_*.txt recall_*.txt f1_*.txt
+
 
 # 2. All-individuals matrices: merging filtered calls over all individuals, and
 # comparing the merge to the filtered set of distinct variants in the ground
@@ -263,6 +266,7 @@ grep "\"precision\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${
 grep "\"recall\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX_MERGE}
 grep "\"f1\":" output/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX_MERGE}
 rm -rf truvari_merge.vcf* output/
+
 
 # 3. Joint-calling matrices (if any): filtering the joint calling file and
 # comparing it to the filtered set of distinct variants in the ground truth.
