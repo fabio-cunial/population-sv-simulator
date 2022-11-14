@@ -338,7 +338,7 @@ task ProcessChunk {
             if [ ${svFrequency} != "-1" ]; then
                 PREFIX="${PREFIX}_svf${svFrequency}"
             fi
-            if [ ${contextTypeStart} -ne -1 ]; then
+            if [ ${contextTypeStart} != "-1" ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
                     FILTER_STRING="REPEATS_START=${contextTypeStart} && REPEATS_END=${contextTypeEnd}"
                 else
@@ -346,7 +346,7 @@ task ProcessChunk {
                 fi
                 PREFIX="${PREFIX}_rs${contextTypeStart}_re${contextTypeEnd}"
             fi
-            if [ ${repeatsFraction} -ne -1 ]; then
+            if [ ${repeatsFraction} != "-1" ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
                     FILTER_STRING="REPEATS_FRACTION>=${repeatsFraction}"
                 else

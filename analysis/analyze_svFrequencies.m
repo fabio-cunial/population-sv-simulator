@@ -114,8 +114,6 @@ for clr = [1:length(CALLERS)]
             catch
                 % NOP
             end_try_catch
-            fid
-            sprintf('%s/%s_svf%s_matrix_joint_%s.txt',MATRIX_DIR,CALLERS{clr},SVFREQUENCIES{svf},MEASURES{ms})
             if (fid>=0)
                 while (true)
                     str=fgetl(fid);
