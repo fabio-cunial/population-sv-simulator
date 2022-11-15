@@ -47,11 +47,12 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
+            xlabel('avg read length'); axis square; grid on;
             title(sprintf('%s <=%s %s',CALLERS{clr},SVFREQUENCIES{svf},MEASURES{ms}));
         endfor
     endfor
 endfor
+subplot(1,length(MEASURES),1); legend(LEGEND,'location','south','orient','horizontal');
 lastFigure=100;
 
 
@@ -91,11 +92,12 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
+            xlabel('avg read length'); axis square; grid on;
             title(sprintf('%s MERGE AND JOINT <=%s %s',CALLERS{clr},SVFREQUENCIES{svf},MEASURES{ms}));
         endfor
     endfor
 endfor
+subplot(1,length(MEASURES),1); legend(LEGEND,'location','south','orient','horizontal');
 
 
 % 3. Joint plots
@@ -134,8 +136,9 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on; %legend(LEGEND);
+            xlabel('avg read length'); axis square; grid on;
             title(sprintf('%s MERGE AND JOINT <=%s %s',CALLERS{clr},SVFREQUENCIES{svf},MEASURES{ms}));
         endfor
     endfor
 endfor
+subplot(1,length(MEASURES),1); legend(LEGEND,'location','south','orient','horizontal');

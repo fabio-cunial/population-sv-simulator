@@ -54,6 +54,7 @@ for clr = [1:length(CALLERS)]
         endfor
     endfor
 endfor
+subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
 lastFigure=100;
 
 
@@ -99,6 +100,7 @@ for clr = [1:length(CALLERS)]
         endfor
     endfor
 endfor
+subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
 
 
 % 3. Joint plots
@@ -143,3 +145,4 @@ for clr = [1:length(CALLERS)]
         endfor
     endfor
 endfor
+subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
