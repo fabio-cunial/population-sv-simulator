@@ -1,5 +1,5 @@
 
-MATRIX_DIR='/Users/fcunial/Downloads/performanceMatrices_repeats';
+MATRIX_DIR='/Users/fcunial/Downloads/performanceMatrices_repeatFractions';
 CALLERS={'pbsv', 'sniffles1', 'sniffles2'};
 REPEAT_FRACTIONS={'0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0'};
 READ_LENGTHS=[10000, 12500, 15000, 17500, 20000, 22500];
@@ -102,7 +102,7 @@ endfor
 COVERAGE_LINES={'-*b','-*c','-*y','-*m','-*r'};
 LEGEND={'4 merge', '8 merge', '12 merge', '16 merge', '20 merge', '4 joint', '8 joint', '12 joint', '16 joint', '20 joint'};
 for clr = [1:length(CALLERS)]
-    for svf = [1:length(SVFREQUENCIES)]
+    for rf = [1:length(REPEAT_FRACTIONS)]
         figure(lastFigure+(clr-1)*(1+length(REPEAT_FRACTIONS))+1+rf);
         for ms = [1:length(MEASURES)]
             x=zeros(length(COVERAGES),length(READ_LENGTHS));
@@ -110,12 +110,10 @@ for clr = [1:length(CALLERS)]
             lastX=zeros(length(COVERAGES),1);
             fid=-1;
             try
-                fid=fopen(sprintf('%s/%s_rf%s_matrix_joint_%s.txt',MATRIX_DIR,CALLERS{clr},REPEAT_FRACTIONS{svf},MEASURES{ms}));
+                fid=fopen(sprintf('%s/%s_rf%s_matrix_joint_%s.txt',MATRIX_DIR,CALLERS{clr},REPEAT_FRACTIONS{rf},MEASURES{ms}));
             catch
                 % NOP
             end_try_catch
-            fid
-            sprintf('%s/%s_rf%s_matrix_joint_%s.txt',MATRIX_DIR,CALLERS{clr},REPEAT_FRACTIONS{svf},MEASURES{ms})
             if (fid>=0)
                 while (true)
                     str=fgetl(fid);
