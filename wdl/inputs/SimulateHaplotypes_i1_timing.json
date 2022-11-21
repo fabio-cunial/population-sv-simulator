@@ -13,13 +13,14 @@
     "SimulateHaplotypes.length_means": [10000, 12500, 15000, 17500, 20000, 22500],
     "SimulateHaplotypes.bucket_dir": "gs://cunial-bucket-1/simulation-root/run-timing",
     "SimulateHaplotypes.n_nodes": 1,
-    "SimulateHaplotypes.n_cpus_single_sample": 16,
-    "SimulateHaplotypes.n_cpus_joint": 16,
+    "SimulateHaplotypes.n_cpus_single_sample": 32,
+    "SimulateHaplotypes.n_cpus_joint": 32,
     "SimulateHaplotypes.use_pbsv": 1,
     "SimulateHaplotypes.use_sniffles1": 1,
     "SimulateHaplotypes.use_sniffles2": 1,
     "SimulateHaplotypes.use_hifiasm": 1,
-    "SimulateHaplotypes.use_pav": 1,
+    "SimulateHaplotypes.use_pav": 0,
+    "SimulateHaplotypes.use_paftools": 1,
     "SimulateHaplotypes.delete_bucket_dir": 0,
     "SimulateHaplotypes.keep_assemblies": 1
 }

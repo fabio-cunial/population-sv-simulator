@@ -7,6 +7,7 @@ COVERAGES=[4, 8, 12, 16, 20];
 MEASURES={'tp', 'fp', 'fn', 'precision', 'recall', 'f1'};
 N_INDIVIDUALS=300;
 DELTA=1000;
+FONTSIZE=12;
 
 
 % 1. Per-individual plots
@@ -48,9 +49,16 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on;
-            title(sprintf('%s %s %s',CALLERS{clr},SVTYPES{svt},MEASURES{ms}));
+            xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
+            title(sprintf('%s %s %s',MEASURES{ms},CALLERS{clr},SVTYPES{svt}), 'fontsize', FONTSIZE);
         endfor
+        for i = [1:3]
+            subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
+        endfor
+        for i = [4:length(MEASURES)]
+            subplot(2,length(MEASURES)/2,i); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);
+        endfor
+        subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
     endfor
     % Any SV type
     figure((clr-1)*(1+length(SVTYPES))+1);
@@ -86,11 +94,17 @@ for clr = [1:length(CALLERS)]
             WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
             plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
         endfor
-        xlabel('avg read length'); axis square; grid on;
-        title(sprintf('%s ALL %s', CALLERS{clr}, MEASURES{ms}));
+        xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
+        title(sprintf('%s ALL %s', MEASURES{ms}, CALLERS{clr}), 'fontsize', FONTSIZE);
     endfor
+    for i = [1:3]
+        subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
+    endfor
+    for i = [4:length(MEASURES)]
+        subplot(2,length(MEASURES)/2,i); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);
+    endfor
+    subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
 endfor
-subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
 lastFigure=100;
 
 
@@ -131,9 +145,16 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on;
-            title(sprintf('%s MERGE AND JOINT %s %s',CALLERS{clr},SVTYPES{svt},MEASURES{ms}));
+            xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
+            title(sprintf('%s MERGE AND JOINT %s %s',MEASURES{ms},CALLERS{clr},SVTYPES{svt}), 'fontsize', FONTSIZE);
         endfor
+        for i = [1:3]
+            subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
+        endfor
+        for i = [4:length(MEASURES)]
+            subplot(2,length(MEASURES)/2,i); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);
+        endfor
+        subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
     endfor
     % Any SV type
     figure(lastFigure+(clr-1)*(1+length(SVTYPES))+1);
@@ -167,11 +188,17 @@ for clr = [1:length(CALLERS)]
             WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
             plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
         endfor
-        xlabel('avg read length'); axis square; grid on;
-        title(sprintf('%s MERGE AND JOINT %s',CALLERS{clr},MEASURES{ms}));
+        xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
+        title(sprintf('%s MERGE AND JOINT %s',MEASURES{ms},CALLERS{clr}), 'fontsize', FONTSIZE);
     endfor
+    for i = [1:3]
+        subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
+    endfor
+    for i = [4:length(MEASURES)]
+        subplot(2,length(MEASURES)/2,i); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);
+    endfor
+    subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
 endfor
-subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
 
 
 % 3. Joint plots
@@ -211,9 +238,16 @@ for clr = [1:length(CALLERS)]
                 WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
-            xlabel('avg read length'); axis square; grid on;
-            title(sprintf('%s MERGE AND JOINT %s %s',CALLERS{clr},SVTYPES{svt},MEASURES{ms}));
+            xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
+            title(sprintf('%s MERGE AND JOINT %s %s',MEASURES{ms},CALLERS{clr},SVTYPES{svt}), 'fontsize', FONTSIZE);
         endfor
+        for i = [1:3]
+            subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
+        endfor
+        for i = [4:length(MEASURES)]
+            subplot(2,length(MEASURES)/2,i); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);
+        endfor
+        subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
     endfor
     % Any SV type
     figure(lastFigure+(clr-1)*(1+length(SVTYPES))+1);
@@ -247,8 +281,14 @@ for clr = [1:length(CALLERS)]
             WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
             plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
         endfor
-        xlabel('avg read length'); axis square; grid on;
-        title(sprintf('%s MERGE AND JOINT ALL %s',CALLERS{clr},MEASURES{ms}));
+        xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
+        title(sprintf('%s MERGE AND JOINT ALL %s',MEASURES{ms},CALLERS{clr}), 'fontsize', FONTSIZE);
     endfor
+    for i = [1:3]
+        subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
+    endfor
+    for i = [4:length(MEASURES)]
+        subplot(2,length(MEASURES)/2,i); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);
+    endfor
+    subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
 endfor
-subplot(2,length(MEASURES)/2,1); legend(LEGEND,'location','south','orient','horizontal');
