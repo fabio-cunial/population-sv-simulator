@@ -49,7 +49,7 @@ for clr = [1:length(CALLERS)]
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
             xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
-            title(sprintf('%s repeats>=%s %s',MEASURES{ms},CALLERS{clr},REPEAT_FRACTIONS{rf}), 'fontsize', FONTSIZE);
+            title({MEASURES{ms},CALLERS{clr},sprintf('repeats>=%s',REPEAT_FRACTIONS{rf})}, 'fontsize', FONTSIZE);
         endfor
         for i = [1:3]
             subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
@@ -96,11 +96,10 @@ for clr = [1:length(CALLERS)]
             endif
             subplot(2,length(MEASURES)/2,ms); hold on;
             for coverage = [1:length(COVERAGES)]
-                WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
-                plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
+                plot(x(coverage,[1:lastX(coverage)]), y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
             xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
-            title(sprintf('%s MERGE AND JOINT repeats>=%s %s',MEASURES{ms},CALLERS{clr},REPEAT_FRACTIONS{rf}), 'fontsize', FONTSIZE);
+            title({MEASURES{ms},CALLERS{clr},sprintf('repeats>=%s MERGE AND JOINT',REPEAT_FRACTIONS{rf})}, 'fontsize', FONTSIZE);
         endfor
         for i = [1:3]
             subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
@@ -146,11 +145,10 @@ for clr = [1:length(CALLERS)]
             endif
             subplot(2,length(MEASURES)/2,ms); hold on;
             for coverage = [1:length(COVERAGES)]
-                WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
-                plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
+                plot(x(coverage,[1:lastX(coverage)]), y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
             xlabel('avg read length'); axis square; grid on; set(gca, 'fontsize', FONTSIZE);
-            title(sprintf('%s MERGE AND JOINT repeats>=%s %s',MEASURES{ms},CALLERS{clr},REPEAT_FRACTIONS{rf}), 'fontsize', FONTSIZE);
+            title({MEASURES{ms},CALLERS{clr},sprintf('repeats>=%s MERGE AND JOINT',REPEAT_FRACTIONS{rf})}, 'fontsize', FONTSIZE);
         endfor
         for i = [1:3]
             subplot(2,length(MEASURES)/2,i); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);

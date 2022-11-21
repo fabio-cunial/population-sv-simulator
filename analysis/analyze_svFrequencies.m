@@ -49,7 +49,7 @@ for clr = [1:length(CALLERS)]
                 plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
             xlabel('avg read length'); axis square; grid on;  set(gca, 'fontsize', FONTSIZE);
-            title(sprintf('%s <=%s %s',MEASURES{ms},CALLERS{clr},SVFREQUENCIES{svf}), 'fontsize', FONTSIZE);
+            title({MEASURES{ms},CALLERS{clr},sprintf('<=%s',SVFREQUENCIES{svf})}, 'fontsize', FONTSIZE);
         endfor
         subplot(1,length(MEASURES),1); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
         subplot(1,length(MEASURES),2); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);
@@ -92,11 +92,10 @@ for clr = [1:length(CALLERS)]
             endif
             subplot(1,length(MEASURES),ms); hold on;
             for coverage = [1:length(COVERAGES)]
-                WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
-                plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
+                plot(x(coverage,[1:lastX(coverage)]), y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
             xlabel('avg read length'); axis square; grid on;  set(gca, 'fontsize', FONTSIZE);
-            title(sprintf('%s MERGE AND JOINT <=%s %s',MEASURES{ms},CALLERS{clr},SVFREQUENCIES{svf}), 'fontsize', FONTSIZE);
+            title({MEASURES{ms},CALLERS{clr},sprintf('<=%s MERGE AND JOINT',SVFREQUENCIES{svf})}, 'fontsize', FONTSIZE);
         endfor
         subplot(1,length(MEASURES),1); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
         subplot(1,length(MEASURES),2); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);
@@ -138,11 +137,10 @@ for clr = [1:length(CALLERS)]
             endif
             subplot(1,length(MEASURES),ms); hold on;
             for coverage = [1:length(COVERAGES)]
-                WOBBLE=(rand(1,lastX(coverage))-0.5)*DELTA;
-                plot(x(coverage,[1:lastX(coverage)])+WOBBLE, y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
+                plot(x(coverage,[1:lastX(coverage)]), y(coverage,1:lastX(coverage)), COVERAGE_LINES{coverage});
             endfor
             xlabel('avg read length'); axis square; grid on;  set(gca, 'fontsize', FONTSIZE);
-            title(sprintf('%s MERGE AND JOINT <=%s %s',MEASURES{ms},CALLERS{clr},SVFREQUENCIES{svf}), 'fontsize', FONTSIZE);
+            title({MEASURES{ms},CALLERS{clr},sprintf('<=%s MERGE AND JOINT',SVFREQUENCIES{svf})}, 'fontsize', FONTSIZE);
         endfor
         subplot(1,length(MEASURES),1); xlim([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA]);
         subplot(1,length(MEASURES),2); axis([READ_LENGTHS(1)-DELTA, READ_LENGTHS(length(READ_LENGTHS))+DELTA, 0, 1]);

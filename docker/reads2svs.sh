@@ -152,7 +152,7 @@ for COVERAGE in ${COVERAGES}; do
                 else
                     break
                 fi
-            fi
+            done
         fi
         TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX_PBSV}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
