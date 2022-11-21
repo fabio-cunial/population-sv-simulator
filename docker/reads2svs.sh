@@ -22,7 +22,7 @@ READS_FILE=$1
 SAMPLE_ID=$2  # SM field in the .sam file (needed later for joint calling)
 LENGTH=$3
 MIN_COVERAGE=$4
-MAX_COVERAGE=$5
+MAX_COVERAGE=$5  # Of one haploype
 COVERAGES=$6  # String, separated by "-".
 REFERENCE_FA=$7
 REFERENCE_FAI=$8
@@ -35,9 +35,10 @@ USE_SNIFFLES1=${14}
 USE_SNIFFLES2=${15}
 USE_HIFIASM=${16}
 USE_PAV=${17}
-WORK_DIR=${18}
-DOCKER_DIR=${19}
-KEEP_ASSEMBLIES=${20}
+USE_PAFTOOLS=${18}
+WORK_DIR=${19}
+DOCKER_DIR=${20}
+KEEP_ASSEMBLIES=${21}
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 GSUTIL_DELAY_S="600"
@@ -47,6 +48,7 @@ N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
 N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
 N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
 MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
+MINIMAP2_ASM_FLAG="asm5"  # asm5/asm10/asm20 for ~0.1/1/5% sequence divergence
 READ_GROUP="@RG\tID:movie\tSM:${SAMPLE_ID}"
 REFERENCE_LENGTH=$(wc -c < ${REFERENCE_FA})
 ID1=${SAMPLE_ID}
@@ -61,7 +63,7 @@ cd ${WORK_DIR}
 # Splitting the reads into chunks equal to 1x of a diploid individual, and 
 # aligning each chunk to the reference in isolation.
 N_ROWS=$(wc -l < ${READS_FILE})
-N_ROWS_1X=$(( ( ${N_ROWS} / (4*${MAX_COVERAGE}) ) * 2 ))
+N_ROWS_1X=$(( ${N_ROWS} / (2*${MAX_COVERAGE}) ))
 rm -f chunk-*
 split -d -l ${N_ROWS_1X} ${READS_FILE} chunk-
 rm -f ${READS_FILE}
@@ -190,7 +192,7 @@ for COVERAGE in ${COVERAGES}; do
     # SNIFFLES 2
     PREFIX_SNIFFLES2="sniffles2_${INFIX}"
     if [ ${USE_SNIFFLES2} -eq 1 ]; then 
-        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_SNIFFLES2}.vcf && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_SNIFFLES2}.snf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
     	    ${TIME_COMMAND} sniffles --threads ${N_THREADS} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} --reference ${REFERENCE_FA} --sample-id ${SAMPLE_ID} --input coverage_${COVERAGE}.bam --vcf ${PREFIX_SNIFFLES2}.vcf --snf ${PREFIX_SNIFFLES2}.snf
             while : ; do
@@ -218,12 +220,14 @@ for COVERAGE in ${COVERAGES}; do
     # HIFIASM + QUAST
     PREFIX_ASSEMBLY="assembly_${INFIX}"
     PREFIX_PAV="pav_${INFIX}"
+    PREFIX_PAFTOOLS="paftools_${INFIX}"
     PAV_VCF_PRESENT=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX_PAV}.vcf && echo 0 || echo 1)
-    if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 ]; then 
+    PAFTOOLS_VCF_PRESENT=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX_PAFTOOLS}.vcf && echo 0 || echo 1)
+    if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 -o ${USE_PAFTOOLS} -eq 1 ]; then 
         TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h1.fa && echo 0 || echo 1)
         TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h2.fa && echo 0 || echo 1)
         if [ ${TEST1} -eq 0 -a ${TEST2} -eq 0 ]; then
-            if [ ${USE_PAV} -eq 1 -a ${PAV_VCF_PRESENT} -eq 1 ]; then
+            if [ (${USE_PAV} -eq 1 -a ${PAV_VCF_PRESENT} -eq 1) -o (${USE_PAFTOOLS} -eq 1 -a ${PAFTOOLS_VCF_PRESENT} -eq 1) ]; then
                 while : ; do
                     TEST=$(gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h1.fa ${PREFIX_ASSEMBLY}_h1.fa && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
@@ -280,6 +284,28 @@ for COVERAGE in ${COVERAGES}; do
                 fi
             done
             rm -rf tmpasm*
+        fi
+    fi
+    
+    # PAFTOOLS
+    if [ ${USE_PAFTOOLS} -eq 1 -a ${PAFTOOLS_VCF_PRESENT} -eq 1 ]; then
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX_PAFTOOLS}.vcf && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            cat ${PREFIX_ASSEMBLY}_h1.fa ${PREFIX_ASSEMBLY}_h2.fa > ${PREFIX_ASSEMBLY}_h1_h2.fa
+            ${TIME_COMMAND} minimap2 -t ${N_THREADS} -x ${MINIMAP2_ASM_FLAG} -c --cs ${REFERENCE_FA} ${PREFIX_ASSEMBLY}_h1_h2.fa -o ${PREFIX_ASSEMBLY}_h1_h2.paf
+            rm -f ${PREFIX_ASSEMBLY}_h1_h2.fa
+            ${TIME_COMMAND} sort --parallel=${N_THREADS} -k6,6 -k8,8n ${PREFIX_ASSEMBLY}_h1_h2.paf > ${PREFIX_ASSEMBLY}_h1_h2.sorted.paf
+            rm -f ${PREFIX_ASSEMBLY}_h1_h2.paf
+            ${TIME_COMMAND} paftools.js call -f ${REFERENCE_FA} ${PREFIX_ASSEMBLY}_h1_h2.sorted.paf > ${PREFIX_PAFTOOLS}.vcf
+            while : ; do
+                TEST=$(gsutil cp ${PREFIX_PAFTOOLS}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading file <${PREFIX_PAFTOOLS}.vcf>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else 
+                    break
+                fi
+            done
         fi
     fi
     

@@ -11,6 +11,7 @@ ARG samtools_version=1.16.1
 ARG bcftools_version=1.16
 ARG truvari_version=3.5.0
 ARG minimap2_version=2.24
+ARG k8_version=0.2.4
 ARG pbsv_version=2.8.0
 ARG sniffles1_version=1.0.12
 ARG sniffles2_version=2.0.7
@@ -100,12 +101,15 @@ RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_versi
 RUN pip install truvari==${truvari_version} \
     && truvari --help
 
-# MINIMAP2
+# MINIMAP2 + PAFTOOLS
+RUN curl -L https://github.com/attractivechaos/k8/releases/download/v${k8_version}/k8-${k8_version}.tar.bz2 | tar -jxf - \
+    && cp k8-${k8_version}/k8-Linux /usr/local/bin/k8
 RUN wget https://github.com/lh3/minimap2/releases/download/v${minimap2_version}/minimap2-${minimap2_version}_x64-linux.tar.bz2 \
     && tar xjf minimap2-${minimap2_version}_x64-linux.tar.bz2 \
     && rm minimap2-${minimap2_version}_x64-linux.tar.bz2 \
     && cd minimap2-${minimap2_version}_x64-linux \
     && cp minimap2 /usr/local/bin/ \
+    && cp paftools.js /usr/local/bin/ \
     && cd ${work_dir} \
     && rm -rf minimap2-${minimap2_version}_x64-linux \
     && minimap2 --help

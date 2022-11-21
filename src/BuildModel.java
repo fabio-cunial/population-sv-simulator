@@ -209,7 +209,7 @@ public class BuildModel {
 	 * 
 	 * @param path a cleaned version of the TRF file from UCSC Genome Browser, 
 	 * with runs of tabs replaced by commas (the rows of this file are already
-	 * grouped  by contig and sorted by starting position); contigs are assumed
+	 * grouped by contig and sorted by starting position); contigs are assumed
 	 * to be sorted as follows (contigs in "other" are not loaded):
 	 *
 	 * chr1,chr10,...,chr19,  chr2,...,chr22,  chr3,...,chr9,  chrX,chrY, other.

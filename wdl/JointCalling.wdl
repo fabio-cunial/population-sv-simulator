@@ -9,20 +9,14 @@ version 1.0
 #
 # TASK            | TIME   | RAM    | CORES | COMMENT
 # sniffles2 joint | 2 m    | 1 GB   |   1   | 
-# pbsv joint      | 14-23h | 18 GB  |  3.5  | coverage 4
-#                 | 43 h   | 28 GB  |  3.7  | coverage 8
-#                 | 56 h   | 35 GB  |  3.6  | coverage 12
-#                 | ?? h   | ?? GB  |  ???  | coverage 16
-#                 | ?? h   | ?? GB  |  ???  | coverage 20
+# pbsv joint      | 14-23h | 18 GB  |   4   | coverage 4
+#                 | 43 h   | 28 GB  |   4   | coverage 8
+#                 | 56 h   | 35 GB  |   4   | coverage 12
+#                 | 115 h  | 48 GB  |   4   | coverage 16
+#                 | 165 h  | 62 GB  |   4   | coverage 20
 #
 # Remark: PBSV processes 1 Mbp chunk after another, in sequence rather than in
 # parallel.
-#
-#
-#
-# Remark: for chr1 at 30x, for ~90 individuals, 4 threads: joint calling with
-# PBSV takes ~40 hours and 18 GB of RAM (and it uses <=3 cores rather than
-# the 4 assigned), and joint calling with Sniffles 2 takes just seconds.
 #
 workflow JointCalling {
     input {

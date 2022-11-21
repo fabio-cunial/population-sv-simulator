@@ -31,6 +31,7 @@ workflow SimulateHaplotypes {
         Int use_sniffles2
         Int use_hifiasm
         Int use_pav
+        Int use_paftools
         Int delete_bucket_dir
         Int keep_assemblies
     }
@@ -84,6 +85,7 @@ workflow SimulateHaplotypes {
                  use_sniffles2 = use_sniffles2,
                  use_hifiasm = use_hifiasm,
                  use_pav = use_pav,
+                 use_paftools = use_paftools,
                  keep_assemblies = keep_assemblies
         }
     }
@@ -201,6 +203,7 @@ task ProcessChunk {
         Int use_sniffles2
         Int use_hifiasm
         Int use_pav
+        Int use_paftools
         Int keep_assemblies
     }
     parameter_meta {
@@ -265,7 +268,7 @@ task ProcessChunk {
                 fi
                 bash ~{docker_dir}/haplotype2reads.sh ${ID1} ${ID2} ~{length_min} ~{length_max} ${LENGTH} ~{length_stdev} ~{max_coverage} ~{bucket_dir} ~{work_dir}
                 READS_FILE="reads_i${ID1}_i${ID2}_l${LENGTH}_c~{max_coverage}.fa"
-                bash ~{docker_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{work_dir} ~{docker_dir} ~{keep_assemblies}
+                bash ~{docker_dir}/reads2svs.sh ${READS_FILE} ${ID1} ${LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{work_dir} ~{docker_dir} ~{keep_assemblies}
             done
             rm -f haplotype_${ID1}.fa haplotype_${ID2}.fa
         done
