@@ -45,6 +45,7 @@ workflow PerformanceMatrices {
         File annotate_vcfs_segdups
     }
     parameter_meta {
+        svFrequencies: "They should be fractions $X/(2*n_individuals)$, where $X$ is an integer number of haplotypes."
         contextTypes: "0=non-satellite repeat; 1=satellite repeat; 2=both of the above; 3=none of the above, but segmental duplication; 4=none of the above."
         repeatFractions: "Fractions of one."
         only_pass: "(0/1) Use only variants with FILTER=PASS."
@@ -329,9 +330,9 @@ task ProcessChunk {
             fi
             if [ ${svLength} != "-1" ]; then
                 if [ ${#FILTER_STRING} -eq 0 ]; then
-                    FILTER_STRING="((SVLEN>0 && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<0))"
+                    FILTER_STRING="((SVLEN>0 && SVLEN>=${svLength}) || (SVLEN<0 && SVLEN<=-${svLength}))"
                 else
-                    FILTER_STRING="${FILTER_STRING} && ((SVLEN>0 && SVLEN<=${svLength}) || (SVLEN>=-${svLength} && SVLEN<0))"
+                    FILTER_STRING="${FILTER_STRING} && ((SVLEN>0 && SVLEN>=${svLength}) || (SVLEN<0 && SVLEN<=-${svLength}))"
                 fi
                 PREFIX="${PREFIX}_svl${svLength}"
             fi

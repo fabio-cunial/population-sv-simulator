@@ -2,7 +2,7 @@
     "PerformanceMatrices.callers": ["pbsv", "sniffles1", "sniffles2"],
     "PerformanceMatrices.svTypes": [],
     "PerformanceMatrices.svLengths": [],
-    "PerformanceMatrices.svFrequencies": [0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0],
+    "PerformanceMatrices.svFrequencies": [0.001666, 0.00333, 0.005, 0.00666, 0.008333, 0.01666, 0.0333, 0.05, 0.0666, 0.08333, 0.1666],
     "PerformanceMatrices.contextTypes": [],
     "PerformanceMatrices.repeatFractions": [],
     "PerformanceMatrices.read_lengths": [10000, 12500, 15000, 17500, 20000, 22500],
