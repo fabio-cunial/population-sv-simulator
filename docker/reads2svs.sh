@@ -227,7 +227,7 @@ for COVERAGE in ${COVERAGES}; do
         TEST1=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h1.fa && echo 0 || echo 1)
         TEST2=$(gsutil -q stat ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h2.fa && echo 0 || echo 1)
         if [ ${TEST1} -eq 0 -a ${TEST2} -eq 0 ]; then
-            if [ (${USE_PAV} -eq 1 -a ${PAV_VCF_PRESENT} -eq 1) -o (${USE_PAFTOOLS} -eq 1 -a ${PAFTOOLS_VCF_PRESENT} -eq 1) ]; then
+            if [ ${USE_PAV} -eq 1 -a ${PAV_VCF_PRESENT} -eq 1 ] || [ ${USE_PAFTOOLS} -eq 1 -a ${PAFTOOLS_VCF_PRESENT} -eq 1 ]; then
                 while : ; do
                     TEST=$(gsutil cp ${BUCKET_DIR}/assemblies/${PREFIX_ASSEMBLY}_h1.fa ${PREFIX_ASSEMBLY}_h1.fa && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
