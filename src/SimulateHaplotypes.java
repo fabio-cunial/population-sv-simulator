@@ -86,6 +86,7 @@ public class SimulateHaplotypes {
 		final String OUTPUT_DIR = args[10];
 		
 		final int MAX_DISTANCE_TO_REPEAT_INTERVAL = 100;  // Arbitrary
+        final int HISTOGRAM_BIN_SIZE = 100000;  // Arbitrary
 		StringBuilder buffer = new StringBuilder(10000);  // Arbitrary
 		
 		System.err.println("Loading reference...");
@@ -111,6 +112,7 @@ public class SimulateHaplotypes {
 		buildVCF(OUTPUT_DIR);
 		System.err.println("Saving population to disk...");
 		serialize(OUTPUT_DIR+"/haplotype2variants.txt",OUTPUT_DIR+"/variants.txt");
+        printPositionHistogram(OUTPUT_DIR+"/histogram_startPositions.txt",HISTOGRAM_BIN_SIZE);
 	}
 	
 	
@@ -1092,7 +1094,31 @@ public class SimulateHaplotypes {
 		if (printGenotype) bw.write("\tFORMAT\t"+sampleName);
 		bw.newLine();
 	}
-	
+    
+    
+	/**
+	 * For each SV type, the procedure prints the total number of SVs in the 
+     * population that start inside each bin of length $binSize$ of the
+     * reference.
+	 */
+	private static final void printPositionHistogram(String outputFile, int binSize) throws IOException {
+		int i, j;
+		BufferedWriter bw;
+        int[][] histogram;
+        
+        histogram = new int[BuildModel.SV_TYPES.length][reference.length()/binSize+1];
+        for (i=0; i<histogram.length; i++) Arrays.fill(histogram[i],0);
+		for (i=0; i<=lastVariant; i++) {
+			if (variants[i].isActive) histogram[variants[i].svType][variants[i].position/binSize]++;
+		}
+        bw = new BufferedWriter(new FileWriter(outputFile));
+        for (i=0; i<histogram.length; i++) {
+            for (j=0; j<histogram[i].length; j++) bw.write(histogram[i][j]+",");
+            bw.newLine();
+        }
+        bw.close();
+	}
+    
 	
 	private static final void serialize(String haplotype2variantsFile, String variantsFile) throws IOException {
 		int i, j;
