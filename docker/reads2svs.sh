@@ -17,6 +17,7 @@
 # sniffles2               | 3 min  | 150 MB |   1   |
 # hifiasm                 | 45 min | 20 GB  |   8   |
 # PAV                     | 1..8 h | 7 GB   | 2...8 | faster with high covg
+# paftools                | 2 s    | 300 MB |   1   |
 #
 READS_FILE=$1
 SAMPLE_ID=$2  # SM field in the .sam file (needed later for joint calling)
@@ -49,6 +50,7 @@ N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
 N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
 MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
 MINIMAP2_ASM_FLAG="asm5"  # asm5/asm10/asm20 for ~0.1/1/5% sequence divergence
+PAFTOOLS_MIN_SV_LENGTH="40"
 READ_GROUP="@RG\tID:movie\tSM:${SAMPLE_ID}"
 REFERENCE_LENGTH=$(wc -c < ${REFERENCE_FA})
 ID1=${SAMPLE_ID}
@@ -296,7 +298,10 @@ for COVERAGE in ${COVERAGES}; do
             rm -f ${PREFIX_ASSEMBLY}_h1_h2.fa
             ${TIME_COMMAND} sort --parallel=${N_THREADS} -k6,6 -k8,8n ${PREFIX_ASSEMBLY}_h1_h2.paf > ${PREFIX_ASSEMBLY}_h1_h2.sorted.paf
             rm -f ${PREFIX_ASSEMBLY}_h1_h2.paf
-            ${TIME_COMMAND} paftools.js call -f ${REFERENCE_FA} ${PREFIX_ASSEMBLY}_h1_h2.sorted.paf > ${PREFIX_PAFTOOLS}.vcf
+            ${TIME_COMMAND} paftools.js call -f ${REFERENCE_FA} ${PREFIX_ASSEMBLY}_h1_h2.sorted.paf > ${PREFIX_PAFTOOLS}_raw.vcf
+            rm -f ${PREFIX_ASSEMBLY}_h1_h2.sorted.paf
+            java -cp ${DOCKER_DIR} FormatPaftoolsVCF ${PREFIX_PAFTOOLS}_raw.vcf ${PREFIX_PAFTOOLS}.vcf ${PAFTOOLS_MIN_SV_LENGTH}
+            rm -f ${PREFIX_PAFTOOLS}_raw.vcf
             while : ; do
                 TEST=$(gsutil cp ${PREFIX_PAFTOOLS}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
@@ -308,6 +313,7 @@ for COVERAGE in ${COVERAGES}; do
             done
         fi
     fi
+    rm -f ${PREFIX_PAFTOOLS}*
     
     # PAV
     if [ ${USE_PAV} -eq 1 -a ${PAV_VCF_PRESENT} -eq 1 ]; then
@@ -355,8 +361,9 @@ for COVERAGE in ${COVERAGES}; do
         rm -rf asm/ data/ temp/ results/ log/
         gsutil -m rm -rf "${BUCKET_DIR}/pav/${INFIX}" || echo "Error removing directory <${BUCKET_DIR}/pav/${INFIX}>"
     fi
-    rm -f ${PREFIX_ASSEMBLY}*
     rm -f ${PREFIX_PAV}*
+    
+    rm -f ${PREFIX_ASSEMBLY}*
     
     # Next iteration
     echo "${SAMPLE_ID} ${LENGTH} ${COVERAGE}" >> ${CHECKPOINT_FILE}
