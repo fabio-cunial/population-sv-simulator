@@ -25,16 +25,20 @@ public class BuildModel {
 		final int TRF_FILE_NROWS = Integer.parseInt(args[3]);
 		final String SEGDUPS_FILE = args[4];
 		final int SEGDUPS_FILE_NROWS = Integer.parseInt(args[5]);
-		final String GNOMADSV_FILE = args[6];
-		final boolean ONLY_PASS = Integer.parseInt(args[7])==1;
-		final String OUTPUT_DIR = args[8];
-		final boolean VERBOSE = Integer.parseInt(args[9])==1;
+        final String REFERENCE_FAI = args[6];
+        final String REFERENCE_CYTOBANDS = args[7];
+		final String GNOMADSV_FILE = args[8];
+		final boolean ONLY_PASS = Integer.parseInt(args[9])==1;
+		final String OUTPUT_DIR = args[10];
+		final boolean VERBOSE = Integer.parseInt(args[11])==1;
 		
 		loadRepeatMaskerAnnotations(REPEATMASKER_FILE,REPEATMASKER_FILE_NROWS,MAX_DISTANCE_REPEATMASKER,false);
 		loadTrfAnnotations(TRF_FILE,TRF_FILE_NROWS,MIN_OVERLAP_TRF,false);
 		buildRepeatIntervals(MIN_OVERLAP_INTERVALS);
 		loadSegdups(SEGDUPS_FILE,SEGDUPS_FILE_NROWS,MAX_DISTANCE_SEGDUPS);
 		//alleleFrequencyVsRepeatContext(GNOMADSV_FILE,MAX_DISTANCE_SR,MAX_DISTANCE_PE,MAX_DISTANCE_OTHER,MAX_DISTANCE_SEGDUPS,ONLY_PASS,"./");
+        loadFai(REFERENCE_FAI);
+        loadPqArms(REFERENCE_CYTOBANDS);
 		collectStatistics(GNOMADSV_FILE,MAX_DISTANCE_SR,MAX_DISTANCE_PE,MAX_DISTANCE_OTHER,MAX_DISTANCE_SEGDUPS,ONLY_PASS,VERBOSE);
 		makeStatisticsCumulative();
 		serializeStatistics(OUTPUT_DIR);
@@ -479,10 +483,6 @@ public class BuildModel {
 	
 	
 	
-	
-	
-
-	
 	// ------------------------ SEGDUPS PROCEDURES -----------------------------
 	
 	/**
@@ -623,6 +623,170 @@ public class BuildModel {
 		}
 	}	
 	
+    
+    
+    
+    // ----------------------- SV POSITION PROCEDURES --------------------------
+    
+    private static final int N_CHROMOSOMES = 24;
+    private static final int N_AUTOSOMES = 22;
+    
+    
+    /**
+     * Parameters from the gnomAD-SV paper.
+     */
+    private static final int SV_POSITION_QUANTUM = 100000;
+	public static final int SMOOTHING_RADIUS_POSITIONS = 5;  // In bins
+	public static final int SMOOTHING_WINDOW_POSITIONS = 1+((SMOOTHING_RADIUS_POSITIONS)<<1);
+    
+    
+    
+    private static int[] chromosomeLengths;
+    
+    /*
+     * For each chromosome (rows), the pair (Last position in P arm, 
+     * First position in Q arm), one-based. 
+     */   
+    private static int[][] pqArms;
+    
+    /**
+     * (SV type, Chromosome, Bin) -> N(SVs inside the bin)
+     */
+    private static double[][][] svs_per_position;
+    
+    /**
+     * (SV type, Bin) -> Prob(SV starts inside the bin)
+     */
+    private static double[][] statistics_position;
+    
+    
+    /**
+     * Remark: the procedure initializes also $svs_per_position$.
+     */
+    private static final void loadFai(String inputFile) throws IOException {
+        char c;
+        int i, j;
+        String str;
+        BufferedReader br;
+        String[] tokens;
+        
+        chromosomeLengths = new int[N_CHROMOSOMES];
+        br = new BufferedReader(new FileReader(inputFile));
+        str=br.readLine();
+        while (str!=null) {
+            tokens=str.split("\t");
+            c=tokens[0].charAt(3);
+            if (c=='X' || c=='x') i=N_CHROMOSOMES-1;
+            else if (c=='Y' || c=='y') i=N_CHROMOSOMES;
+            else i=Integer.parseInt(tokens[0].substring(3));
+            chromosomeLengths[i-1]=Integer.parseInt(tokens[1]);
+            str=br.readLine();
+        }
+        br.close();
+        svs_per_position = new double[SVTYPES.length][N_CHROMOSOMES][0];
+        for (i=0; i<SVTYPES.length; i++) {
+            for (j=0; j<N_CHROMOSOMES; j++) svs_per_position[i][j] = new int[(chromosomeLengths[j]+SV_POSITION_QUANTUM)/SV_POSITION_QUANTUM];
+        }
+    }
+    
+    
+    /**
+     * @param inputFile the cytoband file provided with the reference.
+     */
+    private static final void loadPqArms(String inputFile) throws IOException {
+        char c;
+        int i;
+        int first, last;
+        String str;
+        BufferedReader br;
+        String[] tokens;
+        
+        pqArms = new int[N_CHROMOSOMES][2];
+        br = new BufferedReader(new FileReader(inputFile));
+        str=br.readLine();
+        while (str!=null) {
+            tokens=str.split("\t");
+            c=tokens[0].charAt(3);
+            if (c=='X' || c=='x') i=N_CHROMOSOMES-1;
+            else if (c=='Y' || c=='y') i=N_CHROMOSOMES;
+            else i=Integer.parseInt(tokens[0].substring(3));
+            first=Integer.parseInt(tokens[1]); last=Integer.parseInt(tokens[2]);
+            if (tokens[3].charAt(0)=='p' && last>pqArms[i-1][0]) pqArms[i-1][0]=last;
+            else if (tokens[3].charAt(0)=='q' && first<pqArms[i-1][1]) pqArms[i-1][1]=first;
+            str=br.readLine();
+        }
+        br.close();
+        for (i=0; i<N_CHROMOSOMES; i++) {
+            if (pqArms[i][0]==pqArms[i][1]) pqArms[i][0]--;
+        }
+    }
+    
+    
+    
+    
+    
+    /**
+     * Remark: the procedure uses only the autosomes, as described in the 
+     * gnomAD-SV paper.
+     *
+     * Remark: the procedure assumes that the region between P and Q arm is
+     * empty.
+     */
+    private static final void buildStatisticsPosition() {
+        int i, j, k, h;
+        int projectedLength, projectedFirst, projectedLast, projectedFirstBin, projectedLastBin;
+        double ratio, projectedMassPerBp;
+        
+        for (i=0; i<SVTYPES.length; i++) {
+            System.arraycopy(svs_per_position[i][0],0,statistics_position[i],0,svs_per_position[i][0].length);
+            for (j=1; j<N_AUTOSOMES; j++) {
+                for (k=0; k<svs_per_position[i][j].length; k++) {
+                    if ((k+1)*SV_POSITION_QUANTUM-1<=pqArms[j][0]-1) {
+                        // P arm in the source chromosome
+                        ratio=((double)pqArms[0][0])/pqArms[j][0];
+                        projectedLast=(int)(((k+1)*SV_POSITION_QUANTUM-1)*ratio);
+                        if (projectedLast<=pqArms[0][0]-1) {
+                            // P arm in chr1 as well
+                            projectedLength=(int)(SV_POSITION_QUANTUM*ratio);
+                            projectedMassPerBp=svs_per_position[i][j][k]/projectedLength;
+                            projectedFirst=(int)((k*SV_POSITION_QUANTUM)*ratio);
+                            projectedFirstBin=projectedStart/SV_POSITION_QUANTUM;
+                            projectedLastBin=projectedLast/SV_POSITION_QUANTUM;
+                            statistics_position[i][projectedFirstBin]+=projectedMassPerBp*((projectedFirstBin+1)*SV_POSITION_QUANTUM-projectedStart);
+                            for (h=projectedFirstBin+1; h<projectedLastBin; h++) statistics_position[i][h]+=projectedMassPerBp*SV_POSITION_QUANTUM;
+                            statistics_position[i][projectedLastBin]+=projectedMassPerBp*(projectedEnd+1-projectedLastBin*SV_POSITION_QUANTUM);
+                        }
+                    }
+                    else if (k*SV_POSITION_QUANTUM>=pqArms[j][1]-1) {
+                        // Q arm in the source chromosome
+                        ratio=((double)(chromosomeLengths[0]-pqArms[0][1]+1))/(chromosomeLengths[j]-pqArms[j][1]+1);
+                        projectedFirst=pqArms[0][1]-1+(int)((k*SV_POSITION_QUANTUM-pqArms[j][1]+1)*ratio);
+                        projectedLast=(int)(((k+1)*SV_POSITION_QUANTUM-1-pqArms[j][1]+1)*ratio);
+                        if (projectedLast<chromosomeLengths[0]) {
+                            projectedLength=(int)(SV_POSITION_QUANTUM*ratio);
+                            projectedMassPerBp=svs_per_position[i][j][k]/projectedLength;
+                            projectedFirstBin=projectedStart/SV_POSITION_QUANTUM;
+                            projectedLastBin=projectedLast/SV_POSITION_QUANTUM;
+                            statistics_position[i][projectedFirstBin]+=projectedMassPerBp*((projectedFirstBin+1)*SV_POSITION_QUANTUM-projectedStart);
+                            for (h=projectedFirstBin+1; h<projectedLastBin; h++) statistics_position[i][h]+=projectedMassPerBp*SV_POSITION_QUANTUM;
+                            statistics_position[i][projectedLastBin]+=projectedMassPerBp*(projectedEnd+1-projectedLastBin*SV_POSITION_QUANTUM);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Normalizing
+        // ....
+        
+        
+    }
+    
+    
+    
+    
+    
+    
 	
 	
 
@@ -649,7 +813,7 @@ public class BuildModel {
 	public static double[][][] statistics_alleleFrequency;
 	private static int[][] statistics_lastAlleleFrequency;
 	public static double[][][] statistics_alleleFrequency_minmax;
-	
+    
 	/**
 	 * The only SVs supported for statistics.
 	 */
@@ -742,6 +906,7 @@ public class BuildModel {
 			for (j=0; j<statistics_lastAlleleFrequency[i].length; j++) statistics_lastAlleleFrequency[i][j]=-1;
 		}
 		statistics_alleleFrequency_minmax = new double[ALLELE_FREQUENCY_STR.length][SV_TYPES.length][2];
+        statistics_position = new double[(referenceLength+SV_POSITION_QUANTUM)/SV_POSITION_QUANTUM];
 		
 		// Collecting counts
 		br = new BufferedReader(new FileReader(gnomadVCFfile));
@@ -837,6 +1002,7 @@ public class BuildModel {
 				}
 				if (isFrequent) nFrequent_chr1++;
 			}
+            svs_per_position[svType][Integer.parseInt(tokens[0])-1][position/SV_POSITION_QUANTUM]++;
 			str=br.readLine();
 		}
 		br.close();
@@ -845,7 +1011,7 @@ public class BuildModel {
 		// Smoothing length distributions
 		for (i=0; i<SV_TYPES.length; i++) {
 			for (j=0; j<N_INTERVAL_TYPES; j++) {
-				Arrays.fill(smoothedArray,0);
+				Arrays.fill(smoothedArray,0.0);
 				sum=0.0;
 				for (k=0; k<SMOOTHING_WINDOW; k++) sum+=statistics_length[i][j][k];
 				for (k=SMOOTHING_RADIUS; k<statistics_length[i][j].length-SMOOTHING_RADIUS-1; k++) {
@@ -856,6 +1022,22 @@ public class BuildModel {
 				System.arraycopy(smoothedArray,SMOOTHING_RADIUS,statistics_length[i][j],SMOOTHING_RADIUS,statistics_length[i][j].length-((SMOOTHING_RADIUS)<<1));
 			}
 		}
+        
+        // Smoothing position distributions
+        smoothedArray = new double[svs_per_position[0][0].length];
+        for (i=0; i<SV_TYPES.length; i++) {
+            for (j=0; j<N_CHOMOSOMES; j++) {
+				Arrays.fill(smoothedArray,0,svs_per_position[i][j].length,0.0);
+				sum=0.0;
+				for (k=0; k<SMOOTHING_WINDOW_POSITIONS; k++) sum+=svs_per_position[i][j][k];
+				for (k=SMOOTHING_RADIUS_POSITIONS; k<svs_per_position[i][j].length-SMOOTHING_RADIUS_POSITIONS-1; k++) {
+					smoothedArray[k]=sum/SMOOTHING_WINDOW_POSITIONS;
+					sum+=svs_per_position[i][j][k+SMOOTHING_RADIUS_POSITIONS+1]-svs_per_position[i][j][k-SMOOTHING_RADIUS_POSITIONS];
+				}
+				smoothedArray[svs_per_position[i][j].length-SMOOTHING_RADIUS_POSITIONS-1]=sum/SMOOTHING_WINDOW_POSITIONS;
+				System.arraycopy(smoothedArray,SMOOTHING_RADIUS_POSITIONS,svs_per_position[i][j],SMOOTHING_RADIUS_POSITIONS,svs_per_position[i][j].length-((SMOOTHING_RADIUS_POSITIONS)<<1));
+            }
+        }
 		
 		// Computing empirical probabilities
 		for (i=0; i<SV_TYPES.length; i++) {
@@ -891,6 +1073,17 @@ public class BuildModel {
 				}
 			}
 		}
+        
+        
+        for (i=0; i<SV_TYPES.length; i++) {
+            for (j=0; j<N_CHOMOSOMES; j++) {
+                sum=0.0;
+                for (k=0; k<svs_per_position[i][j].length; k++) sum+=svs_per_position[i][j][k];
+                for (k=0; k<svs_per_position[i][j].length; k++) svs_per_position[i][j][k]/=sum;
+            }
+        }
+        
+        
 	}
 	
 	
