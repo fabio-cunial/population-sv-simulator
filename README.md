@@ -1,4 +1,4 @@
-Tools to answer questions about: optimal sequencing parameters in a large PacBio CCS sequencing project; comparative performance of SV callers; benefits of joint SV calling over a large population; limits of SV detection.
+Tools to answer questions about: optimal sequencing parameters in a large PacBio CCS sequencing project; comparative performance of existing SV discovery tools; benefits of joint SV discovery over a large population; limits of SV discovery and motivations for new joint tools.
 
 # Overview of the tools
 
