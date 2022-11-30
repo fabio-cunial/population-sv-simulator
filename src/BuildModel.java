@@ -647,7 +647,7 @@ public class BuildModel {
     /**
      * (SV type, Chromosome, Bin) -> count(SVs that start inside the bin)
      */
-    private static int[][][] svs_per_position;
+    private static double[][][] svs_per_position;
     
     /**
      * (SV type, Bin) -> Prob(SV starts inside the bin)
@@ -676,17 +676,18 @@ public class BuildModel {
         str=br.readLine();
         while (str!=null) {
             tokens=str.split("\t");
-            c=tokens[0].charAt(3);
-            if (c=='X' || c=='x') i=N_CHROMOSOMES-1;
-            else if (c=='Y' || c=='y') i=N_CHROMOSOMES;
-            else i=Integer.parseInt(tokens[0].substring(3));
-            chromosomeLengths[i-1]=Integer.parseInt(tokens[1]);
+            i=str2chromosomeID(tokens[0]);
+            if (i==-1) {
+                str=br.readLine();
+                continue;
+            }
+            chromosomeLengths[i]=Integer.parseInt(tokens[1]);
             str=br.readLine();
         }
         br.close();
-        svs_per_position = new int[SV_TYPES.length][N_CHROMOSOMES][0];
+        svs_per_position = new double[SV_TYPES.length][N_CHROMOSOMES][0];
         for (i=0; i<SV_TYPES.length; i++) {
-            for (j=0; j<N_CHROMOSOMES; j++) svs_per_position[i][j] = new int[(chromosomeLengths[j]+SV_POSITION_QUANTUM)/SV_POSITION_QUANTUM];
+            for (j=0; j<N_CHROMOSOMES; j++) svs_per_position[i][j] = new double[(chromosomeLengths[j]+SV_POSITION_QUANTUM)/SV_POSITION_QUANTUM];
         }
         
         chromosomePLengths = new int[N_CHROMOSOMES];
@@ -694,15 +695,36 @@ public class BuildModel {
         str=br.readLine();
         while (str!=null) {
             tokens=str.split("\t");
-            c=tokens[0].charAt(3);
-            if (c=='X' || c=='x') i=N_CHROMOSOMES-1;
-            else if (c=='Y' || c=='y') i=N_CHROMOSOMES;
-            else i=Integer.parseInt(tokens[0].substring(3));
+            i=str2chromosomeID(tokens[0]);
+            if (i==-1) {
+                str=br.readLine();
+                continue;
+            }
             length=Integer.parseInt(tokens[2]);
-            if (tokens[3].charAt(0)=='p' && length>chromosomePLengths[i-1]) chromosomePLengths[i-1]=length;
+            if (tokens[3].charAt(0)=='p' && length>chromosomePLengths[i]) chromosomePLengths[i]=length;
             str=br.readLine();
         }
         br.close();
+    }
+    
+    
+    /**
+     * @return -1 if $str$ does not represent a non-mitochondrial chromosome;
+     * the 0-based integer ID of a chromosome otherwise.
+     */
+    private static final int str2chromosomeID(String str) {
+        char c;
+        
+        if (str.length()>3) {
+            if (!str.substring(0,3).equalsIgnoreCase("chr")) return -1;
+            if (str.length()>5) return -1;
+            c=str.charAt(3);
+        }
+        else c=str.charAt(0);
+        if (c=='M' || c=='m') return -1;
+        if (c=='X' || c=='x') return N_CHROMOSOMES-2;
+        else if (c=='Y' || c=='y') return N_CHROMOSOMES-1;
+        else return Integer.parseInt(str.length()>3?str.substring(3):str)-1;
     }
     
     
@@ -721,7 +743,7 @@ public class BuildModel {
         int projectedFirst, projectedLast, projectedFirstBin, projectedLastBin;
         double ratioP, ratioQ, massP, massQ, projectedMassPerBp, sum;
         
-        statistics_position = new double[svs_per_position[0][0].length][SV_TYPES.length];
+        statistics_position = new double[SV_TYPES.length][svs_per_position[0][0].length];
         for (i=0; i<SV_TYPES.length; i++) {
             System.arraycopy(svs_per_position[i][0],0,statistics_position[i],0,svs_per_position[i][0].length);
             for (j=1; j<N_AUTOSOMES; j++) {
@@ -818,7 +840,7 @@ public class BuildModel {
 	public static final int SV_LENGTH_QUANTUM = 50;
 	public static final int ALLELE_FREQUENCY_NBINS = 10000;  // Arbitrary
 	public static final String[] AF_NAMES = new String[] {"ALL", "AFR", "AMR", "EAS", "EUR", "OTH"};
-	public static final String[] AF_FILE_NAMES = new String[] {"statistics_alleleFrequency", "statistics_alleleFrequency_AFR", "statistics_alleleFrequency_AMR", "statistics_alleleFrequency_EAS", "statistics_alleleFrequency_EUR", "statistics_alleleFrequency_OTH"};
+	public static final String[] AF_FILE_NAMES = new String[] {"statistics_alleleFrequency_ALL", "statistics_alleleFrequency_AFR", "statistics_alleleFrequency_AMR", "statistics_alleleFrequency_EAS", "statistics_alleleFrequency_EUR", "statistics_alleleFrequency_OTH"};
 	public static final String[] ALLELE_FREQUENCY_STR = new String[] {";AF=", ";AFR_AF=", ";AMR_AF=", ";EAS_AF=", ";EUR_AF=", ";OTH_AF="};
 	
 	/**
@@ -999,7 +1021,7 @@ public class BuildModel {
 				}
 				if (isFrequent) nFrequent_chr1++;
 			}
-            svs_per_position[svType][Integer.parseInt(tokens[0])-1][position/SV_POSITION_QUANTUM]++;
+            svs_per_position[svType][str2chromosomeID(tokens[0])][position/SV_POSITION_QUANTUM]++;
 			str=br.readLine();
 		}
 		br.close();
@@ -1011,7 +1033,7 @@ public class BuildModel {
 				Arrays.fill(smoothedArray,0.0);
 				sum=0.0;
 				for (k=0; k<SMOOTHING_WINDOW; k++) sum+=statistics_length[i][j][k];
-				for (k=SMOOTHING_RADIUS; k<=statistics_length[i][j].length-SMOOTHING_RADIUS-1; k++) {
+				for (k=SMOOTHING_RADIUS; k<=statistics_length[i][j].length-SMOOTHING_RADIUS-2; k++) {
 					smoothedArray[k]=sum/SMOOTHING_WINDOW;
 					sum+=statistics_length[i][j][k+SMOOTHING_RADIUS+1]-statistics_length[i][j][k-SMOOTHING_RADIUS];
 				}
@@ -1027,7 +1049,7 @@ public class BuildModel {
 				Arrays.fill(smoothedArray,0,svs_per_position[i][j].length,0.0);
 				sum=0.0;
 				for (k=0; k<SMOOTHING_WINDOW_POSITIONS; k++) sum+=svs_per_position[i][j][k];
-				for (k=SMOOTHING_RADIUS_POSITIONS; k<=svs_per_position[i][j].length-SMOOTHING_RADIUS_POSITIONS-1; k++) {
+				for (k=SMOOTHING_RADIUS_POSITIONS; k<=svs_per_position[i][j].length-SMOOTHING_RADIUS_POSITIONS-2; k++) {
 					smoothedArray[k]=sum/SMOOTHING_WINDOW_POSITIONS;
 					sum+=svs_per_position[i][j][k+SMOOTHING_RADIUS_POSITIONS+1]-svs_per_position[i][j][k-SMOOTHING_RADIUS_POSITIONS];
 				}
