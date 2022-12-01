@@ -178,8 +178,31 @@ task ProcessChild {
         else
             echo "0 0 0" > ${CHECKPOINT_FILE}
         fi
+        
+        
+        
+        # different smrt cells can have different mean/median
+        
+        ---------->
+        tr '\n' 'Z' < ~{child_reads} > pasted1.fa
+        ${TIME_COMMAND} shuf pasted.fa > pasted2.fa
+        rm -f pasted1.fa
+        tr 'Z' '\n' < pasted2.fa > 
+        
+        
+        
+        awk '{ printf("%s",$0); n++; if (n%4==0) { printf("\n"); } else { printf("#"); } }' > pasted1.fq
+        shuf pasted1.fq > pasted2.fq
+        rm -f pasted1.fq
+        tr '#' '\n' < pasted2.fq > reads.fastq
+        rm -f pasted2.fq
+
+        
+        
+        
+        
         COVERAGES=~{sep='-' coverages}
-        bash ~{docker_dir}/reads2svs.sh ~{child_reads} ~{child_id} ${FAKE_LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{work_dir} ~{docker_dir} ~{keep_assemblies}
+        bash ~{docker_dir}/reads2svs.sh reads.fastq ~{child_id} ${FAKE_LENGTH} ~{min_coverage} ~{max_coverage} ${COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_mmi} ~{reference_tandem_repeats} ${CHECKPOINT_FILE} ~{bucket_dir} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{work_dir} ~{docker_dir} ~{keep_assemblies}
     >>>
     
     output {

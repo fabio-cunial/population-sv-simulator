@@ -66,6 +66,10 @@ cd ${WORK_DIR}
 # aligning each chunk to the reference in isolation.
 N_ROWS=$(wc -l < ${READS_FILE})
 N_ROWS_1X=$(( ${N_ROWS} / (2*${MAX_COVERAGE}) ))
+if [ $((${N_ROWS_1X} % 4)) -ne 0 ]; then
+    # Making sure it is a multiple of 4, to make FASTQ files work.
+    N_ROWS_1X=$(( (${N_ROWS_1X}/4 + 1)*4 ))
+fi
 rm -f chunk-*
 split -d -l ${N_ROWS_1X} ${READS_FILE} chunk-
 rm -f ${READS_FILE}
