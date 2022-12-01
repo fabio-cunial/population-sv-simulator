@@ -4,8 +4,8 @@
 # to the reference. Then, for each coverage, merges a prefix of the chunks and
 # runs the callers on the merged BAM.
 #
-# Resource analysis for 20x coverage of one haplotype. Intel Xeon, 2.30GHz, 8
-# physical cores.
+# Resource analysis for 20x coverage of one chr1 haplotype. Intel Xeon,
+# 2.30GHz, 8 physical cores.
 #
 # TASK                    | TIME   | RAM    | CORES | COMMENT
 # minimap2 one chunk      | 30 s   | 3 GB   |   7   |

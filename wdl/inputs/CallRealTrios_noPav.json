@@ -1,0 +1,19 @@
+{
+    "CallRealTrios.n_children": 50,
+    "CallRealTrios.child_fa_addresses": "gs://cunial-bucket-1/trios-root/????",
+    "CallRealTrios.reference_fa": "gs://cunial-bucket-1/trios-root/T2T/??????",
+    "CallRealTrios.reference_fai": "gs://cunial-bucket-1/trios-root/T2T/?????",
+    "CallRealTrios.reference_mmi": "gs://cunial-bucket-1/trios-root/T2T/??????",
+    "CallRealTrios.reference_tandem_repeats": "gs://cunial-bucket-1/trios-root/T2T/????????",
+    "CallRealTrios.coverages": [4, 8, 12, 16, 20],
+    "CallRealTrios.bucket_dir": "gs://cunial-bucket-1/trios-root/run",
+    "CallRealTrios.n_cpus_single_sample": 16,
+    "CallRealTrios.use_pbsv": 1,
+    "CallRealTrios.use_sniffles1": 1,
+    "CallRealTrios.use_sniffles2": 1,
+    "CallRealTrios.use_hifiasm": 0,
+    "CallRealTrios.use_pav": 0,
+    "CallRealTrios.use_paftools": 0,
+    "CallRealTrios.delete_bucket_dir": 0,
+    "CallRealTrios.keep_assemblies": 0
+}

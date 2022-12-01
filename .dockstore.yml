@@ -20,3 +20,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/PerformanceMatrices.wdl
   testParameterFiles:
+- name: CallRealTrios
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/CallRealTrios.wdl
+  testParameterFiles:
