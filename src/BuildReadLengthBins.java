@@ -11,7 +11,7 @@ import java.io.*;
  */
 public class BuildReadLengthBins {
 
-    public static final String BIN_FILE_SEPARATOR = "|";
+    public static final String BIN_FILE_SEPARATOR = "__________";
 
 
 	public static void main(String[] args) throws IOException {
@@ -23,7 +23,7 @@ public class BuildReadLengthBins {
         final int N_BINS = MAX_READ_LENGTH/BIN_LENGTH+1;
         
         int i, j;
-        int bin, last, length, maxLength;
+        int bin, last, length, maxLength, nReads;
         String str, file, header, sequence, separator, quality;
         Random random = new Random();
         BufferedReader br1, br2;
@@ -32,7 +32,7 @@ public class BuildReadLengthBins {
         String[] tmpArray, tokens;
         BufferedWriter[] buffers;
         
-        // Building buckets
+        // Building bins
         buffers = new BufferedWriter[N_BINS];
         for (i=0; i<N_BINS; i++) buffers[i] = new BufferedWriter(new FileWriter(OUTPUT_PREFIX+i+".bin"));
         bufferLengths = new int[N_BINS];
@@ -40,8 +40,9 @@ public class BuildReadLengthBins {
         br1 = new BufferedReader(new FileReader(INPUT_FILES_LIST));
         file=br1.readLine();
         while (file!=null) {
+            System.err.println("Loading file <"+file+">...");
             br2 = new BufferedReader(new FileReader(file));
-            header=br2.readLine();
+            header=br2.readLine(); nReads=0;
             while (header!=null) {
                 sequence=br2.readLine(); separator=br2.readLine(); quality=br2.readLine();
                 bin=sequence.length()/BIN_LENGTH;
@@ -51,9 +52,12 @@ public class BuildReadLengthBins {
                 buffers[bin].write(sequence); buffers[bin].write(BIN_FILE_SEPARATOR);
                 buffers[bin].write(separator); buffers[bin].write(BIN_FILE_SEPARATOR);
                 buffers[bin].write(quality); buffers[bin].newLine();
+                nReads++;
+                if (nReads%10000==0) System.err.println(nReads+" reads");
                 header=br2.readLine();
             }
             br2.close();
+            System.err.println("Done");
             file=br1.readLine();
         }
         br1.close();
@@ -67,7 +71,8 @@ public class BuildReadLengthBins {
         }
         bw.close();
         
-        // Permuting reads in each bucket
+        // Permuting reads in each bin
+        System.err.println("Permuting bins...");
         tmpArray = new String[maxLength];
         for (i=0; i<N_BINS; i++) {
             br1 = new BufferedReader(new FileReader(OUTPUT_PREFIX+i+".bin"));
@@ -77,6 +82,7 @@ public class BuildReadLengthBins {
                 str=br1.readLine();
             }
             br1.close();
+            if (last<=1) continue;
             shuffle(tmpArray,last,random);
             bw = new BufferedWriter(new FileWriter(OUTPUT_PREFIX+i+".bin"));
             for (j=0; j<=last; j++) {
@@ -84,6 +90,7 @@ public class BuildReadLengthBins {
             }
             bw.close();
         }
+        System.err.println("Done");
 	}
     
     
