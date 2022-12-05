@@ -17,6 +17,7 @@ ARG sniffles1_version=1.0.12
 ARG sniffles2_version=2.0.7
 ARG hifiasm_version=0.16.1
 ARG quast_version=5.2.0
+ARG apache_commons_math_version=3.6.1
 # - PAV has releases, but for simplicity we just clone the repo to resolve a 
 # dependency on SVPOP. Should be done more rigorously.
 # - PBSIM2 and PBSIM1 have no version
@@ -222,6 +223,13 @@ RUN cd pbsim2 \
 #     && rm -rf PBSIM-PacBio-Simulator \
 #     && pbsim --help
 
+# Apache Commons Math
+RUN wget https://dlcdn.apache.org//commons/math/binaries/commons-math3-${apache_commons_math_version}-bin.tar.gz \
+    && tar -xzf commons-math3-${apache_commons_math_version}-bin.tar.gz \
+    && rm -f commons-math3-${apache_commons_math_version}-bin.tar.gz \
+    && mv commons-math3-${apache_commons_math_version}/commons-math3-${apache_commons_math_version}.jar . \
+    && rm -rf commons-math3-${apache_commons_math_version}
+
 # Simulation code
 COPY haplotype2reads.sh .
 COPY reads2svs.sh .
@@ -230,4 +238,4 @@ COPY pav_restoreCheckpoint.sh .
 COPY pav_checkpointDaemon.sh .
 COPY performance_matrices_impl.sh .
 COPY *.java .
-RUN javac *.java
+RUN javac -cp commons-math3-${apache_commons_math_version}.jar *.java
