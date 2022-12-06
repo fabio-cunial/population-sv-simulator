@@ -18,25 +18,33 @@ public class BuildReadLengthBins {
 		final String INPUT_FILES_LIST = args[0];
         final int BIN_LENGTH = Integer.parseInt(args[1]);
         final int MAX_READ_LENGTH = Integer.parseInt(args[2]);  // For a bin
-        final String OUTPUT_PREFIX = args[3];
+        final long GENOME_LENGTH_HAPLOID = Long.parseLong(args[3]);
+        final String OUTPUT_PREFIX = args[4];
         
         final int N_BINS = MAX_READ_LENGTH/BIN_LENGTH+1;
+        final int HALF_BIN_LENGTH = BIN_LENGTH>>1;
+        final int MIN_READS_IN_LOCAL_MAXIMUM = 500;  // Arbitrary
         
         int i, j;
-        int bin, last, length, maxLength, nReads;
+        int bin, last, length, maxLength, nReads, minBin, minValue;
+        int nMaxima, previousMaximum, lastMaximum;
+        double sum, mass;
         String str, file, header, sequence, separator, quality;
         Random random = new Random();
         BufferedReader br1, br2;
         BufferedWriter bw;
-        int[] bufferLengths;
+        int[] buffers_last;
+        long[] buffers_stringLength;
         String[] tmpArray, tokens;
         BufferedWriter[] buffers;
         
         // Building bins
         buffers = new BufferedWriter[N_BINS];
         for (i=0; i<N_BINS; i++) buffers[i] = new BufferedWriter(new FileWriter(OUTPUT_PREFIX+i+".bin"));
-        bufferLengths = new int[N_BINS];
-        Arrays.fill(bufferLengths,0);
+        buffers_last = new int[N_BINS];
+        Arrays.fill(buffers_last,-1);
+        buffers_stringLength = new long[N_BINS];
+        Arrays.fill(buffers_stringLength,0);
         br1 = new BufferedReader(new FileReader(INPUT_FILES_LIST));
         file=br1.readLine();
         while (file!=null) {
@@ -47,9 +55,10 @@ public class BuildReadLengthBins {
                 sequence=br2.readLine(); separator=br2.readLine(); quality=br2.readLine();
                 bin=sequence.length()/BIN_LENGTH;
                 if (bin>=N_BINS) bin=N_BINS-1;
-                bufferLengths[bin]++;
+                buffers_last[bin]++;
                 buffers[bin].write(header); buffers[bin].write(BIN_FILE_SEPARATOR);
                 buffers[bin].write(sequence); buffers[bin].write(BIN_FILE_SEPARATOR);
+                buffers_stringLength[bin]+=sequence.length();
                 buffers[bin].write(separator); buffers[bin].write(BIN_FILE_SEPARATOR);
                 buffers[bin].write(quality); buffers[bin].newLine();
                 nReads++;
@@ -65,9 +74,9 @@ public class BuildReadLengthBins {
         bw = new BufferedWriter(new FileWriter(OUTPUT_PREFIX+".histogram"));
         maxLength=0;
         for (i=0; i<N_BINS; i++) {
-            length=bufferLengths[i];
+            length=buffers_last[i]+1;
             if (length>maxLength) maxLength=length;
-            bw.write(length+"\n");
+            bw.write((i*BIN_LENGTH+HALF_BIN_LENGTH)+","+length+"\n");
         }
         bw.close();
         
@@ -91,6 +100,44 @@ public class BuildReadLengthBins {
             bw.close();
         }
         System.err.println("Done");
+        
+        // Reporting high local maxima
+        bw = new BufferedWriter(new FileWriter(OUTPUT_PREFIX+".maxima"));
+        nMaxima=0; lastMaximum=-1; previousMaximum=-1;
+        for (i=0; i<N_BINS; i++) {
+            if (buffers_last[i]+1>=MIN_READS_IN_LOCAL_MAXIMUM && (i==0 || buffers_last[i]>buffers_last[i-1]) && (i==N_BINS-1 || buffers_last[i]>buffers_last[i+1])) {
+                bw.write((i*BIN_LENGTH)+","+((i+1)*BIN_LENGTH-1)+"\n");
+                nMaxima++;
+                previousMaximum=lastMaximum; lastMaximum=i;
+            }
+        }
+        bw.close();
+        System.err.println("The read length distribution contains "+nMaxima+" local maxima with >="+MIN_READS_IN_LOCAL_MAXIMUM+" reads each.");
+        if (nMaxima>=2) {
+            System.err.println("The two rightmost high maxima are at bins: "+previousMaximum+" (lengths ["+(previousMaximum*BIN_LENGTH)+".."+((previousMaximum+1)*BIN_LENGTH-1)+"]) and "+lastMaximum+" (lengths ["+(lastMaximum*BIN_LENGTH)+".."+((lastMaximum+1)*BIN_LENGTH-1)+"])");
+            minBin=-1; minValue=Integer.MAX_VALUE;
+            for (i=previousMaximum+1; i<lastMaximum; i++) {
+                if (buffers_last[i]<buffers_last[i-1] && buffers_last[i]<buffers_last[i+1] && buffers_last[i]<minValue) {
+                    minBin=i; minValue=buffers_last[i];
+                }
+            }
+            System.err.println("Assume to cut the distribution at the "+minBin+"-th bin of smallest local minimum (lengths ["+(minBin*BIN_LENGTH)+".."+((minBin+1)*BIN_LENGTH-1)+"]).");
+            sum=0.0;
+            for (i=0; i<N_BINS; i++) sum+=buffers_last[i]+1;
+            mass=0.0;
+            for (i=0; i<=minBin; i++) mass+=buffers_last[i]+1;
+            mass/=sum;
+            System.err.println("Probability mass up to the "+minBin+"-th bin, included: "+mass);
+            System.err.println("Probability mass after the "+minBin+"-th bin: "+(1.0-mass));
+            sum=0.0;
+            for (i=0; i<=minBin; i++) sum+=buffers_stringLength[i];
+            System.err.println("Coverage of one haplotype by bins up to the "+minBin+"-th, included: "+(sum/GENOME_LENGTH_HAPLOID));
+            sum=0.0;
+            for (i=minBin+1; i<N_BINS; i++) sum+=buffers_stringLength[i];
+            System.err.println("Coverage of one haplotype by bins after the "+minBin+"-th: "+(sum/GENOME_LENGTH_HAPLOID));
+        }
+        else if (nMaxima==1) System.err.println("The only high local maximum is at bin: "+lastMaximum+" (lengths ["+(lastMaximum*BIN_LENGTH)+".."+((lastMaximum+1)*BIN_LENGTH-1)+"])");
+        else { /* NOP */ }
 	}
     
     
