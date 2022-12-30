@@ -3,8 +3,8 @@ import java.io.*;
 
 
 /**
- * Builds the histogram of the number of reads that fall in each bucket, and
- * prints all local maxima.
+ * Builds the histogram of the number of reads that fall in each read length 
+ * bin, and prints all local maxima of the histogram.
  */
 public class Fastq2LengthHistogram {
 
@@ -15,7 +15,7 @@ public class Fastq2LengthHistogram {
         final String OUTPUT_FILE_HISTOGRAM = args[3];
         final String OUTPUT_FILE_MAX = args[4];
         
-        final int N_BINS = MAX_READ_LENGTH/BIN_LENGTH+1;
+        final int N_BINS = (MAX_READ_LENGTH+BIN_LENGTH-1)/BIN_LENGTH;
         
         int i;
         int bin, length;

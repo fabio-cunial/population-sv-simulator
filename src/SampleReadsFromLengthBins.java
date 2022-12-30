@@ -6,8 +6,10 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 
 
 /**
- * Samples reads from the length bins created by $BuildReadLengthBins$, using a
- * bimodal normal distribution given in input.
+ * Given the length bin files created by $BuildReadLengthBins$, the program 
+ * samples reads using a bimodal normal distribution specified in input.
+ *
+ * If the desired coverage cannot be achieved, the program returns error code 3.
  */
 public class SampleReadsFromLengthBins {
     /**
@@ -35,9 +37,9 @@ public class SampleReadsFromLengthBins {
     
     /**
      * @param args 
-     *  4: weight of the left normal, in [0..1];
+     *  4: weight of the left normal distribution, in [0..1];
      * 10: the actual RAM usage is at least twice this much, because of the 
-     *     quality track in FASTQs.
+     *     quality track in a FASTQ file.
      */
 	public static void main(String[] args) throws IOException {
         final double MEAN_LEFT = Double.parseDouble(args[0]);
@@ -47,14 +49,14 @@ public class SampleReadsFromLengthBins {
         final double WEIGHT_LEFT = Double.parseDouble(args[4]);
         final int BIN_LENGTH = Integer.parseInt(args[5]);
         final int MAX_READ_LENGTH = Integer.parseInt(args[6]);  // For a bin
-		final String BUCKETS_PREFIX = args[7];
-        final long GENOME_LENGTH_HAPLOID = Long.parseLong(args[8]);
-        final double TARGET_COVERAGE_HAPLOID = Double.parseDouble(args[9]);
+		final String BINS_PREFIX = args[7];
+        final long GENOME_LENGTH_ONE_HAPLOTYPE = Long.parseLong(args[8]);
+        final double TARGET_COVERAGE_ONE_HAPLOTYPE = Double.parseDouble(args[9]);
         maxBpsInRam=Long.parseLong(args[10]);
-        final String OUTPUT_FILE = args[11];
+        final String OUTPUT_FASTQ_FILE = args[11];
         
-        final int N_BINS = MAX_READ_LENGTH/BIN_LENGTH+1;
-        final long TARGET_COVERAGE_BP = (long)(GENOME_LENGTH_HAPLOID*(TARGET_COVERAGE_HAPLOID*2));
+        final int N_BINS = (MAX_READ_LENGTH+BIN_LENGTH-1)/BIN_LENGTH;
+        final long TARGET_COVERAGE_BP = (long)(GENOME_LENGTH_ONE_HAPLOTYPE*(TARGET_COVERAGE_ONE_HAPLOTYPE*2));
         final int MAX_SAMPLING_ATTEMPTS = N_BINS*10;  // Arbitrary
         
         int i, j;
@@ -79,7 +81,7 @@ public class SampleReadsFromLengthBins {
         for (i=0; i<N_BINS; i++) bins[i] = new Bin(i,0);
         queue = new PriorityQueue<Bin>();
         coverage=0; nBpsInRam=0;
-        bw = new BufferedWriter(new FileWriter(OUTPUT_FILE));
+        bw = new BufferedWriter(new FileWriter(OUTPUT_FASTQ_FILE));
         while (coverage<TARGET_COVERAGE_BP) {
             j=0; bin=-1;
             while (j<MAX_SAMPLING_ATTEMPTS) {
@@ -87,7 +89,7 @@ public class SampleReadsFromLengthBins {
                 if (bin<0) bin=-1-bin;
                 j++;
                 if (buffers_last[bin]!=-1) {  // The bin cannot be empty
-                    loadBin(bin,BUCKETS_PREFIX);
+                    loadBin(bin,BINS_PREFIX);
                     if (buffers_last[bin]!=-1) {  // The bin cannot be empty
                         freeSpace(bin);
                         break;
@@ -95,8 +97,8 @@ public class SampleReadsFromLengthBins {
                 }
             }
             if (j==MAX_SAMPLING_ATTEMPTS) {
-                System.err.println("ERROR: Not enough reads to sample "+TARGET_COVERAGE_HAPLOID+"x haploid coverage from the given bins and distribution.");
-                System.exit(1);
+                System.err.println("Not enough reads to sample "+TARGET_COVERAGE_ONE_HAPLOTYPE+"x haploid coverage from the given bins and distribution.");
+                System.exit(3);
             }
             histogram[bin]++;
             tokens=buffers[bin][buffers_last[bin]].split(BuildReadLengthBins.BIN_FILE_SEPARATOR);
@@ -110,7 +112,7 @@ public class SampleReadsFromLengthBins {
             buffers_last[bin]--;
         }
         bw.close();
-        bw = new BufferedWriter(new FileWriter(OUTPUT_FILE+".histogram"));
+        bw = new BufferedWriter(new FileWriter(OUTPUT_FASTQ_FILE+".histogram"));
         for (i=0; i<N_BINS; i++) bw.write(histogram[i]+"\n");
         bw.close();
 	}
@@ -132,7 +134,7 @@ public class SampleReadsFromLengthBins {
     
     /**
      * Loads from disk a (possibly empty) bin file up until its 
-     * $buffers_last$-th record, included.
+     * $buffers_last$-th row, included.
      */
     private static final void loadBin(int bin, String prefix) throws IOException {
         final int CAPACITY = 1000;  // Arbitrary
@@ -142,7 +144,7 @@ public class SampleReadsFromLengthBins {
         
         if (buffers_isLoaded[bin]) {
             queue.remove(bins[bin]);
-            bins[bin].priority=buffers_stringLength[bin];  // An approximation
+            bins[bin].priority=buffers_last[bin];  // An approximation
             queue.add(bins[bin]);
             return;
         }
@@ -167,15 +169,15 @@ public class SampleReadsFromLengthBins {
         if (buffers_last[bin]==Integer.MAX_VALUE) buffers_last[bin]=last;
         buffers_stringLength[bin]>>=1;  // Just an approximation
         nBpsInRam+=buffers_stringLength[bin];
-        bins[bin].priority=buffers_stringLength[bin];  // Just an approximation
+        bins[bin].priority=buffers_last[bin];
         queue.add(bins[bin]);
-        System.err.println("Allocated bin "+bin+" with "+buffers_stringLength[bin]+" bps");
+        System.err.println("Loaded bin "+bin+" with ~"+buffers_stringLength[bin]+" bps");
     }
     
     
     /**
-     * Keeps removing a least-recently-used bin until $nBpsInRam$ becomes at
-     * most $MAX_BPS_IN_RAM$.
+     * Keeps removing the lowest-priority bin until $nBpsInRam$ becomes at
+     * most $maxBpsInRam$.
      *
      * @param excludeBin do not deallocate this bin.
      */
@@ -190,7 +192,7 @@ public class SampleReadsFromLengthBins {
             if (bin==null) break;
             id=bin.id;
             if (id==excludeBin) {
-                if (queue.size()==1) break;
+                if (queue.size()==0) break;
                 else continue;
             }
             buffers_isLoaded[id]=false;
