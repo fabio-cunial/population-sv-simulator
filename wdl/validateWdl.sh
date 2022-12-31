@@ -7,3 +7,4 @@ java -jar ${WOMTOOL_PATH} validate -l JointCalling.wdl
 java -jar ${WOMTOOL_PATH} validate -l AnnotateVCFs.wdl -i inputs/AnnotateVCFs-i300-noPav.json
 java -jar ${WOMTOOL_PATH} validate -l PerformanceMatrices.wdl -i inputs/PerformanceMatrices_svTypes.json
 java -jar ${WOMTOOL_PATH} validate -l CallRealTrios.wdl -i inputs/CallRealTrios_noPav.json
+java -jar ${WOMTOOL_PATH} validate -l ReadLengthDistribution.wdl -i inputs/ReadLengthDistribution.json

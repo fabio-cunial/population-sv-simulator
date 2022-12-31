@@ -34,29 +34,30 @@ workflow ReadLengthDistribution {
         n_cpus: "Used only for setting the runtime"
     }
     
-    Int flowcells_size_gb = 30*3  # Assuming 30x coverage per individual
+    Int flowcells_size_gb = 30*3
+    # Assuming 30x coverage per individual
     scatter(child in read_lines(children_ids)) {
         call ProcessTrioChild {
             input:
-                 child_id = child,
-                 flowcells_size_gb = flowcells_size_gb,
-                 bin_length = bin_length,
-                 max_read_length = max_read_length,
-                 left_weights = left_weights,
-                 target_coverage_one_haplotype = target_coverage_one_haplotype,
-                 reference_fa = reference_fa,
-                 reference_fai = reference_fai,
-                 reference_mmi = reference_mmi,
-                 reference_tandem_repeats = reference_tandem_repeats,
-                 bucket_dir = bucket_dir,
-                 n_cpus = n_cpus_single_sample,
-                 use_pbsv = use_pbsv,
-                 use_sniffles1 = use_sniffles1,
-                 use_sniffles2 = use_sniffles2,
-                 use_hifiasm = use_hifiasm,
-                 use_pav = use_pav,
-                 use_paftools = use_paftools,
-                 keep_assemblies = keep_assemblies
+                child_id = child,
+                flowcells_size_gb = flowcells_size_gb,
+                bin_length = bin_length,
+                max_read_length = max_read_length,
+                left_weights = left_weights,
+                target_coverage_one_haplotype = target_coverage_one_haplotype,
+                reference_fa = reference_fa,
+                reference_fai = reference_fai,
+                reference_mmi = reference_mmi,
+                reference_tandem_repeats = reference_tandem_repeats,
+                bucket_dir = bucket_dir,
+                n_cpus = n_cpus,
+                use_pbsv = use_pbsv,
+                use_sniffles1 = use_sniffles1,
+                use_sniffles2 = use_sniffles2,
+                use_hifiasm = use_hifiasm,
+                use_pav = use_pav,
+                use_paftools = use_paftools,
+                keep_assemblies = keep_assemblies
         }
     }
     output {
@@ -97,7 +98,6 @@ task ProcessTrioChild {
         Int keep_assemblies
     }
     parameter_meta {
-        flowcells_list: "Contains the address of every flowcell of the child (one per line)."
         flowcells_size_gb: "Upper bound on the size of the union of all flowcells in the list. Used just for setting the runtime."
         bin_length: "Of the read length histogram"
         max_read_length: "Of the read length histogram"
@@ -118,14 +118,14 @@ task ProcessTrioChild {
         set -euxo pipefail
         mkdir -p ~{work_dir}
         cd ~{work_dir}
-        
+
         GSUTIL_DELAY_S="600"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         REFERENCE_LENGTH=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {print s}')
         READ_GROUP="@RG\tID:movie\tSM:~{child_id}"
-        
+
         # Building the files needed for sampling reads from the distribution
         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0 && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
@@ -191,7 +191,7 @@ task ProcessTrioChild {
                 fi
             done
         done
-        
+
         # Aborting if the distribution does not have exactly two local maxima
         N_MAXIMA=0
         MEAN_LEFT=0
@@ -222,7 +222,7 @@ task ProcessTrioChild {
             cat bin_.stats
             exit 0
         fi
-        
+
         # Creating reads with multiple length distributions
         WEIGHTS=~{sep='-' left_weights}
         WEIGHTS=$(echo ${WEIGHTS} | tr '-' ' ')
@@ -256,11 +256,11 @@ task ProcessTrioChild {
                     rm -rf reads.bam
                     touch reads.bam
                 else 
-                	${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_mmi} reads.fastq > reads.sam
-                	${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.sam ~{reference_fa} > reads.1.bam
-                	rm -f reads.sam
-                	${TIME_COMMAND} samtools sort -@ ${N_THREADS} reads.1.bam > reads.bam
-                	rm -f reads.1.bam
+                    ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_mmi} reads.fastq > reads.sam
+                    ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.sam ~{reference_fa} > reads.1.bam
+                    rm -f reads.sam
+                    ${TIME_COMMAND} samtools sort -@ ${N_THREADS} reads.1.bam > reads.bam
+                    rm -f reads.1.bam
                 fi
                 while : ; do
                     TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq && echo 0 || echo 1)
