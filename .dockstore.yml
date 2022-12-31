@@ -20,8 +20,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/PerformanceMatrices.wdl
   testParameterFiles:
-- name: CallRealTrios
+- name: ReadLengthDistribution
   subclass: wdl
   publish: True
-  primaryDescriptorPath: /wdl/CallRealTrios.wdl
+  primaryDescriptorPath: /wdl/ReadLengthDistribution.wdl
   testParameterFiles:
