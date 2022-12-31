@@ -117,100 +117,7 @@ task DeleteBucketDir {
 }
 
 
-# Given the VCFs created by a given SV caller on a trio at the maximum
-# possible coverage, the task returns just the child calls that occur also in
-# some parent.
-#
-# Remark: genotype information is ignored.
-#
-task CreateTruthVCF {
-    input {
-        Int child_id
-        String vcf_child
-        String vcf_parent1
-        String vcf_parent2
-        File reference_fa
-        String bucket_dir
-    }
-    String docker_dir = "/simulation"
-    String work_dir = "/cromwell_root/trios"
-    Int ram_size_gb = ceil(size(vcf_child, "GB") + size(vcf_parent1, "GB") + size(vcf_parent2, "GB") + size(reference_fa, "GB"))*2
-    Int disk_size_gb = ram_size_gb*2
-    command <<<
-        set -euxo pipefail
-        cd ~{work_dir}
-        TRUVARI_BENCH_FLAGS=" "  # Default settings for now
-        BCFTOOLS_MERGE_FLAGS="--force-samples --merge none"
-        GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
-        GSUTIL_DELAY_S="600"
-        TIME_COMMAND="/usr/bin/time --verbose"
-        N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
-        N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
-        N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
-        echo "Running <CreateTruthVCF> on ${N_THREADS} cores on the following node:"
-        lscpu
-        cat /proc/meminfo
-        df -h
-        
-        
-        # Creating the truth VCF
-        TEST=$(gsutil -q stat ~{bucket_dir}/child~{child_id}/truth.vcf.gz && echo 0 || echo 1)
-        if [ ${TEST} -eq 0 ]; then
-            while : ; do
-                TEST=$(gsutil cp ~{bucket_dir}/child~{child_id}/truth.vcf.gz . && echo 0 || echo 1)
-                if [ ${TEST} -eq 1 ]; then
-                    echo "Error downloading file <~{bucket_dir}/child~{child_id}/truth.vcf.gz>. Trying again..."
-                    sleep ${GSUTIL_DELAY_S}
-                else
-                    break
-                fi
-            done
-        else
-            bcftools sort --output-type z --output child.vcf.gz ~{vcf_child}
-            tabix child.vcf.gz
-            bcftools sort --output-type z --output parent1.vcf.gz ~{vcf_parent1}
-            tabix parent1.vcf.gz
-            bcftools sort --output-type z --output parent2.vcf.gz ~{vcf_parent2}
-            tabix parent2.vcf.gz
-            ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base parent1.vcf.gz --comp child.vcf.gz --reference ~{reference_fa} --output output_parent1/
-            mv output_parent1/tp-call.vcf in_parent1.vcf
-            rm -rf output_parent1/
-            ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base parent2.vcf.gz --comp child.vcf.gz --reference ~{reference_fa} --output output_parent2/
-            mv output_parent2/tp-call.vcf in_parent2.vcf
-            rm -rf output_parent2/
-            bcftools sort --output-type z --output in_parent1.vcf.gz in_parent1.vcf
-            tabix in_parent1.vcf.gz
-            bcftools sort --output-type z --output in_parent2.vcf.gz in_parent2.vcf
-            tabix in_parent2.vcf
-            ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} in_parent1.vcf.gz in_parent2.vcf.gz --output-type z --output truth.vcf.gz
-            while : ; do
-                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truth.vcf.gz ~{bucket_dir}/child~{child_id}/truth.vcf.gz && echo 0 || echo 1)
-                if [ ${TEST} -eq 1 ]; then
-                    echo "Error uploading file <~{bucket_dir}/child~{child_id}/truth.vcf.gz>. Trying again..."
-                    sleep ${GSUTIL_DELAY_S}
-                else
-                    break
-                fi
-            done
-        fi
-        
-        
-        
-        
-        
-        
-    >>>
-    output {
-        File vcf_child_truth = work_dir + "/out.vcf.gz"
-    }
-    runtime {
-        docker: "fcunial/simulation"
-        cpu: 4  # Arbitrary
-        memory: ram_size_gb + "GB"
-        disks: "local-disk " + disk_size_gb + " HDD"
-        preemptible: 3
-    }
-}
+
 
 
 
@@ -245,7 +152,7 @@ task CreateTruthVCF {
 # Remark: the task checkpoints at the file level, by storing files in
 # <bucket_dir> and by skipping their creation if they already exist.
 #
-task ProcessChild {
+task ProcessTrioChild {
     input {
         Int child_id
         File flowcells_list

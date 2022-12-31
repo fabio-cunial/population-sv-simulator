@@ -81,7 +81,7 @@ public class BuildReadLengthBins {
             bw.write((i*BIN_LENGTH+HALF_BIN_LENGTH)+","+length+"\n");
         }
         bw.close();
-        printStats(OUTPUT_PREFIX+".stats");
+        printStats(buffers_last,buffers_stringLength,OUTPUT_PREFIX+".stats");
         
         // Permuting reads in each bin
         System.err.println("Permuting bins...");
@@ -134,7 +134,7 @@ public class BuildReadLengthBins {
      * Remark: mean and std are just crude approximations, and should instead be
      * computed by fitting a mixture of Gaussians.
      */
-    private static final void printStats(String outputFile) throws IOException {
+    private static final void printStats(int[] buffers_last, long[] buffers_stringLength, String outputFile) throws IOException {
         int i;
         int nMaxima, lastMaximum, previousMaximum, minBin, minValue;
         double sum, mass;
@@ -154,9 +154,9 @@ public class BuildReadLengthBins {
             return;
         }
         bw.write((previousMaximum*BIN_LENGTH+HALF_BIN_LENGTH)+"\n");
-        bw.write(std(previousMaximum,false)+"\n");
+        bw.write(std(previousMaximum,false,buffers_last)+"\n");
         bw.write((lastMaximum*BIN_LENGTH+HALF_BIN_LENGTH)+"\n");
-        bw.write(std(lastMaximum,true)+"\n");
+        bw.write(std(lastMaximum,true,buffers_last)+"\n");
         minBin=-1; minValue=Integer.MAX_VALUE;
         for (i=previousMaximum+1; i<lastMaximum; i++) {
             if (buffers_last[i]<buffers_last[i-1] && buffers_last[i]<buffers_last[i+1] && buffers_last[i]<minValue) {
@@ -190,7 +190,7 @@ public class BuildReadLengthBins {
      * Remark: this is just a crude approximation. We should instead fit a
      * mixture of Gaussians.
      */
-    private static final double std(int bin, boolean direction) {
+    private static final double std(int bin, boolean direction, int[] buffers_last) {
         int i, j, k, n;
         final int mean = bin*BIN_LENGTH+HALF_BIN_LENGTH;
         double std;

@@ -3,25 +3,28 @@ import java.io.*;
 
 
 /**
- * For each trio child in a trio table, creates a text file that lists the 
- * addresses of all its FASTQ files taken from a Terra table (so this is just
- * the join of a trio table and a Terra table).
+ * Given a trio table describing families, the program keeps all individuals 
+ * from consistent families (both parents and children), and for every such 
+ * individual it creates a text file that lists the addresses of all the FASTQ 
+ * files of the individual taken from a Terra table (so this is just the join of
+ * a trio table and a Terra table). The program prints also: (1) for each trio 
+ * child, a file that lists the IDs of its parents (one per line); (2) a list of
+ * all IDs of trio children (one per line).
  */
 public class GetTrioChildren {
     /**
      * Trio table constants
      */
-    private static final String SEPARATOR = "\t";
-    private static final String DATE_SEPARATOR = "-";
-    private static final String GENDER_1 = "Female";
-    private static final String GENDER_2 = "Male";
-    private static final String FAMILY_ID_HEADER = "family_id";
-	private static final String INDIVIDUAL_ID_HEADER = "research_id";
-    private static final String DATE_HEADER = "date_of_birth";
-    private static final String SEX_AT_BIRTH_HEADER = "sex_at_birth";
-    private static final int GENDER_MALE = 0;
-    private static final int GENDER_FEMALE = 1;
-    private static final int GENDER_REST = 2;
+    private static final String TRIO_TABLE_DATE_SEPARATOR = "-";
+    private static final String TRIO_TABLE_GENDER_1 = "Female";
+    private static final String TRIO_TABLE_GENDER_2 = "Male";
+    private static final String TRIO_TABLE_FAMILY_ID_HEADER = "family_id";
+	private static final String TRIO_TABLE_INDIVIDUAL_ID_HEADER = "research_id";
+    private static final String TRIO_TABLE_DATE_HEADER = "date_of_birth";
+    private static final String TRIO_TABLE_SEX_AT_BIRTH_HEADER = "sex_at_birth";
+    private static final int TRIO_TABLE_GENDER_FEMALE = 0;
+    private static final int TRIO_TABLE_GENDER_MALE = 1;
+    private static final int TRIO_TABLE_GENDER_OTHER = 2;
     
     /**
      * Terra table constants
@@ -31,6 +34,7 @@ public class GetTrioChildren {
     /**
      * Constants of both tables
      */
+    private static final String SEPARATOR = "\t";
     private static final String TERRA_TABLE_ID_HEADER = "research_id";
     
     /**
@@ -41,10 +45,13 @@ public class GetTrioChildren {
     private static int children_last;
     
     /**
-     * The FASTQ files (columns) of each trio child in $children$ (rows).
+     * The FASTQ files (columns) of each individual in a valid trio (rows, 
+     * sorted in increasing order).
      */
-    private static String[][] child2fastqs;
-    private static int[] child2fastqs_last;
+    private static String[] individualIDs;
+    private static int individualIDs_last;
+    private static String[][] individual2fastqs;
+    private static int[] individual2fastqs_last;
     
     
 	public static void main(String[] args) throws IOException {
@@ -52,26 +59,13 @@ public class GetTrioChildren {
         final String TERRA_TABLE = args[1];
         final String OUTPUT_PREFIX = args[2];
         
-        int i, j;
-        int last, nChildren;
-        BufferedWriter bw;
-        
         System.err.println("Loading trio table...");
-        loadChildrenIDs(TRIO_TABLE);
+        loadChildren(TRIO_TABLE);
         System.err.println("Done");
         System.err.println("Loading Terra table...");
-        loadChild2fastqs(TERRA_TABLE);
+        loadFastqs(TERRA_TABLE);
         System.err.println("Done");
-        for (i=0; i<=childrenIDs_last; i++) {
-            last=child2fastqs_last[i];
-            if (last==-1) continue;
-            bw = new BufferedWriter(new FileWriter(OUTPUT_PREFIX+childrenIDs[i]+".list"));
-            for (j=0; j<=last; j++) {
-                bw.write(child2fastqs[i][j]);
-                bw.newLine();
-            }
-            bw.close();
-        }
+        printOutput(OUTPUT_PREFIX);
 	}
     
     
@@ -90,10 +84,10 @@ public class GetTrioChildren {
         str=br.readLine();
         tokens=str.split(SEPARATOR);
         for (i=0; i<tokens.length; i++) {
-            if (tokens[i].equalsIgnoreCase(FAMILY_ID_HEADER)) FAMILY_ID_FIELD=i;
-            if (tokens[i].equalsIgnoreCase(INDIVIDUAL_ID_HEADER)) INDIVIDUAL_ID_FIELD=i;
-            if (tokens[i].equalsIgnoreCase(DATE_HEADER)) DATE_FIELD=i;
-            if (tokens[i].equalsIgnoreCase(SEX_AT_BIRTH_HEADER)) SEX_AT_BIRTH_FIELD=i;
+            if (tokens[i].equalsIgnoreCase(TRIO_TABLE_FAMILY_ID_HEADER)) FAMILY_ID_FIELD=i;
+            if (tokens[i].equalsIgnoreCase(TRIO_TABLE_INDIVIDUAL_ID_HEADER)) INDIVIDUAL_ID_FIELD=i;
+            if (tokens[i].equalsIgnoreCase(TRIO_TABLE_DATE_HEADER)) DATE_FIELD=i;
+            if (tokens[i].equalsIgnoreCase(TRIO_TABLE_SEX_AT_BIRTH_HEADER)) SEX_AT_BIRTH_FIELD=i;
             if (tokens[i].equalsIgnoreCase(TERRA_TABLE_ID_HEADER)) TERRA_TABLE_ID_FIELD=i;            
         }
         if (FAMILY_ID_FIELD==-1 || INDIVIDUAL_ID_FIELD==-1 || DATE_FIELD==-1 || SEX_AT_BIRTH_FIELD==-1 || TERRA_TABLE_ID_FIELD==-1) {
@@ -110,10 +104,10 @@ public class GetTrioChildren {
         while (str!=null) {
             tokens=str.split(SEPARATOR);
             familyID=Integer.parseInt(tokens[FAMILY_ID_FIELD]);
-            if (tokens[SEX_AT_BIRTH_FIELD].equalsIgnoreCase(GENDER_1)) sexAtBirth=0;
-            else if (tokens[SEX_AT_BIRTH_FIELD].equalsIgnoreCase(GENDER_2)) sexAtBirth=1;
-            else sexAtBirth=2;
-            if (tokens[DATE_FIELD].indexOf(DATE_SEPARATOR)>=0) year=Integer.parseInt(tokens[DATE_FIELD].substring(0,tokens[DATE_FIELD].indexOf(DATE_SEPARATOR)));
+            if (tokens[SEX_AT_BIRTH_FIELD].equalsIgnoreCase(TRIO_TABLE_GENDER_1)) sexAtBirth=TRIO_TABLE_GENDER_FEMALE;
+            else if (tokens[SEX_AT_BIRTH_FIELD].equalsIgnoreCase(TRIO_TABLE_GENDER_2)) sexAtBirth=TRIO_TABLE_GENDER_MALE;
+            else sexAtBirth=TRIO_TABLE_GENDER_OTHER;
+            if (tokens[DATE_FIELD].indexOf(TRIO_TABLE_DATE_SEPARATOR)>=0) year=Integer.parseInt(tokens[DATE_FIELD].substring(0,tokens[DATE_FIELD].indexOf(TRIO_TABLE_DATE_SEPARATOR)));
             else year=MIN_YEAR;
             if (familyID==currentFamilyID) family_last++;
             else {
@@ -132,7 +126,7 @@ public class GetTrioChildren {
         if (children_last>0) Arrays.sort(children,0,children_last+1);
         j=0;
         for (i=1; i<=children_last; i++) {
-            if (children[i].terraTable_field==childrenIDs[j].terraTable_field) continue;
+            if (children[i].terraTable_field==children[j].terraTable_field) continue;
             children[++j]=children[i];
         }
         children_last=j;
@@ -155,7 +149,7 @@ public class GetTrioChildren {
             gap=family[i].year-family[1].year;
             if (gap>maxGap) maxGap=gap;
         }
-        if (family[0].id==family[1].id || family[0].gender==family[1].gender || family[0].gender==GENDER_REST || family[1].gender==GENDER_REST || maxGap<MIN_CONSISTENT_GAP) {
+        if (family[0].id==family[1].id || family[0].gender==family[1].gender || family[0].gender==TRIO_TABLE_GENDER_OTHER || family[1].gender==TRIO_TABLE_GENDER_OTHER || maxGap<MIN_CONSISTENT_GAP) {
             System.err.println("WARNING: family "+familyID+" is not consistent.");
             for (i=0; i<=last; i++) System.err.println(family[i]);
             return;
@@ -191,6 +185,7 @@ public class GetTrioChildren {
             out.terraTable_field=terraTable_field;
             out.parent1=parent1; out.parent2=parent2;
             out.fastqs=fastqs;
+            return out;
         }
         
         /**
@@ -205,67 +200,104 @@ public class GetTrioChildren {
     }
     
     
+    /**
+     * Loads $individualIDs$ and $individual2fastqs$.
+     */
     private static final void loadFastqs(String terraTable) throws IOException {
         final int CAPACITY = 2;  // Arbitrary
         int i, j;
-        int ids_last;
-        int CHILD_ID_FIELD, FASTQ_FIELD;
+        int INDIVIDUAL_ID_FIELD, FASTQ_FIELD;
         String str, childID;
         BufferedReader br;
-        String[] tokens, ids;
+        String[] tokens;
         
         // Sorting and compacting the distinct IDs of every child and parent
-        ids = new String[children_last*3];
-        ids_last=-1;
+        individualIDs = new String[children_last*3];
+        individualIDs_last=-1;
         for (i=0; i<=children_last; i++) {
-            ids[++ids_last]=children[i].terraTable_field;
-            ids[++ids_last]=children[i].parent1.terraTable_field;
-            ids[++ids_last]=children[i].parent2.terraTable_field;
+            individualIDs[++individualIDs_last]=children[i].terraTable_field;
+            individualIDs[++individualIDs_last]=children[i].parent1.terraTable_field;
+            individualIDs[++individualIDs_last]=children[i].parent2.terraTable_field;
         }
-        Arrays.sort(ids,0,ids_last+1);
+        Arrays.sort(individualIDs,0,individualIDs_last+1);
         j=0;
-        for (i=1; i<=ids_last; i++) {
-            if (!ids[i].equalsIgnoreCase(ids[j])) ids[++j]=ids[i];
+        for (i=1; i<=individualIDs_last; i++) {
+            if (!individualIDs[i].equalsIgnoreCase(individualIDs[j])) individualIDs[++j]=individualIDs[i];
         }
-        ids_last=j;
+        individualIDs_last=j;
         
-        // Building list files
+        // Building FASTQ lists
         br = new BufferedReader(new FileReader(terraTable));
         str=br.readLine();
         tokens=str.split(SEPARATOR);
-        CHILD_ID_FIELD=-1; FASTQ_FIELD=-1;
+        INDIVIDUAL_ID_FIELD=-1; FASTQ_FIELD=-1;
         for (i=0; i<tokens.length; i++) {
-            if (tokens[i].equalsIgnoreCase(TERRA_TABLE_ID_HEADER)) CHILD_ID_FIELD=i;
+            if (tokens[i].equalsIgnoreCase(TERRA_TABLE_ID_HEADER)) INDIVIDUAL_ID_FIELD=i;
             if (tokens[i].equalsIgnoreCase(TERRA_TABLE_FASTQ_HEADER)) FASTQ_FIELD=i;
         }
-        if (CHILD_ID_FIELD==-1 || FASTQ_FIELD==-1) {
+        if (INDIVIDUAL_ID_FIELD==-1 || FASTQ_FIELD==-1) {
             System.err.println("ERROR: invalid header in Terra table.");
             System.exit(1);
         }
-        child2fastqs = new String[childrenIDs_last+1][CAPACITY];
-        child2fastqs_last = new int[childrenIDs_last+1];
-        Arrays.fill(child2fastqs_last,-1);
+        individual2fastqs = new String[individualIDs_last+1][CAPACITY];
+        individual2fastqs_last = new int[individualIDs_last+1];
+        Arrays.fill(individual2fastqs_last,-1);
         str=br.readLine();
         while (str!=null) {
             tokens=str.split(SEPARATOR);
-            childID=tokens[CHILD_ID_FIELD];
-            i=Arrays.binarySearch(childrenIDs,0,childrenIDs_last+1,childID);
+            childID=tokens[INDIVIDUAL_ID_FIELD];
+            i=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,childID);
             if (i<0) {
                 str=br.readLine();
                 continue;
             }
-            child2fastqs_last[i]++;
-            if (child2fastqs_last[i]==child2fastqs[i].length) {
-                String[] newArray = new String[child2fastqs[i].length<<1];
-                System.arraycopy(child2fastqs[i],0,newArray,0,child2fastqs[i].length);
-                child2fastqs[i]=newArray;
+            individual2fastqs_last[i]++;
+            if (individual2fastqs_last[i]==individual2fastqs[i].length) {
+                String[] newArray = new String[individual2fastqs[i].length<<1];
+                System.arraycopy(individual2fastqs[i],0,newArray,0,individual2fastqs[i].length);
+                individual2fastqs[i]=newArray;
             }
-            child2fastqs[i][child2fastqs_last[i]]=tokens[FASTQ_FIELD];
+            individual2fastqs[i][individual2fastqs_last[i]]=tokens[FASTQ_FIELD];
             str=br.readLine();
         }
         br.close();
-        for (i=0; i<=childrenIDs_last; i++) {
-            if (child2fastqs_last[i]==-1) System.err.println("WARNING: child "+childrenIDs[i]+" has no FASTQ.");
+        for (i=0; i<=individualIDs_last; i++) {
+            if (individual2fastqs_last[i]==-1) System.err.println("WARNING: individual "+individualIDs[i]+" has no FASTQ.");
+        }
+    }
+    
+    
+    /**
+     * Remark: only individuals with some FASTQ file are reported in output, and
+     * only children such that both them and their parents have some FASTQ file.
+     */
+    private static final void printOutput(String prefix) throws IOException {
+        int i, j, k, h;
+        BufferedWriter bw1, bw2;
+        
+        // List of trio children, and parents of each child
+        bw1 = new BufferedWriter(new FileWriter(prefix+"children.txt"));
+        for (i=0; i<=children_last; i++) {
+            j=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].id);
+            k=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].parent1.id);
+            h=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].parent2.id);
+            if (individual2fastqs_last[j]!=-1 && individual2fastqs_last[k]!=-1 && individual2fastqs_last[h]!=-1) {
+                bw1.write(children[i].id+"\n");
+                bw2 = new BufferedWriter(new FileWriter(prefix+children[i].id+".parents"));
+                bw2.write(children[i].parent1.id+"\n");
+                bw2.write(children[i].parent2.id+"\n");
+                bw2.close();
+            }
+        }
+        bw1.close();
+        
+        // FASTQs of each individual
+        for (i=0; i<=individualIDs_last; i++) {
+            if (individual2fastqs_last[i]!=-1) {
+                bw1 = new BufferedWriter(new FileWriter(prefix+individualIDs[i]+".fastqs"));
+                for (j=0; j<=individual2fastqs_last[i]; j++) bw1.write(individual2fastqs[i][j]+"\n");
+                bw1.close();
+            }
         }
     }
     
