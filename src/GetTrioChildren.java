@@ -5,11 +5,15 @@ import java.io.*;
 /**
  * Given a trio table describing families, the program keeps all individuals 
  * from consistent families (both parents and children), and for every such 
- * individual it creates a text file that lists the addresses of all the FASTQ 
- * files of the individual taken from a Terra table (so this is just the join of
- * a trio table and a Terra table). The program prints also: (1) for each trio 
- * child, a file that lists the IDs of its parents (one per line); (2) a list of
- * all IDs of trio children (one per line).
+ * individual it creates a text file (named with the Terra table ID of the 
+ * child) that lists the addresses of all the FASTQ files of the individual, 
+ * taken from a Terra table (so this is just the join of a trio table and a 
+ * Terra table). The program prints also: (1) for each trio child, a file that 
+ * lists the Terra table IDs of its parents (one per line); (2) a list of all 
+ * Terra table IDs of trio children (one per line).
+ *
+ * Remark: only individuals with some FASTQ file are reported in output, and
+ * only children such that both them and their parents have some FASTQ file.
  */
 public class GetTrioChildren {
     /**
@@ -45,8 +49,8 @@ public class GetTrioChildren {
     private static int children_last;
     
     /**
-     * The FASTQ files (columns) of each individual in a valid trio (rows, 
-     * sorted in increasing order).
+     * For each individual in a valid trio, its ID in the Terra table (sorted in
+     * increasing order) and its FASTQ files (columns).
      */
     private static String[] individualIDs;
     private static int individualIDs_last;
@@ -211,8 +215,9 @@ public class GetTrioChildren {
         BufferedReader br;
         String[] tokens;
         
-        // Sorting and compacting the distinct IDs of every child and parent
-        individualIDs = new String[children_last*3];
+        // Sorting and compacting the distinct Terra table IDs of every child
+        // and parent
+        individualIDs = new String[(children_last+1)*3];
         individualIDs_last=-1;
         for (i=0; i<=children_last; i++) {
             individualIDs[++individualIDs_last]=children[i].terraTable_field;
@@ -278,14 +283,14 @@ public class GetTrioChildren {
         // List of trio children, and parents of each child
         bw1 = new BufferedWriter(new FileWriter(prefix+"children.txt"));
         for (i=0; i<=children_last; i++) {
-            j=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].id);
-            k=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].parent1.id);
-            h=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].parent2.id);
+            j=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].terraTable_field);
+            k=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].parent1.terraTable_field);
+            h=Arrays.binarySearch(individualIDs,0,individualIDs_last+1,children[i].parent2.terraTable_field);
             if (individual2fastqs_last[j]!=-1 && individual2fastqs_last[k]!=-1 && individual2fastqs_last[h]!=-1) {
-                bw1.write(children[i].id+"\n");
-                bw2 = new BufferedWriter(new FileWriter(prefix+children[i].id+".parents"));
-                bw2.write(children[i].parent1.id+"\n");
-                bw2.write(children[i].parent2.id+"\n");
+                bw1.write(children[i].terraTable_field+"\n");
+                bw2 = new BufferedWriter(new FileWriter(prefix+children[i].terraTable_field+".parents"));
+                bw2.write(children[i].parent1.terraTable_field+"\n");
+                bw2.write(children[i].parent2.terraTable_field+"\n");
                 bw2.close();
             }
         }
