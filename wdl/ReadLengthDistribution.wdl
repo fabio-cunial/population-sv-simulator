@@ -125,6 +125,7 @@ task ProcessTrioChild {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         REFERENCE_LENGTH=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {print s}')
         READ_GROUP="@RG\tID:movie\tSM:~{child_id}"
+        MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
 
         # Building the files needed for sampling reads from the distribution
         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0 && echo 0 || echo 1)
