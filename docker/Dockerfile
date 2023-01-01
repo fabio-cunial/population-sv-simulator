@@ -233,6 +233,7 @@ RUN wget https://dlcdn.apache.org//commons/math/binaries/commons-math3-${apache_
 # Simulation code
 COPY haplotype2reads.sh .
 COPY reads2svs.sh .
+COPY reads2svs_impl.sh .
 COPY pav_state_files.txt .
 COPY pav_restoreCheckpoint.sh .
 COPY pav_checkpointDaemon.sh .

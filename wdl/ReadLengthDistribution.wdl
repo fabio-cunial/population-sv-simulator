@@ -191,7 +191,7 @@ task ProcessTrioChild {
                     break
                 fi
             done
-        done
+        fi
 
         # Aborting if the distribution does not have exactly two local maxima
         N_MAXIMA=0
@@ -281,7 +281,7 @@ task ProcessTrioChild {
                         break
                     fi
                 fi
-            done
+            fi
             COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
             COVERAGE=$(( ${COVERAGE} / (2*${REFERENCE_LENGTH}) ))  # 1 haplotype
             bash ~{docker_dir}/reads2svs_impl.sh ~{child_id} reads.bam reads.fastq ${COVERAGE} ~{child_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}

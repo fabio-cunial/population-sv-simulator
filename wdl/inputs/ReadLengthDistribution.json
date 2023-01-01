@@ -1,6 +1,6 @@
 {
     "ReadLengthDistribution.bucket_dir": "gs://cunial-bucket-1/read-length-distribution",
-    "ReadLengthDistribution.children_ids": "gs://cunial-bucket-1/read-length-distribution/trios_info/children.txt",
+    "ReadLengthDistribution.children_ids": "gs://cunial-bucket-1/read-length-distribution/trios_info/children-small.txt",
     "ReadLengthDistribution.bin_length": 500,
     "ReadLengthDistribution.max_read_length": 30000,
     "ReadLengthDistribution.left_weights": [0.0, 0.25, 0.5, 0.75, 1.0],
