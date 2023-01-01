@@ -120,23 +120,25 @@ public class BuildReadLengthBins {
     /**
      * Prints the following values to the rows of $outputFile$, one per row:
      *
-     * nMaxima  // If !=2 the following lines are not printed
-     * meanLeft
+     * nMaxima  // If < 2 the following lines are not printed
+     * meanLeft  // Last-but-one peak
      * stdLeft
-     * meanRight
+     * meanRight  // Last peak
      * stdRight
-     * leftRightMinBin  // Local minimum bin between the two local maxima
-     * massLeft  // Probability mass up to leftRightMinBin, included.
-     * massRight  // Probability mass after leftRightMinBin
-     * coverageLeft  // Of one haplotype. Up to leftRightMinBin, included.
-     * coverageRight  // Of one haplotype. After leftRightMinBin.
+     * leftMinBin  // Local minimum between the last-but-one and the previous
+     *             // max (if any). 0 otherwise.
+     * leftRightMinBin  // Local minimum bin between the last two local maxima
+     * massLeft  // Probability mass in [leftMinBin..leftRightMinBin]
+     * massRight  // Probability mass in [leftRightMinBin+1..]
+     * coverageLeft  // Of one haplotype. In [leftMinBin..leftRightMinBin].
+     * coverageRight  // Of one haplotype. In [leftRightMinBin+1..].
      *
      * Remark: mean and std are just crude approximations, and should instead be
      * computed by fitting a mixture of Gaussians.
      */
     private static final void printStats(int[] buffers_last, long[] buffers_stringLength, String outputFile) throws IOException {
         int i;
-        int nMaxima, lastMaximum, previousMaximum, minBin, minValue;
+        int nMaxima, lastMaximum, previousMaximum, leftMinBin, leftRightMinBin;
         double sum, mass;
         BufferedWriter bw;
         
@@ -149,80 +151,70 @@ public class BuildReadLengthBins {
             }
         }
         bw.write(nMaxima+"\n");
-        if (nMaxima!=2) {
+        if (nMaxima<2) {
             bw.close();
             return;
         }
-        bw.write((previousMaximum*BIN_LENGTH+HALF_BIN_LENGTH)+"\n");
-        bw.write(std(previousMaximum,false,buffers_last)+"\n");
-        bw.write((lastMaximum*BIN_LENGTH+HALF_BIN_LENGTH)+"\n");
-        bw.write(std(lastMaximum,true,buffers_last)+"\n");
-        minBin=-1; minValue=Integer.MAX_VALUE;
+        leftRightMinBin=-1;
         for (i=previousMaximum+1; i<lastMaximum; i++) {
-            if (buffers_last[i]<buffers_last[i-1] && buffers_last[i]<buffers_last[i+1] && buffers_last[i]<minValue) {
-                minBin=i; minValue=buffers_last[i];
+            if (buffers_last[i]<buffers_last[i-1] && buffers_last[i]<buffers_last[i+1]) {
+                leftRightMinBin=i;
+                break;
             }
         }
-        bw.write(minBin+"\n");
+        leftMinBin=0;
+        for (i=1; i<previousMaximum; i++) {
+            if (buffers_last[i]<buffers_last[i-1] && buffers_last[i]<buffers_last[i+1]) {
+                leftMinBin=i;
+                break;
+            }
+        }
+        bw.write((previousMaximum*BIN_LENGTH+HALF_BIN_LENGTH)+"\n");
+        bw.write(std(leftMinBin,previousMaximum-1,previousMaximum,buffers_last)+"\n");
+        bw.write((lastMaximum*BIN_LENGTH+HALF_BIN_LENGTH)+"\n");
+        bw.write(std(lastMaximum+1,N_BINS-1,lastMaximum,buffers_last)+"\n");
+        bw.write(leftMinBin+"\n");
+        bw.write(leftRightMinBin+"\n");
         sum=0.0;
         for (i=0; i<N_BINS; i++) sum+=buffers_last[i]+1;
         mass=0.0;
-        for (i=0; i<=minBin; i++) mass+=buffers_last[i]+1;
+        for (i=leftMinBin; i<=leftRightMinBin; i++) mass+=buffers_last[i]+1;
         mass/=sum;
         bw.write(mass+"\n");
-        bw.write((1.0-mass)+"\n");
+        mass=0.0;
+        for (i=leftRightMinBin+1; i<N_BINS; i++) mass+=buffers_last[i]+1;
+        mass/=sum;
+        bw.write(mass+"\n");
         sum=0.0;
-        for (i=0; i<=minBin; i++) sum+=buffers_stringLength[i];
-        bw.write((sum/GENOME_LENGTH_HAPLOID)+"\n");
+        for (i=leftMinBin; i<=leftRightMinBin; i++) sum+=buffers_stringLength[i];
+        bw.write((sum/((GENOME_LENGTH_HAPLOID)<<1))+"\n");
         sum=0.0;
-        for (i=minBin+1; i<N_BINS; i++) sum+=buffers_stringLength[i];
-        bw.write((sum/GENOME_LENGTH_HAPLOID)+"\n");
+        for (i=leftRightMinBin+1; i<N_BINS; i++) sum+=buffers_stringLength[i];
+        bw.write((sum/((GENOME_LENGTH_HAPLOID)<<1))+"\n");
         bw.close();
     }
     
     
     /**
      * Computes the standard deviation of the normal distribution centered at 
-     * $bin$, using only values on the right of $bin$ (if $direction=TRUE$) or 
-     * on the left of $bin$ (if $direction=FALSE$), and assuming that the values
-     * on the other side are symmetrical.
+     * $bin$ using only the values in $[from..to]$, which are assumed to be on 
+     * one side of a symmetrical distribution.
      *
      * Remark: this is just a crude approximation. We should instead fit a
-     * mixture of Gaussians.
+     * mixture of Gaussians to the histogram.
      */
-    private static final double std(int bin, boolean direction, int[] buffers_last) {
-        int i, j, k, n;
+    private static final double std(int from, int to, int bin, int[] buffers_last) {
+        int i, k, n;
         final int mean = bin*BIN_LENGTH+HALF_BIN_LENGTH;
         double std;
         
         std=0.0; n=0;
-        if (direction) {
-            for (i=bin+1; i<N_BINS; i++) {
-                n+=buffers_last[i]+1;
-                k=i*BIN_LENGTH+HALF_BIN_LENGTH-mean;
-                std+=(buffers_last[i]+1)*k*k;
-                j=i-bin;
-                if (bin-j>=0) {
-                    n+=buffers_last[i]+1;
-                    k=(bin-j)*BIN_LENGTH+HALF_BIN_LENGTH-mean;
-                    std+=(buffers_last[i]+1)*k*k;
-                }
-            }
+        for (i=from; i<=to; i++) {
+            n+=buffers_last[i]+1;
+            k=i*BIN_LENGTH+HALF_BIN_LENGTH-mean;
+            std+=2.0*(buffers_last[i]+1)*k*k;
         }
-        else {
-            for (i=bin-1; i>=0; i--) {
-                n+=buffers_last[i]+1;
-                k=i*BIN_LENGTH+HALF_BIN_LENGTH-mean;
-                std+=(buffers_last[i]+1)*k*k;
-                j=bin-i;
-                if (bin+j<N_BINS) {
-                    n+=buffers_last[i]+1;
-                    k=(bin+j)*BIN_LENGTH+HALF_BIN_LENGTH-mean;
-                    std+=(buffers_last[i]+1)*k*k;
-                }
-            }
-        }
-        n+=buffers_last[bin]+1;
+        n+=buffers_last[bin];
         return Math.sqrt(std/n);
     }
 

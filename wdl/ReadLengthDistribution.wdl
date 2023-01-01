@@ -193,7 +193,7 @@ task ProcessTrioChild {
             done
         fi
 
-        # Aborting if the distribution does not have exactly two local maxima
+        # Aborting if the distribution does not have at least two local maxima
         N_MAXIMA=0
         MEAN_LEFT=0
         STD_LEFT=0
@@ -203,7 +203,7 @@ task ProcessTrioChild {
         while read line; do
             if [ $i -eq 0 ]; then
                 N_MAXIMA=${line}
-                if [ ${N_MAXIMA} -ne 2 ]; then
+                if [ ${N_MAXIMA} -lt 2 ]; then
                     break
                 fi
             elif [ $i -eq 1 ]; then
@@ -217,8 +217,8 @@ task ProcessTrioChild {
             fi
             i=$(( $i + 1 ))
         done < bin_.stats
-        if [ ${N_MAXIMA} -ne 2 ]; then
-            echo "The read length distribution of the union of all flowcells has ${N_MAXIMA} local maxima. Aborting."
+        if [ ${N_MAXIMA} -lt 2 ]; then
+            echo "The read length distribution of the union of all flowcells has ${N_MAXIMA}<2 local maxima. Aborting."
             echo "Statistics:"
             cat bin_.stats
             exit 0
@@ -250,8 +250,8 @@ task ProcessTrioChild {
                 done
             else
                 GENOME_LENGTH_HAPLOID=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {print s}')
-                java -Xmx4G -cp ~{docker_dir} SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} 2000000000 reads.fastq
-                if [ $? -ne 0 ]; then
+                TEST=$(java -Xmx4G -cp ~{docker_dir} SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} 2000000000 reads.fastq && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
                     rm -rf reads.fastq
                     touch reads.fastq
                     rm -rf reads.bam
