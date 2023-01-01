@@ -271,7 +271,7 @@ task ProcessTrioChild {
                     else
                         break
                     fi
-                fi
+                done
                 while : ; do
                     TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.bam ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
@@ -280,7 +280,7 @@ task ProcessTrioChild {
                     else
                         break
                     fi
-                fi
+                done
             fi
             COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
             COVERAGE=$(( ${COVERAGE} / (2*${REFERENCE_LENGTH}) ))  # 1 haplotype
