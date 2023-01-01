@@ -118,7 +118,8 @@ task ProcessTrioChild {
         set -euxo pipefail
         mkdir -p ~{work_dir}
         cd ~{work_dir}
-
+        
+        GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
         GSUTIL_DELAY_S="600"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
