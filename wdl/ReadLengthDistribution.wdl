@@ -64,11 +64,12 @@ workflow ReadLengthDistribution {
 
 
 # Assume that a trio child has high coverage, and that the read length
-# distribution of the union of all its flowcells is the mixture of two
-# Gaussians. The procedure merges all the flowcells of the child, it creates
-# several bimodal distributions with a different weight assigned to the left
-# Gaussian, it creates a read set (at a smaller fixed coverage) by sampling
-# from every such distribution, and it runs SV callers on every such read set.
+# distribution of the union of all its flowcells is the mixture of at least two
+# Gaussians. The procedure merges all the flowcells of the child; it creates
+# several bimodal distributions using the last two Gaussians, assigning a
+# different weight to the last-but-one Gaussian; it creates a read set (at a
+# small fixed coverage) by sampling from every such bimodal distribution; and
+# it runs SV callers on every such read set.
 #
 # Remark: the task checkpoints at the file level, by storing files in
 # <bucket_dir/child_id> and by skipping their creation if they already exist.

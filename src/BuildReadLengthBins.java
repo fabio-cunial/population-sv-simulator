@@ -16,6 +16,8 @@ public class BuildReadLengthBins {
     private static int BIN_LENGTH, HALF_BIN_LENGTH;
     private static int N_BINS;
     private static final int MIN_READS_IN_LOCAL_MAXIMUM = 500;  // Arbitrary
+    private static final int MIN_LOCAL_MAXIMUM = 1000;  // Arbitrary
+    private static final int MAX_LOCAL_MAXIMUM = 25000;  // Arbitrary
     private static long GENOME_LENGTH_HAPLOID;
 
 
@@ -144,8 +146,8 @@ public class BuildReadLengthBins {
         
         bw = new BufferedWriter(new FileWriter(outputFile));
         nMaxima=0; lastMaximum=-1; previousMaximum=-1;
-        for (i=0; i<N_BINS; i++) {
-            if (buffers_last[i]+1>=MIN_READS_IN_LOCAL_MAXIMUM && (i==0 || buffers_last[i]>buffers_last[i-1]) && (i==N_BINS-1 || buffers_last[i]>buffers_last[i+1])) {
+        for (i=1; i<N_BINS-1; i++) {
+            if ((i+1)*BIN_LENGTH-1>=MIN_LOCAL_MAXIMUM && i*(BIN_LENGTH)<=MAX_LOCAL_MAXIMUM && buffers_last[i]+1>=MIN_READS_IN_LOCAL_MAXIMUM && buffers_last[i]>buffers_last[i-1] && buffers_last[i]>buffers_last[i+1]) {
                 nMaxima++;
                 previousMaximum=lastMaximum; lastMaximum=i;
             }
