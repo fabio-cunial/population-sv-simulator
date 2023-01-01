@@ -39,11 +39,14 @@ public class Fastq2LengthHistogram {
         }
         br.close();
         
-        // Finding local maxima
+        // Printing local maxima and histogram
         bw = new BufferedWriter(new FileWriter(OUTPUT_FILE_MAX));
         for (i=0; i<N_BINS; i++) {
             if ((i==0 || histogram[i]>histogram[i-1]) && (i==N_BINS-1 || histogram[i]>histogram[i+1])) bw.write((i*BIN_LENGTH)+","+((i+1)*BIN_LENGTH-1)+"\n");
         }
+        bw.close();
+        bw = new BufferedWriter(new FileWriter(OUTPUT_FILE_HISTOGRAM));
+        for (i=0; i<N_BINS; i++) bw.write((i*BIN_LENGTH)+","+histogram[i]+"\n");
         bw.close();
 	}
 
