@@ -14,7 +14,6 @@ workflow ReadLengthDistribution {
         Float target_coverage_one_haplotype
         File reference_fa
         File reference_fai
-        File reference_mmi
         File reference_tandem_repeats
         Int n_cpus
         Int use_pbsv
@@ -47,7 +46,6 @@ workflow ReadLengthDistribution {
                 target_coverage_one_haplotype = target_coverage_one_haplotype,
                 reference_fa = reference_fa,
                 reference_fai = reference_fai,
-                reference_mmi = reference_mmi,
                 reference_tandem_repeats = reference_tandem_repeats,
                 bucket_dir = bucket_dir,
                 n_cpus = n_cpus,
@@ -85,7 +83,6 @@ task ProcessTrioChild {
         Float target_coverage_one_haplotype
         File reference_fa
         File reference_fai
-        File reference_mmi
         File reference_tandem_repeats
         String bucket_dir
         Int n_cpus
@@ -110,7 +107,7 @@ task ProcessTrioChild {
     
     Int ram_size_gb = 4 + flowcells_size_gb*3
     # *3: from loosely rounding up PAV; +4: to leave some free RAM to the OS.
-    Int disk_size_gb = ram_size_gb*2 + ceil( size(reference_fa, "GB")*3 + size(reference_mmi, "GB") + size(reference_tandem_repeats, "GB") )
+    Int disk_size_gb = ram_size_gb*2 + ceil( size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB") )
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/simulation"
     
@@ -258,7 +255,7 @@ task ProcessTrioChild {
                     rm -rf reads.bam
                     touch reads.bam
                 else 
-                    ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_mmi} reads.fastq > reads.sam
+                    ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
                     ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.sam ~{reference_fa} > reads.1.bam
                     rm -f reads.sam
                     ${TIME_COMMAND} samtools sort -@ ${N_THREADS} reads.1.bam > reads.bam
