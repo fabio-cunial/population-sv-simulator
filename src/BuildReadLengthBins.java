@@ -15,9 +15,9 @@ public class BuildReadLengthBins {
     public static final String BIN_FILE_SEPARATOR = "__________";
     private static int BIN_LENGTH, HALF_BIN_LENGTH;
     private static int N_BINS;
-    private static final int MIN_READS_IN_LOCAL_MAXIMUM = 500;  // Arbitrary
-    private static final int MIN_LOCAL_MAXIMUM = 1000;  // Arbitrary
-    private static final int MAX_LOCAL_MAXIMUM = 25000;  // Arbitrary
+    public static final int MIN_READS_IN_LOCAL_MAXIMUM = 500;  // Arbitrary
+    public static final int MIN_LOCAL_MAXIMUM = 1000;  // Arbitrary
+    public static final int MAX_LOCAL_MAXIMUM = 25000;  // Arbitrary
     private static long GENOME_LENGTH_HAPLOID;
 
 

@@ -41,8 +41,8 @@ public class Fastq2LengthHistogram {
         
         // Printing local maxima and histogram
         bw = new BufferedWriter(new FileWriter(OUTPUT_FILE_MAX));
-        for (i=0; i<N_BINS; i++) {
-            if ((i==0 || histogram[i]>histogram[i-1]) && (i==N_BINS-1 || histogram[i]>histogram[i+1])) bw.write((i*BIN_LENGTH)+","+((i+1)*BIN_LENGTH-1)+"\n");
+        for (i=1; i<N_BINS-1; i++) {
+            if ((i+1)*BIN_LENGTH-1>=BuildReadLengthBins.MIN_LOCAL_MAXIMUM && i*(BIN_LENGTH)<=BuildReadLengthBins.MAX_LOCAL_MAXIMUM && histogram[i]+1>=BuildReadLengthBins.MIN_READS_IN_LOCAL_MAXIMUM && histogram[i]>histogram[i-1] && histogram[i]>histogram[i+1]) bw.write((i*BIN_LENGTH)+","+((i+1)*BIN_LENGTH-1)+"\n");
         }
         bw.close();
         bw = new BufferedWriter(new FileWriter(OUTPUT_FILE_HISTOGRAM));
