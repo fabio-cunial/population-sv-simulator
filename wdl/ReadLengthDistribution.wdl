@@ -125,6 +125,7 @@ task ProcessTrioChild {
         REFERENCE_LENGTH=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {print s}')
         READ_GROUP="@RG\tID:movie\tSM:~{child_id}"
         MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
+        GENOME_LENGTH_HAPLOID=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {print s}')
 
         # Building the files needed for sampling reads from the distribution
         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0 && echo 0 || echo 1)
@@ -179,7 +180,7 @@ task ProcessTrioChild {
                     fi
                 done
             done < ~{child_id}.fastqs
-            java -cp ~{docker_dir} BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} bin_
+            java -cp ~{docker_dir} BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
             rm -f *.fq
             while : ; do
                 TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/bins/ && echo 0 || echo 1)
@@ -248,7 +249,6 @@ task ProcessTrioChild {
                     fi
                 done
             else
-                GENOME_LENGTH_HAPLOID=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {print s}')
                 TEST=$(java -Xmx4G -cp ~{docker_dir} SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} 2000000000 reads.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -rf reads.fastq
