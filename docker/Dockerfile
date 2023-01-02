@@ -227,7 +227,7 @@ RUN cd pbsim2 \
 RUN wget https://dlcdn.apache.org//commons/math/binaries/commons-math3-${apache_commons_math_version}-bin.tar.gz \
     && tar -xzf commons-math3-${apache_commons_math_version}-bin.tar.gz \
     && rm -f commons-math3-${apache_commons_math_version}-bin.tar.gz \
-    && mv commons-math3-${apache_commons_math_version}/commons-math3-${apache_commons_math_version}.jar . \
+    && mv commons-math3-${apache_commons_math_version}/commons-math3-${apache_commons_math_version}.jar ./commons-math3.jar \
     && rm -rf commons-math3-${apache_commons_math_version}
 
 # Simulation code
@@ -239,4 +239,4 @@ COPY pav_restoreCheckpoint.sh .
 COPY pav_checkpointDaemon.sh .
 COPY performance_matrices_impl.sh .
 COPY *.java .
-RUN javac -cp commons-math3-${apache_commons_math_version}.jar *.java
+RUN javac -cp commons-math3.jar *.java

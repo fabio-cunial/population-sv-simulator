@@ -66,7 +66,7 @@ public class BuildReadLengthBins {
                 buffers[bin].write(separator); buffers[bin].write(BIN_FILE_SEPARATOR);
                 buffers[bin].write(quality); buffers[bin].newLine();
                 nReads++;
-                if (nReads%10000==0) System.err.println(nReads+" reads");
+                if (nReads%100000==0) System.err.println(nReads+" reads");
                 header=br2.readLine();
             }
             br2.close();
@@ -103,6 +103,7 @@ public class BuildReadLengthBins {
                 bw.write(tmpArray[j]); bw.newLine();
             }
             bw.close();
+            System.err.println("Bin "+i+" permuted (out of "+N_BINS+" total)");
         }
         System.err.println("Done");
 	}
