@@ -123,6 +123,7 @@ task ProcessTrioChild {
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+        TIME_COMMAND="/usr/bin/time --verbose"
         READ_GROUP="@RG\tID:movie\tSM:~{child_id}"
         MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
         GENOME_LENGTH_HAPLOID=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {printf "%lu", s}')
@@ -251,11 +252,16 @@ task ProcessTrioChild {
             else
                 TEST=$(java -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} $((~{flowcells_size_gb}/2)) reads.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
-                    rm -rf reads.fastq
+                    rm -f reads.fastq.histogram 
+                    touch reads.fastq.histogram 
+                    rm -f reads.fastq.max
+                    touch reads.fastq.max
+                    rm -f reads.fastq
                     touch reads.fastq
-                    rm -rf reads.bam
+                    rm -f reads.bam
                     touch reads.bam
                 else 
+                    java -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq ~{bin_length} ~{max_read_length} reads.fastq.histogram reads.fastq.max
                     ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
                     ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.sam ~{reference_fa} > reads.1.bam
                     rm -f reads.sam
@@ -263,7 +269,7 @@ task ProcessTrioChild {
                     rm -f reads.1.bam
                 fi
                 while : ; do
-                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq && echo 0 || echo 1)
+                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq* ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         echo "Error uploading file <~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
@@ -281,9 +287,11 @@ task ProcessTrioChild {
                     fi
                 done
             fi
-            COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
-            COVERAGE=$(( ${COVERAGE} / (2*${GENOME_LENGTH_HAPLOID}) ))  # 1 haplotype
-            bash ~{docker_dir}/reads2svs_impl.sh ~{child_id} reads.bam reads.fastq ${COVERAGE} ~{child_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
+            if [ -s reads.fastq ]; then
+                COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
+                COVERAGE=$(( ${COVERAGE} / (2*${GENOME_LENGTH_HAPLOID}) ))  # 1 haplotype
+                bash ~{docker_dir}/reads2svs_impl.sh ~{child_id} reads.bam reads.fastq ${COVERAGE} ~{child_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
+            fi
             rm -f reads.fastq reads.bam
         done
     >>>
