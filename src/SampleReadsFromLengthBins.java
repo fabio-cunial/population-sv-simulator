@@ -38,8 +38,8 @@ public class SampleReadsFromLengthBins {
     /**
      * @param args 
      *  4: weight of the left normal distribution, in [0..1];
-     * 10: the actual RAM usage is at least twice this much, because of the 
-     *     quality track in a FASTQ file.
+     * 10: max characters in RAM (in billions); the actual RAM usage is at least
+     *     twice this much, because of the quality track in a FASTQ file.
      */
 	public static void main(String[] args) throws IOException {
         final double MEAN_LEFT = Double.parseDouble(args[0]);
@@ -52,7 +52,7 @@ public class SampleReadsFromLengthBins {
 		final String BINS_PREFIX = args[7];
         final long GENOME_LENGTH_ONE_HAPLOTYPE = Long.parseLong(args[8]);
         final double TARGET_COVERAGE_ONE_HAPLOTYPE = Double.parseDouble(args[9]);
-        maxBpsInRam=Long.parseLong(args[10]);
+        maxBpsInRam=Long.parseLong(args[10])*1000000000;
         final String OUTPUT_FASTQ_FILE = args[11];
         
         final int N_BINS = (MAX_READ_LENGTH+BIN_LENGTH-1)/BIN_LENGTH;

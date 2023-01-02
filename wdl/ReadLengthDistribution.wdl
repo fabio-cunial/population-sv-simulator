@@ -108,6 +108,7 @@ task ProcessTrioChild {
     
     Int ram_size_gb = 4 + flowcells_size_gb*3
     # *3: from loosely rounding up PAV; +4: to leave some free RAM to the OS.
+    Int ram_size_gb_effective = ram_size_gb - 4
     Int disk_size_gb = ram_size_gb*2 + ceil( size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB") )
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/simulation"
@@ -130,7 +131,7 @@ task ProcessTrioChild {
         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0.bin && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
             while : ; do
-                TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/bins/*" . && echo 0 || echo 1)
+                TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/bins/*" . && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     echo "Error downloading files from <~{bucket_dir}/~{child_id}/bins/>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
@@ -248,7 +249,7 @@ task ProcessTrioChild {
                     fi
                 done
             else
-                TEST=$(java -Xmx4G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} 2000000000 reads.fastq && echo 0 || echo 1)
+                TEST=$(java -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} $((~{flowcells_size_gb}/2)) reads.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -rf reads.fastq
                     touch reads.fastq

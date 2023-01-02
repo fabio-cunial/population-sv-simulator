@@ -121,7 +121,8 @@ public class BuildReadLengthBins {
     
     
     /**
-     * Prints the following values to the rows of $outputFile$, one per row:
+     * Prints, to the rows of $outputFile$, the following stats about the union 
+     * of all FASTQ files (one per row):
      *
      * nMaxima  // If < 2 the following lines are not printed
      * meanLeft  // Last-but-one peak
