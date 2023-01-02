@@ -122,13 +122,12 @@ task ProcessTrioChild {
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
-        REFERENCE_LENGTH=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {print s}')
         READ_GROUP="@RG\tID:movie\tSM:~{child_id}"
         MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
         GENOME_LENGTH_HAPLOID=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {printf "%lu", s}')
 
         # Building the files needed for sampling reads from the distribution
-        TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0 && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0.bin && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
             while : ; do
                 TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/bins/*" . && echo 0 || echo 1)
@@ -282,7 +281,7 @@ task ProcessTrioChild {
                 done
             fi
             COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
-            COVERAGE=$(( ${COVERAGE} / (2*${REFERENCE_LENGTH}) ))  # 1 haplotype
+            COVERAGE=$(( ${COVERAGE} / (2*${GENOME_LENGTH_HAPLOID}) ))  # 1 haplotype
             bash ~{docker_dir}/reads2svs_impl.sh ~{child_id} reads.bam reads.fastq ${COVERAGE} ~{child_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
             rm -f reads.fastq reads.bam
         done
