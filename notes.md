@@ -349,6 +349,9 @@ FILTER_STRING="((SVLEN>${previousSvLength} && SVLEN<=${svLength}) || (SVLEN>=-${
 [DONE] fix SV length bug: we should focus on long SVs rather than on short.
 
 
+- samtools calmd is faster if run after having sorted the bam by position. apply this fix to the simulator.
+
+
 https://github.com/PacificBiosciences/sv-benchmark
 
 

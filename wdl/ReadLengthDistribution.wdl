@@ -263,10 +263,8 @@ task ProcessTrioChild {
                 else 
                     java -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq ~{bin_length} ~{max_read_length} reads.fastq.histogram reads.fastq.max
                     ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
-                    ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.sam ~{reference_fa} > reads.1.bam
+                    ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.bam
                     rm -f reads.sam
-                    ${TIME_COMMAND} samtools sort -@ ${N_THREADS} reads.1.bam > reads.bam
-                    rm -f reads.1.bam
                 fi
                 while : ; do
                     TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq* ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
