@@ -87,6 +87,7 @@ public class SampleReadsFromLengthBins {
             while (j<MAX_SAMPLING_ATTEMPTS) {
                 bin=Arrays.binarySearch(cumulativeBimodal,random.nextDouble());
                 if (bin<0) bin=-1-bin;
+                if (bin==N_BINS) bin=N_BINS-1;
                 j++;
                 if (buffers_last[bin]!=-1) {  // The bin cannot be empty
                     loadBin(bin,BINS_PREFIX);
