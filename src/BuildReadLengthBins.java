@@ -6,13 +6,10 @@ import java.io.*;
 /**
  * Given a list of FASTQ files (for example the flowcells of a sample), the
  * program partitions the union of all their reads into length bins, permutes
- * every bin randomly, and stores every bin to a separate file. Every bin file
- * contains one line per read, which is the concatenation of the four rows of a
- * FASTQ read.
+ * every bin randomly, and stores every bin to a separate file.
  */
 public class BuildReadLengthBins {
 
-    public static final String BIN_FILE_SEPARATOR = "__________";
     private static int BIN_LENGTH, HALF_BIN_LENGTH;
     private static int N_BINS;
     public static final int MIN_READS_IN_LOCAL_MAXIMUM = 500;  // Arbitrary
@@ -39,7 +36,7 @@ public class BuildReadLengthBins {
         BufferedWriter bw;
         int[] buffers_last;
         long[] buffers_stringLength;
-        String[] tmpArray, tokens;
+        Fastq[] tmpArray;
         BufferedWriter[] buffers;
         
         // Building bins
@@ -60,10 +57,10 @@ public class BuildReadLengthBins {
                 bin=sequence.length()/BIN_LENGTH;
                 if (bin>=N_BINS) bin=N_BINS-1;
                 buffers_last[bin]++;
-                buffers[bin].write(header); buffers[bin].write(BIN_FILE_SEPARATOR);
-                buffers[bin].write(sequence); buffers[bin].write(BIN_FILE_SEPARATOR);
+                buffers[bin].write(header); buffers[bin].newLine();
+                buffers[bin].write(sequence); buffers[bin].newLine();
                 buffers_stringLength[bin]+=sequence.length();
-                buffers[bin].write(separator); buffers[bin].write(BIN_FILE_SEPARATOR);
+                buffers[bin].write(separator); buffers[bin].newLine();
                 buffers[bin].write(quality); buffers[bin].newLine();
                 nReads++;
                 if (nReads%100000==0) System.err.println(nReads+" reads");
@@ -87,21 +84,20 @@ public class BuildReadLengthBins {
         
         // Permuting reads in each bin
         System.err.println("Permuting bins...");
-        tmpArray = new String[maxLength];
+        tmpArray = new Fastq[maxLength];
         for (i=0; i<N_BINS; i++) {
             br1 = new BufferedReader(new FileReader(OUTPUT_PREFIX+i+".bin"));
-            str=br1.readLine(); last=-1;
-            while (str!=null) {
-                tmpArray[++last]=str;
-                str=br1.readLine();
+            header=br1.readLine(); last=-1;
+            while (header!=null) {
+                sequence=br1.readLine(); separator=br1.readLine(); quality=br1.readLine();
+                tmpArray[++last] = new Fastq(header,sequence,separator,quality);
+                header=br1.readLine();
             }
             br1.close();
             if (last<=1) continue;
             shuffle(tmpArray,last,random);
             bw = new BufferedWriter(new FileWriter(OUTPUT_PREFIX+i+".bin"));
-            for (j=0; j<=last; j++) {
-                bw.write(tmpArray[j]); bw.newLine();
-            }
+            for (j=0; j<=last; j++) tmpArray[j].writeTo(bw);
             bw.close();
             System.err.println("Bin "+i+" permuted (out of "+N_BINS+" total)");
         }
@@ -109,9 +105,9 @@ public class BuildReadLengthBins {
 	}
     
     
-    private static final void shuffle(String[] array, int last, Random random) {
+    private static final void shuffle(Fastq[] array, int last, Random random) {
         int i, j;
-        String tmp;
+        Fastq tmp;
         
         for (i=last; i>0; i--) {
             j=random.nextInt(i+1);

@@ -21,7 +21,7 @@ public class SampleReadsFromLengthBins {
      * The binned set of reads from which sampling takes place. Not all bins are
      * kept in memory at the same time.
      */
-    private static String[][] buffers;
+    private static Fastq[][] buffers;
     private static int[] buffers_last;  // Last unsampled read
     private static long[] buffers_stringLength;
     private static boolean[] buffers_isLoaded;
@@ -64,11 +64,10 @@ public class SampleReadsFromLengthBins {
         long coverage, nBpsInRam;
         BufferedWriter bw;
         int[] histogram;
-        String[] tokens;
         
         random = new Random();
         buildCumulativeBimodal(N_BINS,BIN_LENGTH,MEAN_LEFT,STD_LEFT,MEAN_RIGHT,STD_RIGHT,WEIGHT_LEFT);
-        buffers = new String[N_BINS][0];
+        buffers = new Fastq[N_BINS][0];
         buffers_last = new int[N_BINS];
         Arrays.fill(buffers_last,Integer.MAX_VALUE);
         buffers_stringLength = new long[N_BINS];
@@ -102,14 +101,10 @@ public class SampleReadsFromLengthBins {
                 System.exit(3);
             }
             histogram[bin]++;
-            tokens=buffers[bin][buffers_last[bin]].split(BuildReadLengthBins.BIN_FILE_SEPARATOR);
-            bw.write(tokens[0]); bw.newLine();
-            bw.write(tokens[1]); bw.newLine();
-            length=tokens[1].length();
+            buffers[bin][buffers_last[bin]].writeTo(bw);
+            length=buffers[bin][buffers_last[bin]].sequence.length();
             coverage+=length;
             buffers_stringLength[bin]-=length;
-            bw.write(tokens[2]); bw.newLine();
-            bw.write(tokens[3]); bw.newLine();
             buffers_last[bin]--;
         }
         bw.close();
@@ -140,6 +135,7 @@ public class SampleReadsFromLengthBins {
     private static final void loadBin(int bin, String prefix) throws IOException {
         final int CAPACITY = 1000;  // Arbitrary
         int last;
+        String header, sequence, separator, quality;
         String str;
         BufferedReader br;
         
@@ -151,19 +147,20 @@ public class SampleReadsFromLengthBins {
         }
         last=-1; buffers_stringLength[bin]=0;
         br = new BufferedReader(new FileReader(prefix+bin+".bin"));
-        str=br.readLine();
-        while (str!=null) {
+        header=br.readLine();
+        while (header!=null) {
+            sequence=br.readLine(); separator=br.readLine(); quality=br.readLine();
             last++;
             if (last>buffers_last[bin]) break;
-            if (buffers[bin]==null) buffers[bin] = new String[CAPACITY];
+            if (buffers[bin]==null) buffers[bin] = new Fastq[CAPACITY];
             else if (last>=buffers[bin].length) {
-                String[] newArray = new String[buffers[bin].length+CAPACITY];
+                Fastq[] newArray = new Fastq[buffers[bin].length+CAPACITY];
                 System.arraycopy(buffers[bin],0,newArray,0,buffers[bin].length);
                 buffers[bin]=newArray;
             }
-            buffers[bin][last]=str;
-            buffers_stringLength[bin]+=str.length();
-            str=br.readLine();
+            buffers[bin][last] = new Fastq(header,sequence,separator,quality);
+            buffers_stringLength[bin]+=sequence.length();
+            header=br.readLine();
         }
         br.close();
         buffers_isLoaded[bin]=true;
