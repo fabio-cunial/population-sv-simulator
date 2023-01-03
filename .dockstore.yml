@@ -25,3 +25,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/ReadLengthDistribution.wdl
   testParameterFiles:
+- name: TriosCreateTruthVCFs
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/TriosCreateTruthVCFs.wdl
+  testParameterFiles:

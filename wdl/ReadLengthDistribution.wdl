@@ -33,8 +33,7 @@ workflow ReadLengthDistribution {
         n_cpus: "Used only for setting the runtime"
     }
     
-    Int flowcells_size_gb = 30*3
-    # Assuming 30x coverage per individual
+    Int flowcells_size_gb = 30*3  # Assuming 30x coverage per individual
     scatter(child in read_lines(children_ids)) {
         call ProcessTrioChild {
             input:
@@ -306,3 +305,15 @@ task ProcessTrioChild {
         preemptible: 3
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
