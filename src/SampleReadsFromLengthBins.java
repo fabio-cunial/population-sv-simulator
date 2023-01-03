@@ -124,6 +124,8 @@ public class SampleReadsFromLengthBins {
         final NormalDistribution normalRight = new NormalDistribution(meanRight,stdRight);
         cumulativeBimodal = new double[nBins];
         for (i=0; i<nBins; i++) cumulativeBimodal[i] = normalLeft.probability(i*binLength,(i+1)*binLength)*weightLeft + normalRight.probability(i*binLength,(i+1)*binLength)*weightRight;
+        System.err.println("Sampling from the following bimodal:");
+        for (i=0; i<nBins; i++) System.err.println((i*binLength)+","+cumulativeBimodal[i]);
         for (i=1; i<nBins; i++) cumulativeBimodal[i]+=cumulativeBimodal[i-1];
     }
     
