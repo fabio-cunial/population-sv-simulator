@@ -317,9 +317,9 @@ task IntersectVCFs {
                 ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} in_parent1.vcf.gz in_parent2.vcf.gz --output-type z --output truth.vcf.gz
                 rm -f in_parent1.vcf.gz in_parent2.vcf.gz
                 while : ; do
-                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truth.vcf.gz ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
+                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truth.vcf.gz ~{bucket_dir}/~{child_id}/${CALLER}_truth.vcf.gz && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
-                        echo "Error uploading file <~{bucket_dir}/~{child_id}/truth.vcf.gz>. Trying again..."
+                        echo "Error uploading file <~{bucket_dir}/~{child_id}/${CALLER}_truth.vcf.gz>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
                     else
                         break
