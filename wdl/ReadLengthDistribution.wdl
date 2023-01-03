@@ -260,23 +260,23 @@ task ProcessTrioChild {
                     touch reads.fastq
                     rm -f reads.bam
                     touch reads.bam
-                else 
-                    java -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq ~{bin_length} ~{max_read_length} reads.fastq.histogram reads.fastq.max
-                    ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
-                    ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.1.bam
-                    rm -f reads.sam
-                    ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.1.bam ~{reference_fa} > reads.bam
-                    rm -f reads.1.bam
                 fi
                 while : ; do
-                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq* ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
-                    if [ ${TEST} -eq 1 ]; then
+                    TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq* ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
+                    if [ ${TEST2} -eq 1 ]; then
                         echo "Error uploading file <~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
                     else
                         break
                     fi
                 done
+                if [ ${TEST} -eq 0 ]; then
+                    ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
+                    ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.1.bam
+                    rm -f reads.sam
+                    ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.1.sam ~{reference_fa} > reads.bam
+                    rm -f reads.1.bam
+                fi
                 while : ; do
                     TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.bam ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then

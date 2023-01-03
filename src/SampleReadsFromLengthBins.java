@@ -104,6 +104,7 @@ public class SampleReadsFromLengthBins {
             buffers[bin][buffers_last[bin]].writeTo(bw);
             length=buffers[bin][buffers_last[bin]].sequence.length();
             coverage+=length;
+            buffers[bin][buffers_last[bin]]=null;
             buffers_stringLength[bin]-=length;
             buffers_last[bin]--;
         }
@@ -119,11 +120,15 @@ public class SampleReadsFromLengthBins {
      */
     private static final void buildCumulativeBimodal(int nBins, int binLength, double meanLeft, double stdLeft, double meanRight, double stdRight, double weightLeft) {
         int i;
+        double sum;
         final double weightRight = 1.0-weightLeft;
         final NormalDistribution normalLeft = new NormalDistribution(meanLeft,stdLeft);
         final NormalDistribution normalRight = new NormalDistribution(meanRight,stdRight);
         cumulativeBimodal = new double[nBins];
         for (i=0; i<nBins; i++) cumulativeBimodal[i] = normalLeft.probability(i*binLength,(i+1)*binLength)*weightLeft + normalRight.probability(i*binLength,(i+1)*binLength)*weightRight;
+        sum=0.0;
+        for (i=0; i<nBins; i++) sum+=cumulativeBimodal[i];
+        for (i=0; i<nBins; i++) cumulativeBimodal[i]/=sum;
         System.err.println("Sampling from the following bimodal:");
         for (i=0; i<nBins; i++) System.err.println((i*binLength)+","+cumulativeBimodal[i]);
         for (i=1; i<nBins; i++) cumulativeBimodal[i]+=cumulativeBimodal[i-1];
