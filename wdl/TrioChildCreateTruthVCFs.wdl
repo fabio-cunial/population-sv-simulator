@@ -189,7 +189,7 @@ task CreateFullCoverageVCFs {
                 FASTQ_FILE_LOCAL=${FASTQ_FILE_LOCAL%.gz}
                 cat ${FASTQ_FILE_LOCAL} >> reads.fastq
                 rm -f ${FASTQ_FILE_LOCAL}
-            done < ${INDIVIDUAL}.fastqs
+            done < ~{individual_id}.fastqs
             ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
             ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.1.bam
             rm -f reads.sam
