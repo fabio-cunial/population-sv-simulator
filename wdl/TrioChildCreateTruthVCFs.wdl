@@ -89,7 +89,7 @@ task Child2Family {
         Array[String] individuals = read_lines(child_id + ".parents")
     }
     runtime {
-        docker: "ubuntu:latest"
+        docker: "fcunial/simulation"
     }
 }
 
