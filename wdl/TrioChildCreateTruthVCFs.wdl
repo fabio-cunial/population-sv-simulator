@@ -21,6 +21,9 @@ workflow TrioChildCreateTruthVCFs {
         Int use_paftools
         Int keep_assemblies
     }
+    parameter_meta {
+        n_cpus: "For the bottleneck part of creating VCFs from full-coverage read sets"
+    }
     
     Int flowcells_size_gb = 30*3  # Assuming 30x coverage per individual
     Int vcf_size_gb = 1  # Arbitrary upper bound
