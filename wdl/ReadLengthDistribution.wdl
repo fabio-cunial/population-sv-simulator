@@ -229,8 +229,9 @@ task ProcessTrioChild {
         WEIGHTS=$(echo ${WEIGHTS} | tr '-' ' ')
         for WEIGHT_LEFT in ${WEIGHTS}; do
             EXISTS="0"
-            TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq && echo 0 || echo 1)
-            if [ ${TEST} -eq 0 ]; then
+            TEST1=$(gsutil -q stat ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq && echo 0 || echo 1)
+            TEST2=$(gsutil -q stat ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam && echo 0 || echo 1)
+            if [ ${TEST1} -eq 0 -a ${TEST2} -eq 0 ]; then
                 while : ; do
                     TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq" . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
@@ -240,11 +241,6 @@ task ProcessTrioChild {
                         break
                     fi
                 done
-                if [ -s reads.fastq ]; then
-                    EXISTS="1"
-                fi
-            fi
-            if [ ${EXISTS} -eq 1 ]; then
                 while : ; do
                     TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam" . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
@@ -254,7 +250,11 @@ task ProcessTrioChild {
                         break
                     fi
                 done
-            else
+                if [ -s reads.fastq -a -s reads.bam ]; then
+                    EXISTS="1"
+                fi
+            fi
+            if [ ${EXISTS} -eq 0 ]; then
                 TEST=$(java -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} $((~{flowcells_size_gb}/2)) reads.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -f reads.fastq.histogram 
@@ -292,10 +292,12 @@ task ProcessTrioChild {
                     fi
                 done
             fi
-            if [ -s reads.fastq ]; then
+            if [ -s reads.fastq -a -s reads.bam ]; then
                 COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
                 COVERAGE=$(( ${COVERAGE} / (2*${GENOME_LENGTH_HAPLOID}) ))  # 1 haplotype
                 bash ~{docker_dir}/reads2svs_impl.sh ~{child_id} reads.bam reads.fastq ${COVERAGE} ~{child_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
+            else
+                echo "Empty FASTQ or BAM file for weight ${WEIGHT_LEFT}. Stopping."
             fi
             rm -f reads.fastq reads.bam
         done
