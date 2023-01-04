@@ -3,74 +3,42 @@ version 1.0
 import "AnnotateVCFs.wdl"
 
 
-# The program compares each experimental VCF to its corresponding ground truth,
-# collecting per-individual performance measures. This is performed separately
-# for every tuple (caller, left weight, SV length).
+# The program compares the VCF file for each tuple (trio child, left weight,
+# caller) to its corresponding "truth" file created by
+# <TrioChildCreateTruthVCFs>. SVs of different lengths are analyzed separately.
+# The results are collected in a matrix for every child and caller, whose lines
+# follow the format <leftWeight, svLength, metric>.
 #
 workflow TriosPerformanceMatrices {
-    input {        
+    input {
+        File children_ids
+        String bucket_dir
         Array[String] callers
-        Array[String] svTypes
-        Array[Int] svLengths
-        Array[Float] svFrequencies
-        Array[Int] contextTypes
-        Array[Float] repeatFractions
-        Array[Int] read_lengths
-        Array[Int] coverages
+        Array[Float] left_weights
+        Array[Int] sv_lengths
         Int only_pass
-        Int n_nodes
-        Int n_cpus_per_node
-        String reference_fa
-        String reference_fai
-        String bucket_dir_experimental_vcfs
-        String bucket_dir_ground_truth_vcfs
-        String bucket_dir_allIndividuals_vcfs
-        String bucket_dir_matrices
-        Float max_vcf_size
-        Int n_individuals
+        File reference_fa
     }
     parameter_meta {
-        svFrequencies: "They should be fractions $X/(2*n_individuals)$, where $X$ is an integer number of haplotypes."
-        contextTypes: "0=non-satellite repeat; 1=satellite repeat; 2=both of the above; 3=none of the above, but segmental duplication; 4=none of the above."
-        repeatFractions: "Fractions of one."
+        children_ids: "The trio children to be processed"
         only_pass: "(0/1) Use only variants with FILTER=PASS."
-        n_nodes: "Number of machines over which to distribute the computation."
-        reference_fa: "Address in a bucket"
-        reference_fai: "Address in a bucket"
-        bucket_dir_experimental_vcfs: "Input directory"
-        bucket_dir_ground_truth_vcfs: "Input directory"
-        bucket_dir_allIndividuals_vcfs: "Output directory: the merged VCFs over all individuals will be stored here."
-        bucket_dir_matrices: "Output directory: the matrices with performance measures will be stored here."
-        max_vcf_size: "Max size of a single VCF file, in GB."
-        n_individuals: "Total number of diploid individuals in the population. Used just to estimate space."
-    }
-    
+    }    
 
-    scatter(chunk_file in GetChunks.chunks) {
-        call ProcessChunk { 
+    scatter(child_id in read_lines(children_ids)) {
+        call ChildPerformanceMatrices { 
             input:
-                chunk_file = chunk_file,
-                read_lengths = read_lengths,
-                coverages = coverages,
-                reference_fa = reference_fa,
-                reference_fai = reference_fai,
-                max_vcf_size = max_vcf_size,
-                n_individuals = n_individuals,
+                child_id = child_id,
+                bucket_dir = bucket_dir,
+                callers = callers,
+                left_weights = left_weights,
+                sv_lengths = sv_lengths,
                 only_pass = only_pass,
-                bucket_dir_experimental_vcfs = if annotate_vcfs==1 then bucket_dir_experimental_vcfs+"/annotated" else bucket_dir_experimental_vcfs,
-                bucket_dir_ground_truth_vcfs = bucket_dir_ground_truth_vcfs,
-                bucket_dir_allIndividuals_vcfs = bucket_dir_allIndividuals_vcfs,
-                bucket_dir_matrices = bucket_dir_matrices,
-                n_cpus = n_cpus_per_node
+                reference_fa = reference_fa
         }
     }
     output {
     }
 }
-
-
-
-
 
 
 task ChildPerformanceMatrices {
@@ -81,13 +49,12 @@ task ChildPerformanceMatrices {
         Array[Float] left_weights
         Array[Int] sv_lengths
         Int only_pass
+        File reference_fa
     }
     parameter_meta {
+        only_pass: "Use only calls with FILTER=PASS (0/1)."
     }
     
-    Int ram_size_gb_pre = ceil(max_vcf_size*2*n_cpus)
-    Int ram_size_gb = if 16 > ram_size_gb_pre then 16 else ram_size_gb_pre
-    Int disk_size_gb = ceil(max_vcf_size*n_individuals*20) + ceil((size(reference_fa, "GB")))
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/simulation"
     
@@ -98,9 +65,7 @@ task ChildPerformanceMatrices {
         
         GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
         GSUTIL_DELAY_S="600"
-        N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
-        N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
-        N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+        TRUVARI_BENCH_FLAGS=" "  # Using the default settings for now
         
         CALLERS=~{sep='-' callers}
         CALLERS=$(echo ${CALLERS} | tr '-' ' ')
@@ -118,20 +83,40 @@ task ChildPerformanceMatrices {
                     break
                 fi
             done
-            TP_MATRIX="${caller}_matrix_tp.txt"
-            FP_MATRIX="${caller}_matrix_fp.txt"
-            FN_MATRIX="${caller}_matrix_fn.txt"
-            PRECISION_MATRIX="${caller}_matrix_precision.txt"
-            RECALL_MATRIX="${caller}_matrix_recall.txt"
-            F1_MATRIX="${caller}_matrix_f1.txt"
-            touch ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX}
+            FILTER_STRING_1="((SVLEN>0 && SVLEN>=${sv_length}) || (SVLEN<0 && SVLEN<=-${sv_length}))"
+            if [ ~{only_pass} -eq 1 ]; then
+                FILTER_STRING_1="(${FILTER_STRING_1}) && FILTER=\"PASS\""
+            fi
+            PREVIOUS_SV_LENGTH="0"
+            for sv_length in ${SV_LENGTHS}; do
+                FILTER_STRING_2="((SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length}))"
+                bcftools filter --threads 0 --include "${FILTER_STRING_1}" --output-type v ${caller}_truth.vcf.gz | bcftools sort --output-type z --output truth1_${sv_length}.vcf.gz
+                tabix truth1_${sv_length}.vcf.gz
+                bcftools filter --threads 0 --include "${FILTER_STRING_2}" --output-type v ${caller}_truth.vcf.gz | bcftools sort --output-type z --output truth2_${sv_length}.vcf.gz
+                tabix truth2_${sv_length}.vcf.gz
+                PREVIOUS_SV_LENGTH=${sv_length}
+            done
+            TP_MATRIX_1="${caller}_matrix1_tp.txt"
+            FP_MATRIX_1="${caller}_matrix1_fp.txt"
+            FN_MATRIX_1="${caller}_matrix1_fn.txt"
+            PRECISION_MATRIX_1="${caller}_matrix1_precision.txt"
+            RECALL_MATRIX_1="${caller}_matrix1_recall.txt"
+            F1_MATRIX_1="${caller}_matrix1_f1.txt"
+            TP_MATRIX_2="${caller}_matrix2_tp.txt"
+            FP_MATRIX_2="${caller}_matrix2_fp.txt"
+            FN_MATRIX_2="${caller}_matrix2_fn.txt"
+            PRECISION_MATRIX_2="${caller}_matrix2_precision.txt"
+            RECALL_MATRIX_2="${caller}_matrix2_recall.txt"
+            F1_MATRIX_2="${caller}_matrix2_f1.txt"
+            touch ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
+            touch ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
             for weight in ${WEIGHTS}; do
                 TEST=$(gsutil -q stat "~{bucket_dir}/~{child_id}/reads_${weight}/${caller}_~{child_id}.vcf" . && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     continue
                 fi
                 while : ; do
-                    TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/reads_${weight}/${caller}_~{child_id}.vcf" . && echo 0 || echo 1)
+                    TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/reads_${weight}/${caller}_~{child_id}.vcf" . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         echo "Error downloading file <~{bucket_dir}/~{child_id}/reads_${weight}/${caller}_~{child_id}.vcf>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
@@ -139,26 +124,66 @@ task ChildPerformanceMatrices {
                         break
                     fi
                 done
+                PREVIOUS_SV_LENGTH="0"
                 for sv_length in ${SV_LENGTHS}; do
-                    echo -n "${weight},${sv_length}," >> ${TP_MATRIX}
-                    echo -n "${weight},${sv_length}," >> ${FP_MATRIX}
-                    echo -n "${weight},${sv_length}," >> ${FN_MATRIX}
-                    echo -n "${weight},${sv_length}," >> ${PRECISION_MATRIX}
-                    echo -n "${weight},${sv_length}," >> ${RECALL_MATRIX}
-                    echo -n "${weight},${sv_length}," >> ${F1_MATRIX}
-                    
-                    
-                    ----------------->
-                    
-                    
-                    
-                    echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
+                    # Cumulative length
+                    echo -n "${weight},${sv_length}," >> ${TP_MATRIX_1}
+                    echo -n "${weight},${sv_length}," >> ${FP_MATRIX_1}
+                    echo -n "${weight},${sv_length}," >> ${FN_MATRIX_1}
+                    echo -n "${weight},${sv_length}," >> ${PRECISION_MATRIX_1}
+                    echo -n "${weight},${sv_length}," >> ${RECALL_MATRIX_1}
+                    echo -n "${weight},${sv_length}," >> ${F1_MATRIX_1}
+                    bcftools filter --threads 0 --include "${FILTER_STRING_1}" --output-type v ${caller}_~{child_id}.vcf | bcftools sort --output-type z --output measured.vcf.gz
+                    tabix measured.vcf.gz
+                    truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base truth1_${sv_length}.vcf.gz --comp measured.vcf.gz --reference ~{reference_fa} --output output_dir/
+                    rm -f measured.vcf.gz
+                    grep "\"TP-call\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_1}
+                    grep "\"FP\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_1}
+                    grep "\"FN\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_1}
+                    grep "\"precision\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX_1}
+                    grep "\"recall\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX_1}
+                    grep "\"f1\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX_1}
+                    rm -rf output_dir/
+                    echo "" >> ${TP_MATRIX_1}; echo "" >> ${FP_MATRIX_1}; echo "" >> ${FN_MATRIX_1}; echo "" >> ${PRECISION_MATRIX_1}; echo "" >> ${RECALL_MATRIX_1}; echo "" >> ${F1_MATRIX_1}
+                    # Length bins
+                    FILTER_STRING_2="((SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length}))"
+                    if [ ~{only_pass} -eq 1 ]; then
+                        FILTER_STRING_2="(${FILTER_STRING_2}) && FILTER=\"PASS\""
+                    fi
+                    echo -n "${weight},${sv_length}," >> ${TP_MATRIX_2}
+                    echo -n "${weight},${sv_length}," >> ${FP_MATRIX_2}
+                    echo -n "${weight},${sv_length}," >> ${FN_MATRIX_2}
+                    echo -n "${weight},${sv_length}," >> ${PRECISION_MATRIX_2}
+                    echo -n "${weight},${sv_length}," >> ${RECALL_MATRIX_2}
+                    echo -n "${weight},${sv_length}," >> ${F1_MATRIX_2}
+                    bcftools filter --threads 0 --include "${FILTER_STRING_2}" --output-type v ${caller}_~{child_id}.vcf | bcftools sort --output-type z --output measured.vcf.gz
+                    tabix measured.vcf.gz
+                    truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base truth2_${sv_length}.vcf.gz --comp measured.vcf.gz --reference ~{reference_fa} --output output_dir/
+                    rm -f measured.vcf.gz
+                    grep "\"TP-call\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_2}
+                    grep "\"FP\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_2}
+                    grep "\"FN\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_2}
+                    grep "\"precision\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX_2}
+                    grep "\"recall\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX_2}
+                    grep "\"f1\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX_2}
+                    rm -rf output_dir/                    
+                    echo "" >> ${TP_MATRIX_2}; echo "" >> ${FP_MATRIX_2}; echo "" >> ${FN_MATRIX_2}; echo "" >> ${PRECISION_MATRIX_2}; echo "" >> ${RECALL_MATRIX_2}; echo "" >> ${F1_MATRIX_2}
+                    PREVIOUS_SV_LENGTH=${sv_length}
                 done
             done
             while : ; do
-                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1} ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
-                    echo "Error uploading per-individual matrices. Trying again..."
+                    echo "Error uploading cumulative length matrices. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
+            while : ; do
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2} ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading binned length matrices. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
                 else
                     break
@@ -171,9 +196,9 @@ task ChildPerformanceMatrices {
     }
     runtime {
         docker: "fcunial/simulation"
-        cpu: n_cpus
-        memory: ram_size_gb + "GB"
-        disks: "local-disk " + disk_size_gb + " HDD"
+        cpu: 1
+        memory: "8GB"  # Arbitrary
+        disks: "local-disk 50 HDD"  # Arbitrary
         preemptible: 0
     }
 }
