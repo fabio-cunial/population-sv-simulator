@@ -123,7 +123,7 @@ task CreateFullCoverageVCFs {
     
     Int ram_size_gb = 4 + flowcells_size_gb*3
     # *3: from loosely rounding up PAV; +4: to leave some free RAM to the OS.
-    Int disk_size_gb = ram_size_gb*2 + ceil( size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB") )
+    Int disk_size_gb = ram_size_gb*4 + ceil( size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB") )
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/simulation"
     
@@ -193,7 +193,7 @@ task CreateFullCoverageVCFs {
             ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
             ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.1.bam
             rm -f reads.sam
-            ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.1.sam ~{reference_fa} > reads.bam
+            ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.1.bam ~{reference_fa} > reads.bam
             rm -f reads.1.bam
             while : ; do
                 TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp reads.bam reads.fastq ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/ && echo 0 || echo 1)

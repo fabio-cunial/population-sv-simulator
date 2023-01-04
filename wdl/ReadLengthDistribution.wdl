@@ -108,7 +108,7 @@ task ProcessTrioChild {
     Int ram_size_gb = 4 + flowcells_size_gb*3
     # *3: from loosely rounding up PAV; +4: to leave some free RAM to the OS.
     Int ram_size_gb_effective = ram_size_gb - 4
-    Int disk_size_gb = ram_size_gb*2 + ceil( size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB") )
+    Int disk_size_gb = ram_size_gb*4 + ceil( size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB") )
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/simulation"
     
