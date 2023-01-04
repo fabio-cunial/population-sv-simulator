@@ -164,6 +164,7 @@ public class SampleReadsFromLengthBins {
                 Fastq[] newArray = new Fastq[buffers[bin].length+CAPACITY];
                 System.arraycopy(buffers[bin],0,newArray,0,buffers[bin].length);
                 buffers[bin]=newArray;
+                freeSpace(bin);
             }
             buffers[bin][last] = new Fastq(header,sequence,separator,quality);
             buffers_stringLength[bin]+=sequence.length();
