@@ -180,7 +180,7 @@ task ProcessTrioChild {
                     fi
                 done
             done < ~{child_id}.fastqs
-            java -cp ~{docker_dir} BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
+            java -cp ~{docker_dir} -Xmx~{ram_size_gb_effective}G BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
             rm -f *.fq
             while : ; do
                 TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/bins/ && echo 0 || echo 1)
@@ -228,6 +228,7 @@ task ProcessTrioChild {
         WEIGHTS=~{sep='-' left_weights}
         WEIGHTS=$(echo ${WEIGHTS} | tr '-' ' ')
         for WEIGHT_LEFT in ${WEIGHTS}; do
+            EXISTS="0"
             TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq && echo 0 || echo 1)
             if [ ${TEST} -eq 0 ]; then
                 while : ; do
@@ -239,6 +240,11 @@ task ProcessTrioChild {
                         break
                     fi
                 done
+                if [ -s reads.fastq ]; then
+                    EXISTS="1"
+                fi
+            fi
+            if [ ${EXISTS} -eq 1 ]; then
                 while : ; do
                     TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam" . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
@@ -273,7 +279,7 @@ task ProcessTrioChild {
                     ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
                     ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.1.bam
                     rm -f reads.sam
-                    ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.1.sam ~{reference_fa} > reads.bam
+                    ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.1.bam ~{reference_fa} > reads.bam
                     rm -f reads.1.bam
                 fi
                 while : ; do
