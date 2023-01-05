@@ -258,7 +258,7 @@ task ProcessTrioChild {
                 fi
             fi
             if [ ${EXISTS} -eq 0 ]; then
-                TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} $((~{flowcells_size_gb}/5)) reads.fastq && echo 0 || echo 1)
+                TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} ~{flowcells_size_gb} reads.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -f reads.fastq.histogram; touch reads.fastq.histogram 
                     rm -f reads.fastq.max; touch reads.fastq.max
