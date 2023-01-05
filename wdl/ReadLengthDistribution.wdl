@@ -242,7 +242,7 @@ task ProcessTrioChild {
                     fi
                 done
                 while : ; do
-                    TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam" . && echo 0 || echo 1)
+                    TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam*" . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         echo "Error downloading <~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
@@ -257,17 +257,14 @@ task ProcessTrioChild {
             if [ ${EXISTS} -eq 0 ]; then
                 TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{target_coverage_one_haplotype} $((~{flowcells_size_gb}/10)) reads.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
-                    rm -f reads.fastq.histogram 
-                    touch reads.fastq.histogram 
-                    rm -f reads.fastq.max
-                    touch reads.fastq.max
-                    rm -f reads.fastq
-                    touch reads.fastq
-                    rm -f reads.bam
-                    touch reads.bam
+                    rm -f reads.fastq.histogram; touch reads.fastq.histogram 
+                    rm -f reads.fastq.max; touch reads.fastq.max
+                    rm -f reads.fastq; touch reads.fastq
+                    rm -f reads.bam; touch reads.bam
+                    rm -f reads.bam.bai; touch reads.bam.bai
                 fi
                 while : ; do
-                    TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq* ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
+                    TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads.fastq*" ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
                     if [ ${TEST2} -eq 1 ]; then
                         echo "Error uploading file <~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.fastq>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
@@ -281,9 +278,10 @@ task ProcessTrioChild {
                     rm -f reads.sam
                     ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.1.bam ~{reference_fa} > reads.bam
                     rm -f reads.1.bam
+                    samtools index -@ ${N_THREADS} reads.bam
                 fi
                 while : ; do
-                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.bam ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam && echo 0 || echo 1)
+                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads.bam*" ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         echo "Error uploading file <~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/reads.bam>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
@@ -293,13 +291,16 @@ task ProcessTrioChild {
                 done
             fi
             if [ -s reads.fastq -a -s reads.bam ]; then
+                if [ ! -f reads.bam.bai ]; then
+                    samtools index -@ ${N_THREADS} reads.bam
+                fi
                 COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
                 COVERAGE=$(( ${COVERAGE} / (2*${GENOME_LENGTH_HAPLOID}) ))  # 1 haplotype
                 bash ~{docker_dir}/reads2svs_impl.sh ~{child_id} reads.bam reads.fastq ${COVERAGE} ~{child_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
             else
                 echo "Empty FASTQ or BAM file for weight ${WEIGHT_LEFT}. Stopping."
             fi
-            rm -f reads.fastq reads.bam
+            rm -f reads.fastq reads.bam reads.bai
         done
     >>>
     

@@ -155,7 +155,7 @@ task CreateFullCoverageVCFs {
                 fi
             done
             while : ; do
-                TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/reads.bam . && echo 0 || echo 1)
+                TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/reads.bam*" . && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     echo "Error downloading file <~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/reads.bam>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
@@ -195,8 +195,9 @@ task CreateFullCoverageVCFs {
             rm -f reads.sam
             ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b reads.1.bam ~{reference_fa} > reads.bam
             rm -f reads.1.bam
+            samtools index -@ ${N_THREADS} reads.bam
             while : ; do
-                TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp reads.bam reads.fastq ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/ && echo 0 || echo 1)
+                TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq reads.bam reads.bam.bai ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/ && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     echo "Error uploading file <~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/reads.bam>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
@@ -205,10 +206,13 @@ task CreateFullCoverageVCFs {
                 fi
             done
         fi
+        if [ ! -f reads.bam.bai ]; then
+            samtools index -@ ${N_THREADS} reads.bam
+        fi
         COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
         COVERAGE=$(( ${COVERAGE} / (2*${GENOME_LENGTH_HAPLOID}) ))  # 1 haplotype
         bash ~{docker_dir}/reads2svs_impl.sh ~{individual_id} reads.bam reads.fastq ${COVERAGE} ~{individual_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
-        rm -f reads.bam reads.fastq
+        rm -f reads.bam reads.bai reads.fastq
     >>>
     
     output {
