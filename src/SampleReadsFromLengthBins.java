@@ -96,22 +96,32 @@ public class SampleReadsFromLengthBins {
                     }
                 }
             }
+System.err.println("-->1  j="+j+" MAX_SAMPLING_ATTEMPTS="+MAX_SAMPLING_ATTEMPTS);
             if (j==MAX_SAMPLING_ATTEMPTS) {
                 System.err.println("Not enough reads to sample "+TARGET_COVERAGE_ONE_HAPLOTYPE+"x haploid coverage from the given bins and distribution.");
                 System.exit(3);
             }
+System.err.println("-->2  bin="+bin);
             histogram[bin]++;
+System.err.println("-->3  buffers_last[bin]="+buffers_last[bin]);
             buffers[bin][buffers_last[bin]].writeTo(bw);
+System.err.println("-->4  buffers_last[bin]="+buffers_last[bin]);
             length=buffers[bin][buffers_last[bin]].sequence.length();
             coverage+=length;
             buffers[bin][buffers_last[bin]]=null;
+System.err.println("-->5 bin="+bin);
             buffers_stringLength[bin]-=length;
             buffers_last[bin]--;
+System.err.println("-->6  buffers_last[bin]="+buffers_last[bin]);
         }
         bw.close();
+System.err.println("-->7");
         bw = new BufferedWriter(new FileWriter(OUTPUT_FASTQ_FILE+".histogram"));
+System.err.println("-->8");
         for (i=0; i<N_BINS; i++) bw.write(histogram[i]+"\n");
+System.err.println("-->9");
         bw.close();
+System.err.println("-->10");
 	}
     
     
@@ -129,7 +139,7 @@ public class SampleReadsFromLengthBins {
         sum=0.0;
         for (i=0; i<nBins; i++) sum+=cumulativeBimodal[i];
         for (i=0; i<nBins; i++) cumulativeBimodal[i]/=sum;
-        System.err.println("Sampling from the following bimodal:");
+        System.err.println("Sampling from the following distribution:");
         for (i=0; i<nBins; i++) System.err.println((i*binLength)+","+cumulativeBimodal[i]);
         for (i=1; i<nBins; i++) cumulativeBimodal[i]+=cumulativeBimodal[i-1];
     }

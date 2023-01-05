@@ -95,7 +95,7 @@ task ProcessTrioChild {
         Int keep_assemblies
     }
     parameter_meta {
-        flowcells_size_gb: "Upper bound on the size of the union of all flowcells in the list. Used just for setting the runtime."
+        flowcells_size_gb: "Upper bound on the size of the union of all flowcells of the child. Used just for setting the runtime."
         bin_length: "Of the read length histogram"
         max_read_length: "Of the read length histogram"
         left_weights: "Weights to assign to the left Gaussian of a bimodal distribution"
@@ -108,7 +108,7 @@ task ProcessTrioChild {
     Int ram_size_gb = 4 + flowcells_size_gb*3
     # *3: from loosely rounding up PAV; +4: to leave some free RAM to the OS.
     Int ram_size_gb_effective = ram_size_gb - 4
-    Int disk_size_gb = ram_size_gb*4 + ceil( size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB") )
+    Int disk_size_gb = ram_size_gb*2 + ceil( size(reference_fa, "GB") + size(reference_tandem_repeats, "GB") + size(flowcells_size_gb*8, "GB") )
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/simulation"
     
@@ -126,6 +126,9 @@ task ProcessTrioChild {
         READ_GROUP="@RG\tID:movie\tSM:~{child_id}"
         MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
         GENOME_LENGTH_HAPLOID=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {printf "%lu", s}')
+        echo "Running <ProcessTrioChild> on ${N_THREADS} cores on the following node:"
+        cat /proc/meminfo
+        df -h
 
         # Building the files needed for sampling reads from the distribution
         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0.bin && echo 0 || echo 1)
