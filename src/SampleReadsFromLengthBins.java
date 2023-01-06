@@ -82,6 +82,7 @@ public class SampleReadsFromLengthBins {
         coverage=0; nBpsInRam=0;
         bw = new BufferedWriter(new FileWriter(OUTPUT_FASTQ_FILE));
         while (coverage<TARGET_COVERAGE_BP) {
+ System.err.println("-->0");
             j=0; bin=-1;
             while (j<MAX_SAMPLING_ATTEMPTS) {
                 bin=Arrays.binarySearch(cumulativeBimodal,random.nextDouble());
@@ -112,8 +113,9 @@ System.err.println("-->4  buffers_last[bin]="+buffers_last[bin]);
 System.err.println("-->5 bin="+bin);
             buffers_stringLength[bin]-=length;
             buffers_last[bin]--;
-System.err.println("-->6  buffers_last[bin]="+buffers_last[bin]);
+System.err.println("-->6  buffers_last[bin]="+buffers_last[bin]+" coverage="+coverage);
         }
+System.err.println("-->6.5");        
         bw.close();
 System.err.println("-->7");
         bw = new BufferedWriter(new FileWriter(OUTPUT_FASTQ_FILE+".histogram"));
