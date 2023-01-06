@@ -184,7 +184,7 @@ task ProcessTrioChild {
                 done
             done < ~{child_id}.fastqs
             java -cp ~{docker_dir} -Xmx~{ram_size_gb_effective}G BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
-            rm -f *.fq
+            rm -f *.fastq
             while : ; do
                 TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/bins/ && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then

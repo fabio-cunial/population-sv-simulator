@@ -8,10 +8,7 @@ import java.io.*;
  * symmetrical to the histogram to the right of the rightmost peak.
  */
 public class DeleteLeftMode {
-    
-    /**
-     * @param args 
-     */
+
 	public static void main(String[] args) throws IOException {
         final double MEAN_RIGHT = Double.parseDouble(args[0]);
         final String BINS_PREFIX = args[1];
