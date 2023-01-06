@@ -3,9 +3,9 @@ version 1.0
 import "TrioChildCreateTruthVCFs.wdl"
 
 
-# Runs several callers on every child of a trio and on its parents, at max
-# coverage, and keeps only the variants of a child that occur also in some
-# parent.
+# Runs several callers on every child of a trio and on its parents, using all
+# the available reads (of any length), and keeps only the variants of a child
+# that occur also in some parent.
 #
 workflow TriosCreateTruthVCFs {
     input {
