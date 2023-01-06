@@ -90,7 +90,12 @@ public class SampleReadsFromLengthBins {
                 if (bin==N_BINS) bin=N_BINS-1;
                 j++;
                 if (buffers_last[bin]!=-1) {  // The bin cannot be empty
-                    loadBin(bin,BINS_PREFIX);
+                    try { loadBin(bin,BINS_PREFIX); }
+                    catch (Exception e) {
+                        System.err.println("loadBin() threw the following exception:");
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
                     if (buffers_last[bin]!=-1) {  // The bin cannot be empty
                         freeSpace(bin);
                         break;
