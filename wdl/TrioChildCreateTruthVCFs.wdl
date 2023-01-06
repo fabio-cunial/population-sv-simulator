@@ -90,6 +90,7 @@ task Child2Family {
     }
     runtime {
         docker: "fcunial/simulation"
+        bootDiskSizeGb: 15
     }
 }
 
@@ -223,6 +224,7 @@ task CreateFullCoverageVCFs {
         cpu: n_cpus
         memory: ram_size_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"
+        bootDiskSizeGb: 15
         preemptible: 3
     }
 }
@@ -339,6 +341,7 @@ task IntersectVCFs {
         cpu: 8  # Arbitrary
         memory: ram_size_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"
+        bootDiskSizeGb: 15
         preemptible: 3
     }
 }
