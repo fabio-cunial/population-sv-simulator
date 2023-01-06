@@ -58,7 +58,7 @@ workflow TrioChildCreateTruthVCFs {
         input:
             child_id = child_id,
             bucket_dir = bucket_dir,
-            preifx = "full_coverage",
+            prefix = "full_coverage",
             reference_fa = reference_fa,
             vcf_size_gb = vcf_size_gb,
             force_sequentiality = CreateAllReadsVCFs.force_sequentiality
