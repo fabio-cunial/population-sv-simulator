@@ -96,7 +96,7 @@ public class SampleReadsFromLengthBins {
                     }
                 }
             }
-System.err.println("-->1  j="+j+" MAX_SAMPLING_ATTEMPTS="+MAX_SAMPLING_ATTEMPTS);
+ System.err.println("-->1  j="+j+" MAX_SAMPLING_ATTEMPTS="+MAX_SAMPLING_ATTEMPTS);
             if (j==MAX_SAMPLING_ATTEMPTS) {
                 System.err.println("Not enough reads to sample "+TARGET_COVERAGE_ONE_HAPLOTYPE+"x haploid coverage from the given bins and distribution.");
                 System.exit(3);

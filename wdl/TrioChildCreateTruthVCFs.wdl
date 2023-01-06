@@ -142,7 +142,7 @@ task CreateFullCoverageVCFs {
         MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
         GENOME_LENGTH_HAPLOID=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {printf "%lu", s}')
         
-        echo 1 > force_sequentiality.txt
+        echo 1 > ~{work_dir}/force_sequentiality.txt
         TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/reads.fastq . && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
             while : ; do
