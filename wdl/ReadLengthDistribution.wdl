@@ -315,6 +315,6 @@ task ProcessTrioChild {
         memory: ram_size_gb + "GB"
         disks: "local-disk " + disk_size_gb + " SSD"  # SSD for faster sampling
         bootDiskSizeGb: 15
-        preemptible: 3
+        preemptible: 0
     }
 }

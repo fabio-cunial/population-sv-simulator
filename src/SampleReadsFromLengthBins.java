@@ -91,8 +91,8 @@ public class SampleReadsFromLengthBins {
                 j++;
                 if (buffers_last[bin]!=-1) {  // The bin cannot be empty
                     try { loadBin(bin,BINS_PREFIX); }
-                    catch (Exception e) {
-                        System.err.println("loadBin() threw the following exception:");
+                    catch (Error e) {
+                        System.err.println("loadBin() threw the following error:");
                         e.printStackTrace();
                         System.exit(1);
                     }
@@ -163,37 +163,50 @@ System.err.println("-->10");
         String str;
         BufferedReader br;
         
+ System.err.println("-->loadBin 0");
         if (buffers_isLoaded[bin]) {
+ System.err.println("-->loadBin 1");
             queue.remove(bins[bin]);
             bins[bin].priority=buffers_last[bin];  // An approximation
             queue.add(bins[bin]);
             return;
         }
+ System.err.println("-->loadBin 2");
         last=-1; buffers_stringLength[bin]=0;
         br = new BufferedReader(new FileReader(prefix+bin+".bin"));
         header=br.readLine();
+ System.err.println("-->loadBin 3");        
         while (header!=null) {
             sequence=br.readLine(); separator=br.readLine(); quality=br.readLine();
             last++;
             if (last>buffers_last[bin]) break;
             if (buffers[bin]==null) buffers[bin] = new Fastq[CAPACITY];
             else if (last>=buffers[bin].length) {
+ System.err.println("-->loadBin 4");
                 Fastq[] newArray = new Fastq[buffers[bin].length+CAPACITY];
                 System.arraycopy(buffers[bin],0,newArray,0,buffers[bin].length);
                 buffers[bin]=newArray;
+ System.err.println("-->loadBin 5");
                 freeSpace(bin);
+ System.err.println("-->loadBin 6");
                 System.gc();
+ System.err.println("-->loadBin 7");
             }
+ System.err.println("-->loadBin 8");
             buffers[bin][last] = new Fastq(header,sequence,separator,quality);
             buffers_stringLength[bin]+=sequence.length();
             header=br.readLine();
+ System.err.println("-->loadBin 9");
         }
+ System.err.println("-->loadBin 10");
         br.close();
+ System.err.println("-->loadBin 11");
         buffers_isLoaded[bin]=true;
         if (buffers_last[bin]==Integer.MAX_VALUE) buffers_last[bin]=last;
         buffers_stringLength[bin]>>=1;  // Just an approximation
         nBpsInRam+=buffers_stringLength[bin];
         bins[bin].priority=buffers_last[bin];
+ System.err.println("-->loadBin 12");
         queue.add(bins[bin]);
         System.err.println("Loaded bin "+bin+" with ~"+buffers_stringLength[bin]+" bps");
     }
