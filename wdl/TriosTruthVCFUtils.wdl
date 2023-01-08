@@ -49,13 +49,14 @@ task IntersectVCFs {
     }
     
     String docker_dir = "/simulation"
-    String work_dir = "/cromwell_root/trios"
+    String work_dir = "/cromwell_root/simulation"
     Int ram_size_gb = ceil(vcf_size_gb*2 + size(reference_fa, "GB")*2)
     Int disk_size_gb = ceil(vcf_size_gb*3 + size(reference_fa, "GB"))
     
     command <<<
         set -euxo pipefail
         cd ~{work_dir}
+        
         TRUVARI_BENCH_FLAGS=" "  # Default settings for now
         BCFTOOLS_MERGE_FLAGS="--force-samples --merge none"
         GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"

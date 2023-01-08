@@ -189,7 +189,6 @@ System.err.println("-->10");
  System.err.println("-->loadBin 5");
                 freeSpace(bin);
  System.err.println("-->loadBin 6");
-                System.gc();
  System.err.println("-->loadBin 7");
             }
             buffers[bin][last] = new Fastq(header,sequence,separator,quality);
