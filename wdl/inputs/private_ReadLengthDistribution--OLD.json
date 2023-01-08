@@ -1,0 +1,19 @@
+{
+    "ReadLengthDistribution.bucket_dir": "gs://fc-secure-95bbd6eb-6d63-49aa-a980-47f3c1342b1e/scratch/cunial-read-length-distribution",
+    "ReadLengthDistribution.children_ids": "gs://fc-secure-95bbd6eb-6d63-49aa-a980-47f3c1342b1e/scratch/cunial-read-length-distribution/trios_info/children.txt",
+    "ReadLengthDistribution.bin_length": 500,
+    "ReadLengthDistribution.max_read_length": 35000,
+    "ReadLengthDistribution.left_weights": [0.0, 0.25, 0.5, 0.75, 1.0],
+    "ReadLengthDistribution.target_coverage_one_haplotype": 4,
+    "ReadLengthDistribution.reference_fa": "gs://fc-secure-95bbd6eb-6d63-49aa-a980-47f3c1342b1e/references/GRCh38_noalt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa",
+    "ReadLengthDistribution.reference_fai": "gs://fc-secure-95bbd6eb-6d63-49aa-a980-47f3c1342b1e/references/GRCh38_noalt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.fai",
+    "ReadLengthDistribution.reference_tandem_repeats": "gs://fc-secure-95bbd6eb-6d63-49aa-a980-47f3c1342b1e/references/GRCh38_noalt/human_GRCh38_no_alt_analysis_set.trf.bed",
+    "ReadLengthDistribution.n_cpus": 16,
+    "ReadLengthDistribution.use_pbsv": 1,
+    "ReadLengthDistribution.use_sniffles1": 1,
+    "ReadLengthDistribution.use_sniffles2": 1,
+    "ReadLengthDistribution.use_hifiasm": 0,
+    "ReadLengthDistribution.use_pav": 0,
+    "ReadLengthDistribution.use_paftools": 0,
+    "ReadLengthDistribution.keep_assemblies": 0
+}

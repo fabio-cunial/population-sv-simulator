@@ -157,7 +157,7 @@ System.err.println("-->10");
      * $buffers_last$-th row, included.
      */
     private static final void loadBin(int bin, String prefix) throws IOException {
-        final int CAPACITY = 1000;  // Arbitrary
+        final int CAPACITY = 10000;  // Arbitrary
         int last;
         String header, sequence, separator, quality;
         String str;
@@ -183,7 +183,7 @@ System.err.println("-->10");
             if (buffers[bin]==null) buffers[bin] = new Fastq[CAPACITY];
             else if (last>=buffers[bin].length) {
  System.err.println("-->loadBin 4");
-                Fastq[] newArray = new Fastq[buffers[bin].length+CAPACITY];
+                Fastq[] newArray = new Fastq[buffers[bin].length<<1];
                 System.arraycopy(buffers[bin],0,newArray,0,buffers[bin].length);
                 buffers[bin]=newArray;
  System.err.println("-->loadBin 5");
@@ -201,7 +201,6 @@ System.err.println("-->10");
  System.err.println("-->loadBin 11");
         buffers_isLoaded[bin]=true;
         if (buffers_last[bin]==Integer.MAX_VALUE) buffers_last[bin]=last;
-        buffers_stringLength[bin]>>=1;  // Just an approximation
         nBpsInRam+=buffers_stringLength[bin];
         bins[bin].priority=buffers_last[bin];
  System.err.println("-->loadBin 12");
