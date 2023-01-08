@@ -336,6 +336,7 @@ task ProcessTrioChild {
         # Creating readsets with a fixed right coverage but multiple left
         # coverages.
         if [ ~{answer_question2} -eq 1 ]; then
+            LEFT_COVERAGES=~{sep='-' question2_left_coverages}
             EXISTS="0"
             TEST1=$(gsutil -q stat ~{bucket_dir}/~{child_id}/reads_maxCoverage_right.fastq && echo 0 || echo 1)
             TEST2=$(gsutil -q stat ~{bucket_dir}/~{child_id}/reads_maxCoverage_left.fastq && echo 0 || echo 1)
@@ -391,7 +392,7 @@ task ProcessTrioChild {
                 done
             fi
             if [ -s reads_maxCoverage_left.fastq -a -s reads_maxCoverage_right.fastq ]; then
-                bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ~{question2_max_coverage} ~{question2_left_coverages} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
+                bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ~{question2_max_coverage} ${LEFT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
             else
                 echo "Empty left or right read sets for weight ${WEIGHT_LEFT}. Aborting."
             fi
