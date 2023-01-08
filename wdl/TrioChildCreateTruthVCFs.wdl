@@ -96,9 +96,9 @@ task CreateAllReadsVCFs {
         flowcells_size_gb: "Upper bound on the size of the union of all flowcells of the individual. Used just for setting the runtime."
     }
     
-    Int ram_size_gb = 4 + flowcells_size_gb*3
+    Int ram_size_gb = ceil(4 + flowcells_size_gb*3)
     # *3: from loosely rounding up PAV; +4: to leave some free RAM to the OS.
-    Int disk_size_gb = ram_size_gb*4 + ceil( size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB") )
+    Int disk_size_gb = ceil(ram_size_gb*4 + size(reference_fa, "GB")*5 + size(reference_tandem_repeats, "GB"))
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/simulation"
     
