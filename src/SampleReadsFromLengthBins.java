@@ -183,7 +183,7 @@ System.err.println("-->10");
             if (buffers[bin]==null) buffers[bin] = new Fastq[CAPACITY];
             else if (last>=buffers[bin].length) {
  System.err.println("-->loadBin 4");
-                Fastq[] newArray = new Fastq[buffers[bin].length<<1];
+                Fastq[] newArray = new Fastq[buffers[bin].length==0?CAPACITY:(buffers[bin].length<<1)];
                 System.arraycopy(buffers[bin],0,newArray,0,buffers[bin].length);
                 buffers[bin]=newArray;
  System.err.println("-->loadBin 5");
