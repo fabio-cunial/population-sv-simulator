@@ -50,8 +50,8 @@ task IntersectVCFs {
     
     String docker_dir = "/simulation"
     String work_dir = "/cromwell_root/trios"
-    Int ram_size_gb = vcf_size_gb*2 + size(reference_fa, "GB")*2
-    Int disk_size_gb = vcf_size_gb*3 + size(reference_fa, "GB")
+    Int ram_size_gb = ceil(vcf_size_gb*2 + size(reference_fa, "GB")*2)
+    Int disk_size_gb = ceil(vcf_size_gb*3 + size(reference_fa, "GB"))
     
     command <<<
         set -euxo pipefail
