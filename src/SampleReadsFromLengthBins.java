@@ -192,11 +192,9 @@ System.err.println("-->10");
                 System.gc();
  System.err.println("-->loadBin 7");
             }
- System.err.println("-->loadBin 8");
             buffers[bin][last] = new Fastq(header,sequence,separator,quality);
             buffers_stringLength[bin]+=sequence.length();
             header=br.readLine();
- System.err.println("-->loadBin 9");
         }
  System.err.println("-->loadBin 10");
         br.close();

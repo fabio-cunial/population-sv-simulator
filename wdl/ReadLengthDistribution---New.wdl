@@ -81,10 +81,9 @@ workflow ReadLengthDistribution {
 # Assume that a trio child has high coverage, and that the read length
 # distribution of the union of all its flowcells is the mixture of at least two
 # Gaussians. The procedure merges all the flowcells of the child; it creates
-# several bimodal distributions using the last two Gaussians, assigning a
-# different weight to the last-but-one Gaussian; it creates a read set (at a
-# small fixed coverage) by sampling from every such bimodal distribution; and
-# it runs SV callers on every such read set.
+# several bimodal distributions using the last two Gaussians; it creates a read
+# set by sampling from every such bimodal distribution; and it runs SV callers
+# on every such read set.
 #
 # Remark: the task checkpoints at the file level, by storing files in
 # <bucket_dir/child_id> and by skipping their creation if they already exist.
@@ -285,7 +284,7 @@ task ProcessTrioChild {
                     fi
                 fi
                 if [ ${EXISTS} -eq 0 ]; then
-                    TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question1_target_coverage_one_haplotype} ~{flowcells_size_gb} reads.fastq && echo 0 || echo 1)
+                    TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question1_target_coverage_one_haplotype} $((~{flowcells_size_gb}/2)) reads.fastq && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         rm -f reads.fastq.histogram; touch reads.fastq.histogram 
                         rm -f reads.fastq.max; touch reads.fastq.max
@@ -364,7 +363,7 @@ task ProcessTrioChild {
                 fi
             fi
             if [ ${EXISTS} -eq 0 ]; then
-                TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 0 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} ~{flowcells_size_gb} reads_maxCoverage_right.fastq && echo 0 || echo 1)
+                TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 0 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} $((~{flowcells_size_gb}/2)) reads_maxCoverage_right.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -f reads_maxCoverage_right.fastq; touch reads_maxCoverage_right.fastq
                 fi
@@ -377,7 +376,7 @@ task ProcessTrioChild {
                         break
                     fi
                 done
-                TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} ~{flowcells_size_gb} reads_maxCoverage_left.fastq && echo 0 || echo 1)
+                TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} $((~{flowcells_size_gb}/2)) reads_maxCoverage_left.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -f reads_maxCoverage_left.fastq; touch reads_maxCoverage_left.fastq
                 fi
