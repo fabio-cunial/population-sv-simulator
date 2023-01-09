@@ -45,7 +45,7 @@ public class SampleReadsFromLengthBins {
         
         cumulativeBimodal=buildCumulativeBimodal(N_BINS,BIN_LENGTH,MEAN_LEFT,STD_LEFT,MEAN_RIGHT,STD_RIGHT,WEIGHT_LEFT);
         bins = new BufferedReader[N_BINS];
-        for (i=0; i<N_BINS; i++) bins[i] = new BufferedReader(new FileReader(BINS_PREFIX+i));
+        for (i=0; i<N_BINS; i++) bins[i] = new BufferedReader(new FileReader(BINS_PREFIX+i+".bin"));
         histogram = new int[N_BINS];
         Arrays.fill(histogram,0);
         coverage=0;

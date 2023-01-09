@@ -394,7 +394,7 @@ task ProcessTrioChild {
             if [ -s reads_maxCoverage_left.fastq -a -s reads_maxCoverage_right.fastq ]; then
                 bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ~{question2_max_coverage} ${LEFT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
             else
-                echo "Empty left or right read sets for weight ${WEIGHT_LEFT}. Aborting."
+                echo "Empty <reads_maxCoverage_left.fastq> or <reads_maxCoverage_right.fastq>. Aborting."
             fi
             rm -f reads_maxCoverage_*.fastq
         fi
