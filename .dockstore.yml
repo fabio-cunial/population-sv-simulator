@@ -30,6 +30,11 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TriosCreateTruthVCFs.wdl
   testParameterFiles:
+- name: TriosCreateTruthVCFs2
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/TriosCreateTruthVCFs2.wdl
+  testParameterFiles:
 - name: TriosPerformanceMatrices
   subclass: wdl
   publish: True
