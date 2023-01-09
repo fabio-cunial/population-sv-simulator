@@ -67,12 +67,12 @@ task IntersectVCFs {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
 
-        TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/truth.vcf.gz && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/~{prefix}_${CALLER}_truth.vcf.gz && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             while : ; do
-                TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/~{prefix}_~{child_id}/*.vcf" . && echo 0 || echo 1)
+                TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/~{prefix}_~{child_id}/vcfs/*.vcf" . && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
-                    echo "Error downloading files <~{bucket_dir}/~{child_id}/~{prefix}_~{child_id}/*.vcf>. Trying again..."
+                    echo "Error downloading files <~{bucket_dir}/~{child_id}/~{prefix}_~{child_id}/vcfs/*.vcf>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
                 else
                     break
@@ -90,9 +90,9 @@ task IntersectVCFs {
             PARENT1=""; PARENT2=""; i=0
             while read PARENT_ID; do
                 while : ; do
-                    TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/~{prefix}_${PARENT_ID}/*.vcf" . && echo 0 || echo 1)
+                    TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/~{prefix}_${PARENT_ID}/vcfs/*.vcf" . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
-                        echo "Error downloading files <~{bucket_dir}/~{child_id}/~{prefix}_${PARENT_ID}/*.vcf>. Trying again..."
+                        echo "Error downloading files <~{bucket_dir}/~{child_id}/~{prefix}_${PARENT_ID}/vcfs/*.vcf>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
                     else
                         break
