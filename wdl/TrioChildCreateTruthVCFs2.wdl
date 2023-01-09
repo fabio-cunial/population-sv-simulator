@@ -12,6 +12,8 @@ workflow TrioChildCreateTruthVCFs2 {
     input {
         String child_id
         String bucket_dir
+        Int bin_length
+        Int max_read_length
         File reference_fa
         File reference_fai
         File reference_tandem_repeats
@@ -40,6 +42,8 @@ workflow TrioChildCreateTruthVCFs2 {
             input:
                 child_id = child_id,
                 individual_id = individual_id,
+                bin_length = bin_length,
+                max_read_length = max_read_length,
                 flowcells_size_gb = flowcells_size_gb,
                 bucket_dir = bucket_dir,
                 reference_fa = reference_fa,
@@ -62,7 +66,7 @@ workflow TrioChildCreateTruthVCFs2 {
             prefix = "long_coverage",
             reference_fa = reference_fa,
             vcf_size_gb = vcf_size_gb,
-            force_sequentiality = CreateFullCoverageVCFs.force_sequentiality
+            force_sequentiality = CreateLongReadsVCFs.force_sequentiality
     }
     
     output {
@@ -78,6 +82,8 @@ task CreateLongReadsVCFs {
     input {
         String child_id
         String individual_id
+        Int bin_length
+        Int max_read_length
         Int flowcells_size_gb
         String bucket_dir
         File reference_fa

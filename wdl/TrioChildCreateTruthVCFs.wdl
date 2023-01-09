@@ -29,31 +29,31 @@ workflow TrioChildCreateTruthVCFs {
     
     Int flowcells_size_gb = 30*3  # Assuming 30x coverage per individual
     Int vcf_size_gb = 1  # Arbitrary upper bound
-    #call TriosTruthVCFUtils.Child2Family {
-    #    input: 
-    #        child_id = child_id,
-    #        bucket_dir = bucket_dir
-    #}
-    #scatter(individual_id in Child2Family.individuals) {
-    #    call CreateAllReadsVCFs {
-    #        input:
-    #            child_id = child_id,
-    #            individual_id = individual_id,
-    #            flowcells_size_gb = flowcells_size_gb,
-    #            bucket_dir = bucket_dir,
-    #            reference_fa = reference_fa,
-    #            reference_fai = reference_fai,
-    #            reference_tandem_repeats = reference_tandem_repeats,
-    #            n_cpus = n_cpus,
-    #            use_pbsv = use_pbsv,
-    #            use_sniffles1 = use_sniffles1,
-    #            use_sniffles2 = use_sniffles2,
-    #            use_hifiasm = use_hifiasm,
-    #            use_pav = use_pav,
-    #            use_paftools = use_paftools,
-    #            keep_assemblies = keep_assemblies
-    #    }
-    #}
+    call TriosTruthVCFUtils.Child2Family {
+        input: 
+            child_id = child_id,
+            bucket_dir = bucket_dir
+    }
+    scatter(individual_id in Child2Family.individuals) {
+        call CreateAllReadsVCFs {
+            input:
+                child_id = child_id,
+                individual_id = individual_id,
+                flowcells_size_gb = flowcells_size_gb,
+                bucket_dir = bucket_dir,
+                reference_fa = reference_fa,
+                reference_fai = reference_fai,
+                reference_tandem_repeats = reference_tandem_repeats,
+                n_cpus = n_cpus,
+                use_pbsv = use_pbsv,
+                use_sniffles1 = use_sniffles1,
+                use_sniffles2 = use_sniffles2,
+                use_hifiasm = use_hifiasm,
+                use_pav = use_pav,
+                use_paftools = use_paftools,
+                keep_assemblies = keep_assemblies
+        }
+    }
     call TriosTruthVCFUtils.IntersectVCFs {
         input:
             child_id = child_id,
@@ -61,7 +61,7 @@ workflow TrioChildCreateTruthVCFs {
             prefix = "full_coverage",
             reference_fa = reference_fa,
             vcf_size_gb = vcf_size_gb,
-            #force_sequentiality = CreateAllReadsVCFs.force_sequentiality
+            force_sequentiality = CreateAllReadsVCFs.force_sequentiality
     }
     
     output {
