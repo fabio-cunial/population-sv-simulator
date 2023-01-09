@@ -121,7 +121,7 @@ task IntersectVCFs {
             bcftools sort --output-type z --output in_parent1.vcf.gz in_parent1.vcf
             tabix in_parent1.vcf.gz
             bcftools sort --output-type z --output in_parent2.vcf.gz in_parent2.vcf
-            tabix in_parent2.vcf
+            tabix in_parent2.vcf.gz
             ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} in_parent1.vcf.gz in_parent2.vcf.gz --output-type z --output truth.vcf.gz
             rm -f in_parent1.vcf.gz in_parent2.vcf.gz
             while : ; do
