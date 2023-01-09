@@ -112,7 +112,7 @@ task IntersectVCFs {
             head -n $(( ${N_LINES} - 1 )) header.txt > newFile.vcf
             echo "##FILTER=<ID=STRANDBIAS,Description=\"STRANDBIAS\">" >> newFile.vcf
             cat columns.txt >> newFile.vcf
-            bcftools view ${FILE} >> newFile.vcf
+            bcftools view -H ${FILE} >> newFile.vcf
             rm -f ${FILE}
             mv newFile.vcf ${FILE}
             rm -f header.txt columns.txt
