@@ -64,14 +64,12 @@ public class SampleReadsFromLengthBins {
                 System.err.println("Not enough reads to sample "+TARGET_COVERAGE_ONE_HAPLOTYPE+"x haploid coverage from the given bins and distribution.");
                 System.exit(3);
             }
-System.err.println("---> 1  bin="+bin);
             histogram[bin]++;
             bw.write(bins[bin].readLine()); bw.newLine();
             str=bins[bin].readLine(); coverage+=str.length();
             bw.write(str); bw.newLine();
             bw.write(bins[bin].readLine()); bw.newLine();
             bw.write(bins[bin].readLine()); bw.newLine();
-System.err.println("---> 2  sampled read of length "+str.length()+" coverage="+coverage);
         }
         for (i=0; i<N_BINS; i++) { bins[i].close(); bins[i]=null; }
         bw.close();
