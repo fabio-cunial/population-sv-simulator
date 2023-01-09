@@ -55,6 +55,7 @@ task IntersectVCFs {
     
     command <<<
         set -euxo pipefail
+        mkdir -p ~{work_dir}
         cd ~{work_dir}
         
         TRUVARI_BENCH_FLAGS=" "  # Default settings for now
