@@ -368,6 +368,8 @@ task ProcessTrioChild {
                 if [ ${TEST} -eq 1 ]; then
                     rm -f reads_maxCoverage_right.fastq; touch reads_maxCoverage_right.fastq
                 fi
+                ls -laht
+                tree
                 while : ; do
                     TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads_maxCoverage_right.fastq" ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
                     if [ ${TEST2} -eq 1 ]; then
