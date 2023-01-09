@@ -40,7 +40,7 @@ task IntersectVCFs {
         String prefix
         File reference_fa
         Int vcf_size_gb
-        Array[Int] force_sequentiality
+        Array[Int]? force_sequentiality
     }
     parameter_meta {
         prefix: "VCFs are assumed to be in directories <bucket_dir>/<child_id>/<prefix>_<X>/, where <X> is the ID of the child or parent."
@@ -67,76 +67,73 @@ task IntersectVCFs {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
 
-        TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/~{prefix}_${CALLER}_truth.vcf.gz && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
+        while : ; do
+            TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/~{prefix}_~{child_id}/vcfs/*.vcf" . && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error downloading files <~{bucket_dir}/~{child_id}/~{prefix}_~{child_id}/vcfs/*.vcf>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
+        while : ; do
+            TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{child_id}.parents . && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error downloading file <~{bucket_dir}/trios_info/~{child_id}.parents>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
+        PARENT1=""; PARENT2=""; i=0
+        while read PARENT_ID; do
             while : ; do
-                TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/~{prefix}_~{child_id}/vcfs/*.vcf" . && echo 0 || echo 1)
+                TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/~{prefix}_${PARENT_ID}/vcfs/*.vcf" . && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
-                    echo "Error downloading files <~{bucket_dir}/~{child_id}/~{prefix}_~{child_id}/vcfs/*.vcf>. Trying again..."
+                    echo "Error downloading files <~{bucket_dir}/~{child_id}/~{prefix}_${PARENT_ID}/vcfs/*.vcf>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
                 else
                     break
                 fi
             done
+            if [ $i -eq 0 ]; then
+                PARENT1=${PARENT_ID}
+            else
+                PARENT2=${PARENT_ID}
+            fi
+            i=$(( $i + 1 ))
+        done < ~{child_id}.parents
+        for FILE in $(find . -type f -name "*_~{child_id}.vcf"); do
+            FILE=$(basename ${FILE})
+            CALLER=${FILE%_~{child_id}.vcf}
+            bcftools sort --output-type z --output child.vcf.gz ${FILE}
+            tabix child.vcf.gz
+            bcftools sort --output-type z --output parent1.vcf.gz ${CALLER}_${PARENT1}.vcf
+            tabix parent1.vcf.gz
+            bcftools sort --output-type z --output parent2.vcf.gz ${CALLER}_${PARENT2}.vcf
+            tabix parent2.vcf.gz
+            ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base parent1.vcf.gz --comp child.vcf.gz --reference ~{reference_fa} --output output_parent1/
+            mv output_parent1/tp-call.vcf in_parent1.vcf
+            rm -rf output_parent1/
+            ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base parent2.vcf.gz --comp child.vcf.gz --reference ~{reference_fa} --output output_parent2/
+            mv output_parent2/tp-call.vcf in_parent2.vcf
+            rm -rf output_parent2/
+            bcftools sort --output-type z --output in_parent1.vcf.gz in_parent1.vcf
+            tabix in_parent1.vcf.gz
+            bcftools sort --output-type z --output in_parent2.vcf.gz in_parent2.vcf
+            tabix in_parent2.vcf
+            ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} in_parent1.vcf.gz in_parent2.vcf.gz --output-type z --output truth.vcf.gz
+            rm -f in_parent1.vcf.gz in_parent2.vcf.gz
             while : ; do
-                TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{child_id}.parents . && echo 0 || echo 1)
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truth.vcf.gz ~{bucket_dir}/~{child_id}/~{prefix}_${CALLER}_truth.vcf.gz && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
-                    echo "Error downloading file <~{bucket_dir}/trios_info/~{child_id}.parents>. Trying again..."
+                    echo "Error uploading file <~{bucket_dir}/~{child_id}/~{prefix}_${CALLER}_truth.vcf.gz>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
                 else
                     break
                 fi
             done
-            PARENT1=""; PARENT2=""; i=0
-            while read PARENT_ID; do
-                while : ; do
-                    TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/~{prefix}_${PARENT_ID}/vcfs/*.vcf" . && echo 0 || echo 1)
-                    if [ ${TEST} -eq 1 ]; then
-                        echo "Error downloading files <~{bucket_dir}/~{child_id}/~{prefix}_${PARENT_ID}/vcfs/*.vcf>. Trying again..."
-                        sleep ${GSUTIL_DELAY_S}
-                    else
-                        break
-                    fi
-                done
-                if [ $i -eq 0 ]; then
-                    PARENT1=${PARENT_ID}
-                else
-                    PARENT2=${PARENT_ID}
-                fi
-                i=$(( $i + 1 ))
-            done < ~{child_id}.parents
-            for FILE in $(find . -type f -name "*_~{child_id}.vcf"); do
-                FILE=$(basename ${FILE})
-                CALLER=${FILE%_~{child_id}.vcf}
-                bcftools sort --output-type z --output child.vcf.gz ${FILE}
-                tabix child.vcf.gz
-                bcftools sort --output-type z --output parent1.vcf.gz ${CALLER}_${PARENT1}.vcf
-                tabix parent1.vcf.gz
-                bcftools sort --output-type z --output parent2.vcf.gz ${CALLER}_${PARENT2}.vcf
-                tabix parent2.vcf.gz
-                ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base parent1.vcf.gz --comp child.vcf.gz --reference ~{reference_fa} --output output_parent1/
-                mv output_parent1/tp-call.vcf in_parent1.vcf
-                rm -rf output_parent1/
-                ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base parent2.vcf.gz --comp child.vcf.gz --reference ~{reference_fa} --output output_parent2/
-                mv output_parent2/tp-call.vcf in_parent2.vcf
-                rm -rf output_parent2/
-                bcftools sort --output-type z --output in_parent1.vcf.gz in_parent1.vcf
-                tabix in_parent1.vcf.gz
-                bcftools sort --output-type z --output in_parent2.vcf.gz in_parent2.vcf
-                tabix in_parent2.vcf
-                ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} ${BCFTOOLS_MERGE_FLAGS} in_parent1.vcf.gz in_parent2.vcf.gz --output-type z --output truth.vcf.gz
-                rm -f in_parent1.vcf.gz in_parent2.vcf.gz
-                while : ; do
-                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp truth.vcf.gz ~{bucket_dir}/~{child_id}/~{prefix}_${CALLER}_truth.vcf.gz && echo 0 || echo 1)
-                    if [ ${TEST} -eq 1 ]; then
-                        echo "Error uploading file <~{bucket_dir}/~{child_id}/~{prefix}_${CALLER}_truth.vcf.gz>. Trying again..."
-                        sleep ${GSUTIL_DELAY_S}
-                    else
-                        break
-                    fi
-                done
-            done
-        fi
+        done
     >>>
     output {
     }
