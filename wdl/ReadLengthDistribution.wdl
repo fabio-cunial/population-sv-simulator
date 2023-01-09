@@ -351,7 +351,7 @@ task ProcessTrioChild {
                     fi
                 done
                 while : ; do
-                    TEST=$(gsutil -m cp ~{bucket_dir}/~{child_id}/reads_maxCoverage_left.fastq . && echo 0 || echo 1)
+                    TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/reads_maxCoverage_left.*" . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         echo "Error downloading <~{bucket_dir}/~{child_id}/reads_maxCoverage_left.fastq>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
@@ -363,7 +363,10 @@ task ProcessTrioChild {
                     EXISTS="1"
                 fi
             fi
-            if [ ${EXISTS} -eq 0 ]; then
+            MAX_COVERAGE_LEFT="0"
+            if [ ${EXISTS} -eq 1 ]; then
+                read MAX_COVERAGE_LEFT < reads_maxCoverage_left.txt
+            else
                 TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 0 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} reads_maxCoverage_right.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -f reads_maxCoverage_right.fastq; touch reads_maxCoverage_right.fastq
@@ -379,12 +382,19 @@ task ProcessTrioChild {
                         break
                     fi
                 done
-                TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} reads_maxCoverage_left.fastq && echo 0 || echo 1)
-                if [ ${TEST} -eq 1 ]; then
-                    rm -f reads_maxCoverage_left.fastq; touch reads_maxCoverage_left.fastq
-                fi
+                MAX_COVERAGE_LEFT=~{question2_max_coverage}
                 while : ; do
-                    TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads_maxCoverage_left.fastq" ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
+                    TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ${MAX_COVERAGE_LEFT} reads_maxCoverage_left.fastq && echo 0 || echo 1)
+                    if [ ${TEST} -eq 1 ]; then
+                        rm -f reads_maxCoverage_left.fastq;
+                        MAX_COVERAGE_LEFT=$(( ${MAX_COVERAGE_LEFT} - 1 ))
+                    else
+                        break
+                    fi
+                done
+                echo ${MAX_COVERAGE_LEFT} > reads_maxCoverage_left.txt
+                while : ; do
+                    TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads_maxCoverage_left.*" ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
                     if [ ${TEST2} -eq 1 ]; then
                         echo "Error uploading file <~{bucket_dir}/~{child_id}/reads_maxCoverage_left.fastq>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
@@ -394,7 +404,8 @@ task ProcessTrioChild {
                 done
             fi
             if [ -s reads_maxCoverage_left.fastq -a -s reads_maxCoverage_right.fastq ]; then
-                bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ~{question2_max_coverage} ${LEFT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
+                LEFT_COVERAGES=$(java -cp ~{docker_dir} UpdateLeftCoverages ${LEFT_COVERAGES} ${MAX_COVERAGE_LEFT})
+                bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ${MAX_COVERAGE_LEFT} ${LEFT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
             else
                 echo "Empty <reads_maxCoverage_left.fastq> or <reads_maxCoverage_right.fastq>. Aborting."
             fi
