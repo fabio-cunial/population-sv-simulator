@@ -103,6 +103,22 @@ task IntersectVCFs {
             fi
             i=$(( $i + 1 ))
         done < ~{child_id}.parents
+        
+        # Fixing VCF format issues by some callers
+        for FILE in $(find . -type f -name "*.vcf"); do
+            bcftools view -h ${FILE} > header.txt
+            tail -n 1 header.txt > columns.txt
+            N_LINES=$(wc -l < header.txt)
+            head -n $(( ${N_LINES} - 1 )) header.txt > newFile.vcf
+            echo "##FILTER=<ID=STRANDBIAS,Description=\"STRANDBIAS\">" >> newFile.vcf
+            cat columns.txt >> newFile.vcf
+            bcftools view ${FILE} >> newFile.vcf
+            rm -f ${FILE}
+            mv newFile.vcf ${FILE}
+            rm -f header.txt columns.txt
+        done
+        
+        # Comparing VCFs
         for FILE in $(find . -type f -name "*_~{child_id}.vcf"); do
             FILE=$(basename ${FILE})
             CALLER=${FILE%_~{child_id}.vcf}
