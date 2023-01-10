@@ -151,7 +151,7 @@ task CreateAllReadsVCFs {
             rm -f reads.fastq
             while read FASTQ_FILE; do
                 while : ; do
-                    TEST=$(gsutil cp ${FASTQ_FILE} . && echo 0 || echo 1)
+                    TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${FASTQ_FILE} . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         echo "Error downloading file <${FASTQ_FILE}>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}

@@ -342,7 +342,7 @@ task ProcessTrioChild {
             TEST2=$(gsutil -q stat ~{bucket_dir}/~{child_id}/reads_maxCoverage_left.fastq && echo 0 || echo 1)
             if [ ${TEST1} -eq 0 -a ${TEST2} -eq 0 ]; then
                 while : ; do
-                    TEST=$(gsutil -m cp ~{bucket_dir}/~{child_id}/reads_maxCoverage_right.fastq . && echo 0 || echo 1)
+                    TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/reads_maxCoverage_right.fastq . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         echo "Error downloading <~{bucket_dir}/~{child_id}/reads_maxCoverage_right.fastq>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}

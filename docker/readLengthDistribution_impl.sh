@@ -57,7 +57,7 @@ else
     ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b right.1.bam ${REFERENCE_FA} > right.bam
     rm -f right.1.bam
     while : ; do
-        TEST=$(gsutil cp right.bam ${BUCKET_DIR}/reads_question2_chunks/ && echo 0 || echo 1)
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp right.bam ${BUCKET_DIR}/reads_question2_chunks/ && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             echo "Error uploading <${BUCKET_DIR}/reads_question2_chunks/right.bam>. Trying again..."
             sleep ${GSUTIL_DELAY_S}
@@ -124,7 +124,7 @@ ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE_LEFT}.
 samtools index -@ ${N_THREADS} coverage_${MIN_COVERAGE_LEFT}.bam
 
 # Iterating over coverages
-PREVIOUS_COVERAGE="0"
+PREVIOUS_COVERAGE="-1"
 for COVERAGE in ${COVERAGES_LEFT}; do
     echo "Starting coverage ${COVERAGE}..."
     TEST1=$(gsutil -q stat ${BUCKET_DIR}/reads_c${COVERAGE}/coverage_${COVERAGE}.fastq && echo 0 || echo 1)
@@ -149,7 +149,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             fi
         done
     else
-        if [ ${PREVIOUS_COVERAGE} -ne 0 ]; then
+        if [ ${PREVIOUS_COVERAGE} -ne -1 ]; then
     		IDS="coverage_${PREVIOUS_COVERAGE}.bam"
     		for i in $(seq -f "%02g" ${PREVIOUS_COVERAGE} $(( ${COVERAGE}-1 )) ); do
     			IDS="${IDS} chunk-${i}.bam"

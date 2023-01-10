@@ -198,7 +198,7 @@ task CreateLongReadsVCFs {
             fi
             rm -f bin_*
             while : ; do
-                TEST=$(gsutil cp reads.fastq "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/" && echo 0 || echo 1)
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/" && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     echo "Error uploading file <~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
@@ -226,7 +226,7 @@ task CreateLongReadsVCFs {
             rm -f reads.1.bam
             samtools index -@ ${N_THREADS} reads.bam
             while : ; do
-                TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp reads.bam reads.bam.bai ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/ && echo 0 || echo 1)
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.bam reads.bam.bai ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/ && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     echo "Error uploading file <~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
