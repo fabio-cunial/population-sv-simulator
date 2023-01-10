@@ -10,7 +10,7 @@ READS_FILE_RIGHT=$2
 SAMPLE_ID=$3  # SM field in the .sam file (needed later for joint calling)
 MIN_COVERAGE_LEFT=$4
 MAX_COVERAGE_LEFT=$5
-COVERAGES_LEFT=$6  # Of one haplotype. String separated by "-".
+COVERAGES_LEFT=$6  # Of each haplotype. String separated by "-".
 REFERENCE_FA=$7
 REFERENCE_FAI=$8
 REFERENCE_TANDEM_REPEATS=$9
@@ -67,10 +67,10 @@ else
     done
 fi
 
-# Splitting the left reads into chunks equal to 1x of a diploid individual, and 
+# Splitting the left reads into chunks equal to 1x of each haplotype, and 
 # aligning each chunk to the reference in isolation.
 N_ROWS=$(wc -l < ${READS_FILE_LEFT})
-N_ROWS_1X=$(( ${N_ROWS} / (2*${MAX_COVERAGE_LEFT}) ))
+N_ROWS_1X=$(( ${N_ROWS} / ${MAX_COVERAGE_LEFT} ))
 if [ $((${N_ROWS_1X} % 4)) -ne 0 ]; then
     # Making sure it is a multiple of 4, to make FASTQ files work.
     N_ROWS_1X=$(( (${N_ROWS_1X}/4 + 1)*4 ))
@@ -112,7 +112,7 @@ for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
 done
 
 # Building the BAM and reads file of the smallest coverage
-echo "Starting coverage ${MIN_COVERAGE_LEFT}..."
+echo "Starting coverage ${MIN_COVERAGE_LEFT} or each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
 mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
 IDS=""
@@ -126,7 +126,7 @@ samtools index -@ ${N_THREADS} coverage_${MIN_COVERAGE_LEFT}.bam
 # Iterating over coverages
 PREVIOUS_COVERAGE="-1"
 for COVERAGE in ${COVERAGES_LEFT}; do
-    echo "Starting coverage ${COVERAGE}..."
+    echo "Starting coverage ${COVERAGE} of each haplotype..."
     TEST1=$(gsutil -q stat ${BUCKET_DIR}/reads_c${COVERAGE}/coverage_${COVERAGE}.fastq && echo 0 || echo 1)
     TEST2=$(gsutil -q stat ${BUCKET_DIR}/reads_c${COVERAGE}/coverage_${COVERAGE}.bam && echo 0 || echo 1)
     if [ ${TEST1} -eq 0 -a ${TEST2} -eq 0 ]; then

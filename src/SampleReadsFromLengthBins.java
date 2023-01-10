@@ -25,12 +25,12 @@ public class SampleReadsFromLengthBins {
         final int BIN_LENGTH = Integer.parseInt(args[5]);
         final int MAX_READ_LENGTH = Integer.parseInt(args[6]);  // For a bin
 		final String BINS_PREFIX = args[7];
-        final long GENOME_LENGTH_ONE_HAPLOTYPE = Long.parseLong(args[8]);
-        final double TARGET_COVERAGE_ONE_HAPLOTYPE = Double.parseDouble(args[9]);
+        final long GENOME_LENGTH_EACH_HAPLOTYPE = Long.parseLong(args[8]);
+        final double TARGET_COVERAGE_EACH_HAPLOTYPE = Double.parseDouble(args[9]);
         final String OUTPUT_FASTQ_FILE = args[10];
         
         final int N_BINS = (MAX_READ_LENGTH+BIN_LENGTH-1)/BIN_LENGTH;
-        final long TARGET_COVERAGE_BP = (long)(GENOME_LENGTH_ONE_HAPLOTYPE*(TARGET_COVERAGE_ONE_HAPLOTYPE*2));
+        final long TARGET_COVERAGE_BP = (long)(GENOME_LENGTH_EACH_HAPLOTYPE*(TARGET_COVERAGE_EACH_HAPLOTYPE*2));
         final int MAX_SAMPLING_ATTEMPTS = N_BINS*10;  // Arbitrary
         
         int i, j, c;
@@ -61,7 +61,7 @@ public class SampleReadsFromLengthBins {
                 j++;
             }
             if (j==MAX_SAMPLING_ATTEMPTS) {
-                System.err.println("Not enough reads to sample "+TARGET_COVERAGE_ONE_HAPLOTYPE+"x haploid coverage from the given bins and distribution.");
+                System.err.println("Not enough reads to sample "+TARGET_COVERAGE_EACH_HAPLOTYPE+"x coverage for each haplotype from the given bins and distribution.");
                 System.exit(3);
             }
             histogram[bin]++;

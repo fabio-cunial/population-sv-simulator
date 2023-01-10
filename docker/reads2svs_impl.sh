@@ -5,7 +5,7 @@
 DATASET_ID=$1  # A unique identifier of the dataset
 READS_BAM=$2
 READS_FA=$3  # FASTA or FASTQ
-COVERAGE=$4  # Of one haplotype
+COVERAGE=$4  # Of each haplotype
 SAMPLE_ID=$5  # SM field in the .sam file (needed later for joint calling)
 N_THREADS=$6
 REFERENCE_FA=$7
