@@ -212,7 +212,7 @@ task ProcessTrioChild {
                     fi
                 done
             done < ~{child_id}.fastqs
-            java -cp ~{docker_dir} -Xmx~{ram_size_gb_effective}G BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
+            java -cp ~{docker_dir} BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
             rm -f *.fq
             while : ; do
                 TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/bins/ && echo 0 || echo 1)
@@ -289,7 +289,7 @@ task ProcessTrioChild {
                     fi
                 fi
                 if [ ${EXISTS} -eq 0 ]; then
-                    TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question1_target_coverage_each_haplotype} reads.fastq && echo 0 || echo 1)
+                    TEST=$(java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} ${WEIGHT_LEFT} ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question1_target_coverage_each_haplotype} reads.fastq && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         rm -f reads.fastq.histogram; touch reads.fastq.histogram 
                         rm -f reads.fastq.max; touch reads.fastq.max
@@ -372,7 +372,7 @@ task ProcessTrioChild {
             if [ ${EXISTS} -eq 1 ]; then
                 read MAX_COVERAGE_LEFT < reads_maxCoverage_left.txt
             else
-                TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 0 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} reads_maxCoverage_right.fastq && echo 0 || echo 1)
+                TEST=$(java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 0 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} reads_maxCoverage_right.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -f reads_maxCoverage_right.fastq; touch reads_maxCoverage_right.fastq
                 fi
@@ -389,10 +389,10 @@ task ProcessTrioChild {
                 done
                 MAX_COVERAGE_LEFT=~{question2_max_coverage}
                 while : ; do
-                    TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ${MAX_COVERAGE_LEFT} reads_maxCoverage_left.fastq && echo 0 || echo 1)
+                    TEST=$(java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ${MAX_COVERAGE_LEFT} reads_maxCoverage_left.fastq && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         rm -f reads_maxCoverage_left.fastq;
-                        MAX_COVERAGE_LEFT=$(( ${MAX_COVERAGE_LEFT} - ~{question2_coverage_quantum} ))
+                        MAX_COVERAGE_LEFT=$(echo "${MAX_COVERAGE_LEFT} - ~{question2_coverage_quantum}" | bc)
                     else
                         break
                     fi

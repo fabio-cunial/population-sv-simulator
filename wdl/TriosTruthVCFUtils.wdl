@@ -104,7 +104,7 @@ task IntersectVCFs {
             i=$(( $i + 1 ))
         done < ~{child_id}.parents
         
-        # Fixing VCF format issues by some callers
+        # Fixing the VCF format issues of some callers
         for FILE in $(find . -type f -name "*.vcf"); do
             bcftools view -h ${FILE} > header.txt
             tail -n 1 header.txt > columns.txt

@@ -17,7 +17,7 @@ workflow TriosPerformanceMatrices {
         Int answer_question1
         Array[Float] question1_left_weights
         Int answer_question2
-        Array[Int] question2_left_coverages
+        Array[Float] question2_left_coverages
         Array[String] callers
         Array[Int] sv_lengths
         Int only_pass
@@ -55,7 +55,7 @@ task ChildPerformanceMatrices {
         Int answer_question1
         Array[Float] question1_left_weights
         Int answer_question2
-        Array[Int] question2_left_coverages
+        Array[Float] question2_left_coverages
         Array[String] callers
         Array[Int] sv_lengths
         Int only_pass

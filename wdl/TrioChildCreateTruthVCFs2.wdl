@@ -139,33 +139,55 @@ task CreateLongReadsVCFs {
                 fi
             done
         else
-            while : ; do
-                TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{individual_id}.fastqs . && echo 0 || echo 1)
-                if [ ${TEST} -eq 1 ]; then
-                    echo "Error downloading file <~{bucket_dir}/trios_info/~{individual_id}.fastqs>. Trying again..."
-                    sleep ${GSUTIL_DELAY_S}
-                else
-                    break
-                fi
-            done
-            rm -f reads.fastq list.txt
-            while read FASTQ_FILE; do
+            TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0.bin && echo 0 || echo 1)
+            if [ ${TEST} -eq 0 ]; then
                 while : ; do
-                    TEST=$(gsutil cp ${FASTQ_FILE} . && echo 0 || echo 1)
+                    TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/bins/*" . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
-                        echo "Error downloading file <${FASTQ_FILE}>. Trying again..."
+                        echo "Error downloading files from <~{bucket_dir}/~{child_id}/bins/>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
                     else
                         break
                     fi
                 done
-                FASTQ_FILE_LOCAL=$(basename ${FASTQ_FILE})
-                gunzip ${FASTQ_FILE_LOCAL}
-                FASTQ_FILE_LOCAL=${FASTQ_FILE_LOCAL%.gz}
-                echo ${FASTQ_FILE_LOCAL} >> list.txt
-            done < ~{individual_id}.fastqs
-            java -cp ~{docker_dir} -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
-            rm -f *.fastq
+            else
+                while : ; do
+                    TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{individual_id}.fastqs . && echo 0 || echo 1)
+                    if [ ${TEST} -eq 1 ]; then
+                        echo "Error downloading file <~{bucket_dir}/trios_info/~{individual_id}.fastqs>. Trying again..."
+                        sleep ${GSUTIL_DELAY_S}
+                    else
+                        break
+                    fi
+                done
+                rm -f reads.fastq list.txt
+                while read FASTQ_FILE; do
+                    while : ; do
+                        TEST=$(gsutil cp ${FASTQ_FILE} . && echo 0 || echo 1)
+                        if [ ${TEST} -eq 1 ]; then
+                            echo "Error downloading file <${FASTQ_FILE}>. Trying again..."
+                            sleep ${GSUTIL_DELAY_S}
+                        else
+                            break
+                        fi
+                    done
+                    FASTQ_FILE_LOCAL=$(basename ${FASTQ_FILE})
+                    gunzip ${FASTQ_FILE_LOCAL}
+                    FASTQ_FILE_LOCAL=${FASTQ_FILE_LOCAL%.gz}
+                    echo ${FASTQ_FILE_LOCAL} >> list.txt
+                done < ~{individual_id}.fastqs
+                java -cp ~{docker_dir} BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
+                rm -f *.fastq
+                while : ; do
+                    TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/bins/ && echo 0 || echo 1)
+                    if [ ${TEST} -eq 1 ]; then
+                        echo "Error uploading bin files to <~{bucket_dir}/~{child_id}/bins/>. Trying again..."
+                        sleep ${GSUTIL_DELAY_S}
+                    else
+                        break
+                    fi
+                done
+            fi
             N_MAXIMA=0
             MEAN_LEFT=0
             STD_LEFT=0
@@ -198,7 +220,7 @@ task CreateLongReadsVCFs {
             fi
             rm -f bin_*
             while : ; do
-                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/" && echo 0 || echo 1)
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq" && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     echo "Error uploading file <~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
@@ -239,7 +261,7 @@ task CreateLongReadsVCFs {
             samtools index -@ ${N_THREADS} reads.bam
         fi
         COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
-        COVERAGE=$(( ${COVERAGE} / (2*${GENOME_LENGTH_HAPLOID}) ))  # 1 haplotype
+        COVERAGE=$(( ${COVERAGE} / (2.0*${GENOME_LENGTH_HAPLOID}) ))  # Of each haplotype
         bash ~{docker_dir}/reads2svs_impl.sh ~{individual_id} reads.bam reads.fastq ${COVERAGE} ~{individual_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
         rm -f reads.bam reads.bai reads.fastq
     >>>
