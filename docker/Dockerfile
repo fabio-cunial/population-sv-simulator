@@ -52,6 +52,7 @@ RUN apt-get -qqy update --fix-missing \
         default-jdk \
         default-jre \
         git \
+        bc \
         python3-pip
 
 # GSUTIL
