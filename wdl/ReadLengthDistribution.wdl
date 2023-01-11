@@ -14,9 +14,10 @@ workflow ReadLengthDistribution {
         Array[Float] question1_left_weights
         Float question1_target_coverage_each_haplotype
         Int answer_question2
-        Array[Int] question2_left_coverages
-        Int question2_min_coverage
-        Int question2_max_coverage
+        Array[Float] question2_left_coverages
+        Float question2_min_coverage
+        Float question2_max_coverage
+        Float question2_coverage_quantum
         File reference_fa
         File reference_fai
         File reference_tandem_repeats
@@ -39,6 +40,7 @@ workflow ReadLengthDistribution {
         answer_question2: "Answers the question: Given a fixed coverage around the right mode, how does performance vary with increasing coverage on the left mode?"
         question2_left_coverages: "Coverages of the left mode. Of each haplotype."
         question2_max_coverage: "The max of <question2_left_coverages>. Used also as the fixed coverage of the right mode."
+        question2_coverage_quantum: "Of each haplotype. Assumed to be a float <=1.0."
         n_cpus: "Used only for setting the runtime"
         use_pbsv: "1=yes, 0=no."
         keep_assemblies: "Stores two assemblies per individual and per configuration in the remote bucket. 1=yes, 0=no."
@@ -59,6 +61,7 @@ workflow ReadLengthDistribution {
                 question2_left_coverages = question2_left_coverages,
                 question2_min_coverage = question2_min_coverage,
                 question2_max_coverage = question2_max_coverage,
+                question2_coverage_quantum = question2_coverage_quantum,
                 reference_fa = reference_fa,
                 reference_fai = reference_fai,
                 reference_tandem_repeats = reference_tandem_repeats,
@@ -98,9 +101,10 @@ task ProcessTrioChild {
         Array[Float] question1_left_weights
         Float question1_target_coverage_each_haplotype
         Int answer_question2
-        Array[Int] question2_left_coverages
-        Int question2_min_coverage
-        Int question2_max_coverage
+        Array[Float] question2_left_coverages
+        Float question2_min_coverage
+        Float question2_max_coverage
+        Float question2_coverage_quantum
         File reference_fa
         File reference_fai
         File reference_tandem_repeats
@@ -124,6 +128,7 @@ task ProcessTrioChild {
         answer_question2: "Answers the question: Given a fixed coverage around the right mode, how does performance vary with increasing coverage on the left mode?"
         question2_left_coverages: "Coverages of the left mode. Of each haplotype."
         question2_max_coverage: "The max of <question2_left_coverages>. Used also as the fixed coverage of the right mode."
+        question2_coverage_quantum: "Of each haplotype. Assumed to be a float <=1.0."
         n_cpus: "Used only for setting the runtime"
         use_pbsv: "1=yes, 0=no."
         keep_assemblies: "Stores two assemblies per individual and per configuration in the remote bucket. 1=yes, 0=no."
@@ -387,7 +392,7 @@ task ProcessTrioChild {
                     TEST=$(java -Xms~{ram_size_gb_effective}G -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ${MAX_COVERAGE_LEFT} reads_maxCoverage_left.fastq && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         rm -f reads_maxCoverage_left.fastq;
-                        MAX_COVERAGE_LEFT=$(( ${MAX_COVERAGE_LEFT} - 1 ))
+                        MAX_COVERAGE_LEFT=$(( ${MAX_COVERAGE_LEFT} - ~{question2_coverage_quantum} ))
                     else
                         break
                     fi
@@ -405,7 +410,7 @@ task ProcessTrioChild {
             fi
             if [ -s reads_maxCoverage_left.fastq -a -s reads_maxCoverage_right.fastq ]; then
                 LEFT_COVERAGES=$(java -cp ~{docker_dir} UpdateLeftCoverages ${LEFT_COVERAGES} ${MAX_COVERAGE_LEFT})
-                bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ${MAX_COVERAGE_LEFT} ${LEFT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
+                bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ${MAX_COVERAGE_LEFT} ${LEFT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir} ~{question2_coverage_quantum}
             else
                 echo "Empty <reads_maxCoverage_left.fastq> or <reads_maxCoverage_right.fastq>. Aborting."
             fi

@@ -50,7 +50,7 @@ if [ ${USE_PBSV} -eq 1 ]; then
         # <discover> is sequential
     	${TIME_COMMAND} pbsv discover --tandem-repeats ${REFERENCE_TANDEM_REPEATS} ${READS_BAM} ${PREFIX_PBSV}.svsig.gz
         while : ; do
-            TEST=$(gsutil cp ${PREFIX_PBSV}.svsig.gz ${BUCKET_DIR}/signatures/ && echo 0 || echo 1)
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_PBSV}.svsig.gz ${BUCKET_DIR}/signatures/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading file <${PREFIX_PBSV}.svsig.gz>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -63,7 +63,7 @@ if [ ${USE_PBSV} -eq 1 ]; then
     if [ ${TEST} -eq 1 ]; then
     	${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ${REFERENCE_FA} ${PREFIX_PBSV}.svsig.gz ${PREFIX_PBSV}.vcf
         while : ; do
-            TEST=$(gsutil cp ${PREFIX_PBSV}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_PBSV}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading file <${PREFIX_PBSV}.vcf>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -82,7 +82,7 @@ if [ ${USE_SNIFFLES1} -eq 1 ]; then
     if [ ${TEST} -eq 1 ]; then
         ${TIME_COMMAND} sniffles1 -t ${N_THREADS} -m ${READS_BAM} -v ${PREFIX_SNIFFLES1}.vcf
         while : ; do
-            TEST=$(gsutil cp ${PREFIX_SNIFFLES1}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_SNIFFLES1}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading file <${PREFIX_SNIFFLES1}.vcf>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -101,7 +101,7 @@ if [ ${USE_SNIFFLES2} -eq 1 ]; then
     if [ ${TEST} -eq 1 ]; then
 	    ${TIME_COMMAND} sniffles --threads ${N_THREADS} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} --reference ${REFERENCE_FA} --sample-id ${SAMPLE_ID} --input ${READS_BAM} --vcf ${PREFIX_SNIFFLES2}.vcf --snf ${PREFIX_SNIFFLES2}.snf
         while : ; do
-            TEST=$(gsutil cp ${PREFIX_SNIFFLES2}.snf ${BUCKET_DIR}/signatures/ && echo 0 || echo 1)
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_SNIFFLES2}.snf ${BUCKET_DIR}/signatures/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading file <${PREFIX_SNIFFLES2}.snf>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -110,7 +110,7 @@ if [ ${USE_SNIFFLES2} -eq 1 ]; then
             fi
         done
         while : ; do
-            TEST=$(gsutil cp ${PREFIX_SNIFFLES2}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_SNIFFLES2}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading file <${PREFIX_SNIFFLES2}.vcf>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -206,7 +206,7 @@ if [ ${USE_PAFTOOLS} -eq 1 -a ${PAFTOOLS_VCF_PRESENT} -eq 1 ]; then
         java -cp ${DOCKER_DIR} FormatPaftoolsVCF ${PREFIX_PAFTOOLS}_raw.vcf ${PREFIX_PAFTOOLS}.vcf ${PAFTOOLS_MIN_SV_LENGTH}
         rm -f ${PREFIX_PAFTOOLS}_raw.vcf
         while : ; do
-            TEST=$(gsutil cp ${PREFIX_PAFTOOLS}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_PAFTOOLS}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading file <${PREFIX_PAFTOOLS}.vcf>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -253,7 +253,7 @@ if [ ${USE_PAV} -eq 1 -a ${PAV_VCF_PRESENT} -eq 1 ]; then
     bcftools filter --exclude 'SVTYPE="SNV" || (SVLEN>-40 && SVLEN<40)' pav_sample.vcf.gz > ${PREFIX_PAV}.vcf
     rm -f pav_sample.vcf.gz*
     while : ; do
-        TEST=$(gsutil cp ${PREFIX_PAV}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_PAV}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             echo "Error uploading file <${PREFIX_PAV}.vcf>. Trying again..."
             sleep ${GSUTIL_DELAY_S}

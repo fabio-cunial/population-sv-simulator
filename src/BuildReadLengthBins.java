@@ -130,22 +130,35 @@ public class BuildReadLengthBins {
      * leftRightMinBin  // Local minimum bin between the last two local maxima
      * massLeft  // Probability mass in [leftMinBin..leftRightMinBin]
      * massRight  // Probability mass in [leftRightMinBin+1..]
-     * coverageLeft  // Of one haplotype. In [leftMinBin..leftRightMinBin].
-     * coverageRight  // Of one haplotype. In [leftRightMinBin+1..].
+     * coverageLeft  // Of each haplotype. In [leftMinBin..leftRightMinBin].
+     * coverageRight  // Of each haplotype. In [leftRightMinBin+1..].
      *
      * Remark: mean and std are just crude approximations, and should instead be
      * computed by fitting a mixture of Gaussians.
      */
     private static final void printStats(int[] buffers_last, long[] buffers_stringLength, String outputFile) throws IOException {
-        int i;
+        final int WINDOW_RADIUS = 1;  // Arbitrary
+        int i, j;
         int nMaxima, lastMaximum, previousMaximum, leftMinBin, leftRightMinBin;
         double sum, mass;
         BufferedWriter bw;
+        int[] smoothed;
         
+        // Smoothing $buffers_last$ for computing local max/min more reliably.
+        smoothed = new int[N_BINS];
+        for (i=0; i<WINDOW_RADIUS; i++) smoothed[i]=buffers_last[i];
+        for (i=WINDOW_RADIUS; i<N_BINS-WINDOW_RADIUS; i++) {
+            smoothed[i]=0;
+            for (j=i-WINDOW_RADIUS; j<=i+WINDOW_RADIUS; j++) smoothed[i]+=buffers_last[j];
+            smoothed[i]/=WINDOW_RADIUS+1+WINDOW_RADIUS;
+        }
+        for (i=N_BINS-WINDOW_RADIUS; i<N_BINS; i++) smoothed[i]=buffers_last[i];
+        
+        // Computing statistics
         bw = new BufferedWriter(new FileWriter(outputFile));
         nMaxima=0; lastMaximum=-1; previousMaximum=-1;
         for (i=1; i<N_BINS-1; i++) {
-            if ((i+1)*BIN_LENGTH-1>=MIN_LOCAL_MAXIMUM && i*(BIN_LENGTH)<=MAX_LOCAL_MAXIMUM && buffers_last[i]+1>=MIN_READS_IN_LOCAL_MAXIMUM && buffers_last[i]>buffers_last[i-1] && buffers_last[i]>buffers_last[i+1]) {
+            if ((i+1)*BIN_LENGTH-1>=MIN_LOCAL_MAXIMUM && i*(BIN_LENGTH)<=MAX_LOCAL_MAXIMUM && buffers_last[i]+1>=MIN_READS_IN_LOCAL_MAXIMUM && smoothed[i]>smoothed[i-1] && smoothed[i]>smoothed[i+1]) {
                 nMaxima++;
                 previousMaximum=lastMaximum; lastMaximum=i;
             }
@@ -157,14 +170,14 @@ public class BuildReadLengthBins {
         }
         leftRightMinBin=-1;
         for (i=previousMaximum+1; i<lastMaximum; i++) {
-            if (buffers_last[i]<buffers_last[i-1] && buffers_last[i]<buffers_last[i+1]) {
+            if (smoothed[i]<smoothed[i-1] && smoothed[i]<smoothed[i+1]) {
                 leftRightMinBin=i;
                 break;
             }
         }
         leftMinBin=0;
         for (i=1; i<previousMaximum; i++) {
-            if (buffers_last[i]<buffers_last[i-1] && buffers_last[i]<buffers_last[i+1]) {
+            if (smoothed[i]<smoothed[i-1] && smoothed[i]<smoothed[i+1]) {
                 leftMinBin=i;
                 break;
             }

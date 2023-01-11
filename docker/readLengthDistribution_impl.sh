@@ -8,9 +8,9 @@
 READS_FILE_LEFT=$1
 READS_FILE_RIGHT=$2
 SAMPLE_ID=$3  # SM field in the .sam file (needed later for joint calling)
-MIN_COVERAGE_LEFT=$4
-MAX_COVERAGE_LEFT=$5
-COVERAGES_LEFT=$6  # Of each haplotype. String separated by "-".
+MIN_COVERAGE_LEFT=$4  # Min value in $COVERAGES_LEFT$.
+MAX_COVERAGE_LEFT=$5    # Max value in $COVERAGES_LEFT$.
+COVERAGES_LEFT=$6  # Of each haplotype. Sorted in increasing order. Assumed to be multiples of COVERAGE_QUANTUM. String separated by "-".
 REFERENCE_FA=$7
 REFERENCE_FAI=$8
 REFERENCE_TANDEM_REPEATS=$9
@@ -24,6 +24,7 @@ USE_PAFTOOLS=${16}
 KEEP_ASSEMBLIES=${17}
 WORK_DIR=${18}
 DOCKER_DIR=${19}
+COVERAGE_QUANTUM=${20}  # Of each haplotype. Assumed to be a double <=1.0.
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 GSUTIL_DELAY_S="600"
@@ -67,16 +68,19 @@ else
     done
 fi
 
-# Splitting the left reads into chunks equal to 1x of each haplotype, and 
-# aligning each chunk to the reference in isolation.
+# Splitting the left reads into chunks equal to a fractional quantum of
+# coverage of each haplotype, and aligning each chunk to the reference in
+# isolation.
+N_CHUNKS=$(( ${MAX_COVERAGE_LEFT} / ${COVERAGE_QUANTUM} ))
 N_ROWS=$(wc -l < ${READS_FILE_LEFT})
-N_ROWS_1X=$(( ${N_ROWS} / ${MAX_COVERAGE_LEFT} ))
-if [ $((${N_ROWS_1X} % 4)) -ne 0 ]; then
+N_ROWS_ONE_QUANTUM=$(( ${N_ROWS} / ${N_CHUNKS} ))
+N_ROWS_ONE_QUANTUM=$(printf "%d" ${N_ROWS_ONE_QUANTUM})
+if [ $((${N_ROWS_ONE_QUANTUM} % 4)) -ne 0 ]; then
     # Making sure it is a multiple of 4, to make FASTQ files work.
-    N_ROWS_1X=$(( (${N_ROWS_1X}/4 + 1)*4 ))
+    N_ROWS_1X=$(( (${N_ROWS_ONE_QUANTUM}/4 + 1)*4 ))
 fi
 rm -f chunk-*
-split -d -l ${N_ROWS_1X} ${READS_FILE_LEFT} chunk-
+split -d -l ${N_ROWS_ONE_QUANTUM} ${READS_FILE_LEFT} chunk-
 rm -f ${READS_FILE_LEFT}
 for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
     FILE_NAME="${BUCKET_DIR}/reads_question2_chunks/$(basename ${CHUNK}).bam"
@@ -115,8 +119,11 @@ done
 echo "Starting coverage ${MIN_COVERAGE_LEFT} or each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
 mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
+LAST_CHUNK=$(( ${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM} ))
+LAST_CHUNK=$(printf "%d" ${LAST_CHUNK})
+LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
 IDS=""
-for i in $(seq -f "%02g" 0 $(( ${MIN_COVERAGE_LEFT}-1 )) ); do
+for i in $(seq -f "%02g" 0 ${LAST_CHUNK}); do
 	IDS="${IDS} chunk-${i}.bam"
     cat chunk-${i} >> coverage_${MIN_COVERAGE_LEFT}.fastq
 done
@@ -124,7 +131,7 @@ ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE_LEFT}.
 samtools index -@ ${N_THREADS} coverage_${MIN_COVERAGE_LEFT}.bam
 
 # Iterating over coverages
-PREVIOUS_COVERAGE="-1"
+PREVIOUS_COVERAGE="-1"; PREVIOUS_LAST_CHUNK="-1";
 for COVERAGE in ${COVERAGES_LEFT}; do
     echo "Starting coverage ${COVERAGE} of each haplotype..."
     TEST1=$(gsutil -q stat ${BUCKET_DIR}/reads_c${COVERAGE}/coverage_${COVERAGE}.fastq && echo 0 || echo 1)
@@ -151,14 +158,17 @@ for COVERAGE in ${COVERAGES_LEFT}; do
     else
         if [ ${PREVIOUS_COVERAGE} -ne -1 ]; then
     		IDS="coverage_${PREVIOUS_COVERAGE}.bam"
-    		for i in $(seq -f "%02g" ${PREVIOUS_COVERAGE} $(( ${COVERAGE}-1 )) ); do
+            LAST_CHUNK=$(( ${COVERAGE} / ${COVERAGE_QUANTUM} ))
+            LAST_CHUNK=$(printf "%d" ${LAST_CHUNK})
+            LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
+    		for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK} ); do
     			IDS="${IDS} chunk-${i}.bam"
     		done
     		${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${COVERAGE}.bam ${IDS}
     		samtools index -@ ${N_THREADS} coverage_${COVERAGE}.bam
             rm -f coverage_${PREVIOUS_COVERAGE}.bam coverage_${PREVIOUS_COVERAGE}.bai
     		cp coverage_${PREVIOUS_COVERAGE}.fastq coverage_${COVERAGE}.fastq
-    		for i in $(seq -f "%02g" ${PREVIOUS_COVERAGE} $(( ${COVERAGE}-1 )) ); do
+    		for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK}); do
                 cat chunk-${i} >> coverage_${COVERAGE}.fastq
     		done
             rm -f coverage_${PREVIOUS_COVERAGE}.fastq
@@ -186,6 +196,9 @@ for COVERAGE in ${COVERAGES_LEFT}; do
     
     # Next iteration
     PREVIOUS_COVERAGE=${COVERAGE}
+    PREVIOUS_LAST_CHUNK=$(( ${COVERAGE} / ${COVERAGE_QUANTUM} ))
+    PREVIOUS_LAST_CHUNK=$(printf "%d" ${PREVIOUS_LAST_CHUNK})
+    PREVIOUS_LAST_CHUNK=$(( ${PREVIOUS_LAST_CHUNK}-1 ))
     tree -L 2 || echo ""
     df -h
 done

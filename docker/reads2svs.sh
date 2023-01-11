@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Splits the reads of a diploid individual into 1x chunks and aligns each chunk
-# to the reference. Then, for each coverage, merges a prefix of the chunks and
-# runs the callers on the merged BAM.
+# Splits the reads of a diploid individual into 1x diploid chunks and aligns
+# each chunk to the reference. Then, for each coverage, merges a prefix of the
+# chunks and runs the callers on the merged BAM.
 #
 # Resource analysis for 20x coverage of one chr1 haplotype. Intel Xeon,
 # 2.30GHz, 8 physical cores.
@@ -22,9 +22,9 @@
 READS_FILE=$1
 SAMPLE_ID=$2  # SM field in the .sam file (needed later for joint calling)
 LENGTH=$3
-MIN_COVERAGE=$4
-MAX_COVERAGE=$5  # Of one haploype
-COVERAGES=$6  # String, separated by "-".
+MIN_COVERAGE=$4  # Min value in $COVERAGES$.
+MAX_COVERAGE=$5  # Max value in $COVERAGES$.
+COVERAGES=$6  # Of each haplotype. String, separated by "-".
 REFERENCE_FA=$7
 REFERENCE_FAI=$8
 REFERENCE_MMI=$9
@@ -65,7 +65,7 @@ cd ${WORK_DIR}
 # Splitting the reads into chunks equal to 1x of a diploid individual, and 
 # aligning each chunk to the reference in isolation.
 N_ROWS=$(wc -l < ${READS_FILE})
-N_ROWS_1X=$(( ${N_ROWS} / (2*${MAX_COVERAGE}) ))
+N_ROWS_1X=$(( ${N_ROWS} / ${MAX_COVERAGE} ))
 if [ $((${N_ROWS_1X} % 4)) -ne 0 ]; then
     # Making sure it is a multiple of 4, to make FASTQ files work.
     N_ROWS_1X=$(( (${N_ROWS_1X}/4 + 1)*4 ))
