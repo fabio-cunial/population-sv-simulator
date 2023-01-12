@@ -72,8 +72,7 @@ fi
 # Splitting the left reads into chunks equal to a fractional quantum of
 # coverage of each haplotype, and aligning each chunk to the reference in
 # isolation.
-N_CHUNKS=$(echo "scale=8; ${MAX_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
-N_CHUNKS=$(printf "%d" ${N_CHUNKS})
+N_CHUNKS=$(echo "scale=0; ${MAX_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
 N_ROWS=$(wc -l < ${READS_FILE_LEFT})
 N_ROWS_ONE_QUANTUM=$(( ${N_ROWS} / ${N_CHUNKS} ))
 if [ $((${N_ROWS_ONE_QUANTUM} % 4)) -ne 0 ]; then
@@ -120,8 +119,7 @@ done
 echo "Starting coverage ${MIN_COVERAGE_LEFT} or each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
 mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
-LAST_CHUNK=$(echo "scale=8; ${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
-LAST_CHUNK=$(printf "%d" ${LAST_CHUNK})
+LAST_CHUNK=$(echo "scale=0; ${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
 LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
 IDS=""
 for i in $(seq -f "%02g" 0 ${LAST_CHUNK}); do
@@ -159,8 +157,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
     else
         if [ ${PREVIOUS_COVERAGE} -ne -1 ]; then
     		IDS="coverage_${PREVIOUS_COVERAGE}.bam"
-            LAST_CHUNK=$(echo "scale=8; ${COVERAGE} / ${COVERAGE_QUANTUM}" | bc)
-            LAST_CHUNK=$(printf "%d" ${LAST_CHUNK})
+            LAST_CHUNK=$(echo "scale=0; ${COVERAGE} / ${COVERAGE_QUANTUM}" | bc)
             LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
     		for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK} ); do
     			IDS="${IDS} chunk-${i}.bam"
@@ -197,8 +194,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
     
     # Next iteration
     PREVIOUS_COVERAGE=${COVERAGE}
-    PREVIOUS_LAST_CHUNK=$(echo "scale=8; ${COVERAGE} / ${COVERAGE_QUANTUM}" | bc)
-    PREVIOUS_LAST_CHUNK=$(printf "%d" ${PREVIOUS_LAST_CHUNK})
+    PREVIOUS_LAST_CHUNK=$(echo "scale=0; ${COVERAGE} / ${COVERAGE_QUANTUM}" | bc)
     PREVIOUS_LAST_CHUNK=$(( ${PREVIOUS_LAST_CHUNK}-1 ))
     tree -L 2 || echo ""
     df -h

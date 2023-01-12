@@ -21,6 +21,61 @@ CALLERS=$(echo ${CALLERS} | tr '-' ' ')
 VALUES=$(echo ${VALUES} | tr '-' ' ')
 SV_LENGTHS=$(echo ${SV_LENGTHS} | tr '-' ' ')
 
+
+function updateMatrices() {
+    local CALLER=$1
+    local FILTER_STRING=$2
+    local VALUE=$3
+    local SV_LENGTH=$4
+    local TP_MATRIX=$5
+    local FP_MATIX=$6
+    local FN_MATIX=$7
+    local PRECISION_MATRIX=$8
+    local RECALL_MATRIX=$9
+    local F1_MATRIX=${10}
+    
+    echo -n "${VALUE},${SV_LENGTH}," >> ${TP_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${FP_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${FN_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${PRECISION_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${RECALL_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${F1_MATRIX}
+    bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type v ${CALLER}_${CHILD_ID}.vcf | bcftools sort --output-type z --output measured.vcf.gz
+    tabix measured.vcf.gz
+    truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base truth1_${SV_LENGTH}.vcf.gz --comp measured.vcf.gz --reference ${REFERENCE_FA} --output output_dir/
+    rm -f measured.vcf.gz
+    grep "\"TP-call\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
+    grep "\"FP\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
+    grep "\"FN\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX}
+    grep "\"precision\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX}
+    grep "\"recall\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX}
+    grep "\"f1\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX}
+    rm -rf output_dir/
+    echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
+}
+
+
+function uploadMatrices() {
+    local TAG=$1
+    local TP_MATRIX=$2
+    local FP_MATIX=$3
+    local FN_MATIX=$4
+    local PRECISION_MATRIX=$5
+    local RECALL_MATRIX=$6
+    local F1_MATRIX=$7
+    
+    while : ; do
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error uploading cumulative length matrices (${TAG}). Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
+}
+
+
 for caller in ${CALLERS}; do
     while : ; do
         TEST=$(gsutil -m cp "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" . && echo 0 || echo 1)
@@ -35,6 +90,10 @@ for caller in ${CALLERS}; do
     if [ ${ONLY_PASS} -eq 1 ]; then
         FILTER_STRING_1="(${FILTER_STRING_1}) && FILTER=\"PASS\""
     fi
+    FILTER_STRING_3="((SVLEN>0 && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN>=-${sv_length}))"
+    if [ ${ONLY_PASS} -eq 1 ]; then
+        FILTER_STRING_3="(${FILTER_STRING_3}) && FILTER=\"PASS\""
+    fi
     PREVIOUS_SV_LENGTH="0"
     for sv_length in ${SV_LENGTHS}; do
         FILTER_STRING_2="((SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length}))"
@@ -42,6 +101,8 @@ for caller in ${CALLERS}; do
         tabix truth1_${sv_length}.vcf.gz
         bcftools filter --threads 0 --include "${FILTER_STRING_2}" --output-type v ${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz | bcftools sort --output-type z --output truth2_${sv_length}.vcf.gz
         tabix truth2_${sv_length}.vcf.gz
+        bcftools filter --threads 0 --include "${FILTER_STRING_3}" --output-type v ${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz | bcftools sort --output-type z --output truth3_${sv_length}.vcf.gz
+        tabix truth3_${sv_length}.vcf.gz
         PREVIOUS_SV_LENGTH=${sv_length}
     done
     TP_MATRIX_1="${TRUTH_VCF_PREFIX}_${caller}_matrix1_tp.txt"
@@ -56,8 +117,15 @@ for caller in ${CALLERS}; do
     PRECISION_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_precision.txt"
     RECALL_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_recall.txt"
     F1_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_f1.txt"
+    TP_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_tp.txt"
+    FP_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_fp.txt"
+    FN_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_fn.txt"
+    PRECISION_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_precision.txt"
+    RECALL_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_recall.txt"
+    F1_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_f1.txt"
     touch ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
     touch ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
+    touch ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
     for value in ${VALUES}; do
         TEST=$(gsutil -q stat "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/${caller}_${CHILD_ID}.vcf" . && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
@@ -74,67 +142,20 @@ for caller in ${CALLERS}; do
         done
         PREVIOUS_SV_LENGTH="0"
         for sv_length in ${SV_LENGTHS}; do
-            # Cumulative length
-            echo -n "${value},${sv_length}," >> ${TP_MATRIX_1}
-            echo -n "${value},${sv_length}," >> ${FP_MATRIX_1}
-            echo -n "${value},${sv_length}," >> ${FN_MATRIX_1}
-            echo -n "${value},${sv_length}," >> ${PRECISION_MATRIX_1}
-            echo -n "${value},${sv_length}," >> ${RECALL_MATRIX_1}
-            echo -n "${value},${sv_length}," >> ${F1_MATRIX_1}
-            bcftools filter --threads 0 --include "${FILTER_STRING_1}" --output-type v ${caller}_${CHILD_ID}.vcf | bcftools sort --output-type z --output measured.vcf.gz
-            tabix measured.vcf.gz
-            truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base truth1_${sv_length}.vcf.gz --comp measured.vcf.gz --reference ${REFERENCE_FA} --output output_dir/
-            rm -f measured.vcf.gz
-            grep "\"TP-call\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_1}
-            grep "\"FP\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_1}
-            grep "\"FN\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_1}
-            grep "\"precision\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX_1}
-            grep "\"recall\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX_1}
-            grep "\"f1\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX_1}
-            rm -rf output_dir/
-            echo "" >> ${TP_MATRIX_1}; echo "" >> ${FP_MATRIX_1}; echo "" >> ${FN_MATRIX_1}; echo "" >> ${PRECISION_MATRIX_1}; echo "" >> ${RECALL_MATRIX_1}; echo "" >> ${F1_MATRIX_1}
+            # Cumulative length (long)
+            updateMatrices ${caller} "${FILTER_STRING_1}" ${value} ${sv_length} ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
             # Length bins
             FILTER_STRING_2="((SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length}))"
             if [ ${ONLY_PASS} -eq 1 ]; then
                 FILTER_STRING_2="(${FILTER_STRING_2}) && FILTER=\"PASS\""
             fi
-            echo -n "${value},${sv_length}," >> ${TP_MATRIX_2}
-            echo -n "${value},${sv_length}," >> ${FP_MATRIX_2}
-            echo -n "${value},${sv_length}," >> ${FN_MATRIX_2}
-            echo -n "${value},${sv_length}," >> ${PRECISION_MATRIX_2}
-            echo -n "${value},${sv_length}," >> ${RECALL_MATRIX_2}
-            echo -n "${value},${sv_length}," >> ${F1_MATRIX_2}
-            bcftools filter --threads 0 --include "${FILTER_STRING_2}" --output-type v ${caller}_${CHILD_ID}.vcf | bcftools sort --output-type z --output measured.vcf.gz
-            tabix measured.vcf.gz
-            truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base truth2_${sv_length}.vcf.gz --comp measured.vcf.gz --reference ${REFERENCE_FA} --output output_dir/
-            rm -f measured.vcf.gz
-            grep "\"TP-call\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX_2}
-            grep "\"FP\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX_2}
-            grep "\"FN\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX_2}
-            grep "\"precision\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX_2}
-            grep "\"recall\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX_2}
-            grep "\"f1\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX_2}
-            rm -rf output_dir/                    
-            echo "" >> ${TP_MATRIX_2}; echo "" >> ${FP_MATRIX_2}; echo "" >> ${FN_MATRIX_2}; echo "" >> ${PRECISION_MATRIX_2}; echo "" >> ${RECALL_MATRIX_2}; echo "" >> ${F1_MATRIX_2}
-            PREVIOUS_SV_LENGTH=${sv_length}
+            updateMatrices ${caller} "${FILTER_STRING_2}" ${value} ${sv_length} ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
+            PREVIOUS_SV_LENGTH=${sv_length}            
+            # Cumulative length (short)
+            updateMatrices ${caller} "${FILTER_STRING_3}" ${value} ${sv_length} ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
         done
     done
-    while : ; do
-        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1} ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
-            echo "Error uploading cumulative length matrices. Trying again..."
-            sleep ${GSUTIL_DELAY_S}
-        else
-            break
-        fi
-    done
-    while : ; do
-        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2} ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
-            echo "Error uploading binned length matrices. Trying again..."
-            sleep ${GSUTIL_DELAY_S}
-        else
-            break
-        fi
-    done
+    uploadMatrices long ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
+    uploadMatrices binned ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
+    uploadMatrices short ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
 done
