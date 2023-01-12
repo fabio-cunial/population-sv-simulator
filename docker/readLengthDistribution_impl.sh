@@ -155,7 +155,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             fi
         done
     else
-        if [ ${PREVIOUS_COVERAGE} = -1 ]; then
+        if [ ${PREVIOUS_COVERAGE} != -1 ]; then
     		IDS="coverage_${PREVIOUS_COVERAGE}.bam"
             LAST_CHUNK=$(echo "scale=0; ${COVERAGE} / ${COVERAGE_QUANTUM}" | bc)
             LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
