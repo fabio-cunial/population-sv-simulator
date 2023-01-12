@@ -35,6 +35,7 @@ N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
 N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
 MINIMAP_COMMAND="minimap2 -t ${N_THREADS} -aYx map-hifi --eqx"
 READ_GROUP="@RG\tID:movie\tSM:${SAMPLE_ID}"
+export LC_NUMERIC="en_US.UTF-8"
 
 set -euxo pipefail
 cd ${WORK_DIR}
