@@ -18,8 +18,10 @@ public class DeleteLeftMode {
         
         final int RIGHT_BIN = (int)(MEAN_RIGHT/BIN_LENGTH);
         final int N_BINS = (MAX_READ_LENGTH+BIN_LENGTH-1)/BIN_LENGTH;
+        final String READ_PREFIX = "@read";
         
         int i, j;
+        int read;
         String str;
         BufferedReader br;
         BufferedWriter bw;
@@ -27,16 +29,17 @@ public class DeleteLeftMode {
         
         histogram = new int[N_BINS];
         Arrays.fill(histogram,0);
+        read=-1;
         bw = new BufferedWriter(new FileWriter(OUTPUT_FASTQ_FILE));
         for (i=N_BINS-1; i>=RIGHT_BIN; i--) {
             br = new BufferedReader(new FileReader(BINS_PREFIX+i+".bin"));
             str=br.readLine();
             while (str!=null) {
                 histogram[i]++;
-                bw.write(str); bw.newLine();
-                str=br.readLine(); bw.write(str); bw.newLine();
-                str=br.readLine(); bw.write(str); bw.newLine();
-                str=br.readLine(); bw.write(str); bw.newLine();
+                bw.write(READ_PREFIX+(++read)); bw.newLine();  // Replacing the original name with a short one, to avoid samtools' "query name too long" error.
+                bw.write(br.readLine()); bw.newLine();
+                bw.write(br.readLine()); bw.newLine();
+                bw.write(br.readLine()); bw.newLine();
                 str=br.readLine();
             }
             br.close();
@@ -55,10 +58,11 @@ public class DeleteLeftMode {
             if (histogram[i]==0) continue;
             br = new BufferedReader(new FileReader(BINS_PREFIX+i+".bin"));
             for (j=0; j<histogram[i]; j++) {
-                str=br.readLine(); bw.write(str); bw.newLine();
-                str=br.readLine(); bw.write(str); bw.newLine();
-                str=br.readLine(); bw.write(str); bw.newLine();
-                str=br.readLine(); bw.write(str); bw.newLine();
+                br.readLine(); 
+                bw.write(READ_PREFIX+(++read)); bw.newLine();  // Replacing the original name with a short one, to avoid samtools' "query name too long" error.
+                bw.write(br.readLine()); bw.newLine();
+                bw.write(br.readLine()); bw.newLine();
+                bw.write(br.readLine()); bw.newLine();
             }
             br.close();
         }

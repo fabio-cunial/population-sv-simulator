@@ -212,8 +212,10 @@ task CreateLongReadsVCFs {
                 i=$(( $i + 1 ))
             done < bin_.stats
             if [ ${N_MAXIMA} -lt 2 ]; then
-                # Using all reads
-                cat bin_* > reads.fastq
+                # Using all reads.
+                # Replacing the original name with a short one, to avoid
+                # samtools' "query name too long" error.
+                cat bin_* | paste - - - - | awk 'BEGIN { FS="\t"; OFS="\n" } { print "@read"NR,$2,$3,$4 }' > reads.fastq
             else
                 # Cleaning the distribution
                 java -cp ~{docker_dir} DeleteLeftMode ${MEAN_RIGHT} bin_ ~{bin_length} ~{max_read_length} reads.fastq

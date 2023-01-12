@@ -32,9 +32,10 @@ public class SampleReadsFromLengthBins {
         final int N_BINS = (MAX_READ_LENGTH+BIN_LENGTH-1)/BIN_LENGTH;
         final long TARGET_COVERAGE_BP = (long)(GENOME_LENGTH_EACH_HAPLOTYPE*(TARGET_COVERAGE_EACH_HAPLOTYPE*2));
         final int MAX_SAMPLING_ATTEMPTS = N_BINS*10;  // Arbitrary
+        final String READ_PREFIX = "@read";
         
         int i, j, c;
-        int bin, length;
+        int bin, length, read;
         long coverage;
         String str;
         Random random = new Random();
@@ -48,7 +49,7 @@ public class SampleReadsFromLengthBins {
         for (i=0; i<N_BINS; i++) bins[i] = new BufferedReader(new FileReader(BINS_PREFIX+i+".bin"));
         histogram = new int[N_BINS];
         Arrays.fill(histogram,0);
-        coverage=0;
+        coverage=0; read=-1;
         bw = new BufferedWriter(new FileWriter(OUTPUT_FASTQ_FILE));
         while (coverage<TARGET_COVERAGE_BP) {
             j=0; bin=-1;
@@ -65,7 +66,8 @@ public class SampleReadsFromLengthBins {
                 System.exit(3);
             }
             histogram[bin]++;
-            bw.write(bins[bin].readLine()); bw.newLine();
+            bins[bin].readLine();  // Replacing the original name with a short one, to avoid samtools' "query name too long" error.
+            bw.write(READ_PREFIX+(++read)); bw.newLine();
             str=bins[bin].readLine(); coverage+=str.length();
             bw.write(str); bw.newLine();
             bw.write(bins[bin].readLine()); bw.newLine();
