@@ -10,7 +10,7 @@ READS_FILE_RIGHT=$2
 SAMPLE_ID=$3  # SM field in the .sam file (needed later for joint calling)
 MIN_COVERAGE_LEFT=$4  # Min value in $COVERAGES_LEFT$.
 MAX_COVERAGE_LEFT=$5    # Max value in $COVERAGES_LEFT$.
-COVERAGES_LEFT=$6  # Of each haplotype. Sorted in increasing order. Assumed to be multiples of COVERAGE_QUANTUM. String separated by "-".
+COVERAGES_LEFT=$6  # Of each haplotype. Sorted in increasing order. Assumed to be doubles and multiples of COVERAGE_QUANTUM. String separated by "-".
 REFERENCE_FA=$7
 REFERENCE_FAI=$8
 REFERENCE_TANDEM_REPEATS=$9
@@ -71,10 +71,10 @@ fi
 # Splitting the left reads into chunks equal to a fractional quantum of
 # coverage of each haplotype, and aligning each chunk to the reference in
 # isolation.
-N_CHUNKS=$(( ${MAX_COVERAGE_LEFT} / ${COVERAGE_QUANTUM} ))
+N_CHUNKS=$(echo "${MAX_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
+N_CHUNKS=$(printf "%d" ${N_CHUNKS})
 N_ROWS=$(wc -l < ${READS_FILE_LEFT})
 N_ROWS_ONE_QUANTUM=$(( ${N_ROWS} / ${N_CHUNKS} ))
-N_ROWS_ONE_QUANTUM=$(printf "%d" ${N_ROWS_ONE_QUANTUM})
 if [ $((${N_ROWS_ONE_QUANTUM} % 4)) -ne 0 ]; then
     # Making sure it is a multiple of 4, to make FASTQ files work.
     N_ROWS_1X=$(( (${N_ROWS_ONE_QUANTUM}/4 + 1)*4 ))
@@ -119,7 +119,7 @@ done
 echo "Starting coverage ${MIN_COVERAGE_LEFT} or each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
 mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
-LAST_CHUNK=$(( ${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM} ))
+LAST_CHUNK=$(echo "${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
 LAST_CHUNK=$(printf "%d" ${LAST_CHUNK})
 LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
 IDS=""
@@ -158,7 +158,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
     else
         if [ ${PREVIOUS_COVERAGE} -ne -1 ]; then
     		IDS="coverage_${PREVIOUS_COVERAGE}.bam"
-            LAST_CHUNK=$(( ${COVERAGE} / ${COVERAGE_QUANTUM} ))
+            LAST_CHUNK=$(echo "${COVERAGE} / ${COVERAGE_QUANTUM}" | bc)
             LAST_CHUNK=$(printf "%d" ${LAST_CHUNK})
             LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
     		for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK} ); do
@@ -196,7 +196,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
     
     # Next iteration
     PREVIOUS_COVERAGE=${COVERAGE}
-    PREVIOUS_LAST_CHUNK=$(( ${COVERAGE} / ${COVERAGE_QUANTUM} ))
+    PREVIOUS_LAST_CHUNK=$(echo "${COVERAGE} / ${COVERAGE_QUANTUM}" | bc)
     PREVIOUS_LAST_CHUNK=$(printf "%d" ${PREVIOUS_LAST_CHUNK})
     PREVIOUS_LAST_CHUNK=$(( ${PREVIOUS_LAST_CHUNK}-1 ))
     tree -L 2 || echo ""
