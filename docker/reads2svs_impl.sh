@@ -153,7 +153,7 @@ if [ ${USE_HIFIASM} -eq 1 -o ${USE_PAV} -eq 1 -o ${USE_PAFTOOLS} -eq 1 ]; then
             done
         fi
     else
-        ${TIME_COMMAND} hifiasm -t ${N_THREADS} --hom-cov $(( ${COVERAGE}*2 )) -o tmpasm ${READS_FA}
+        ${TIME_COMMAND} hifiasm -t ${N_THREADS} --hom-cov $(echo "scale=8; ${COVERAGE}*2.0" | bc) -o tmpasm ${READS_FA}
         awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap1.p_ctg.gfa > ${PREFIX_ASSEMBLY}_h1.fa
         awk '/^S/{print ">"$2; print $3}' tmpasm.bp.hap2.p_ctg.gfa > ${PREFIX_ASSEMBLY}_h2.fa
         while : ; do

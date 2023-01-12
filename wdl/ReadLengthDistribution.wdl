@@ -392,7 +392,7 @@ task ProcessTrioChild {
                     TEST=$(java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ${MAX_COVERAGE_LEFT} reads_maxCoverage_left.fastq && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
                         rm -f reads_maxCoverage_left.fastq;
-                        MAX_COVERAGE_LEFT=$(echo "${MAX_COVERAGE_LEFT} - ~{question2_coverage_quantum}" | bc)
+                        MAX_COVERAGE_LEFT=$(echo "scale=8; ${MAX_COVERAGE_LEFT} - ~{question2_coverage_quantum}" | bc)
                     else
                         break
                     fi

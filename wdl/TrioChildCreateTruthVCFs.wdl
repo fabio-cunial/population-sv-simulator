@@ -185,7 +185,7 @@ task CreateAllReadsVCFs {
             samtools index -@ ${N_THREADS} reads.bam
         fi
         COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
-        COVERAGE=$(( ${COVERAGE} / (2*${GENOME_LENGTH_HAPLOID}) ))  # 1 haplotype
+        COVERAGE=$(echo "scale=8; ${COVERAGE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc)  # Of each haplotype
         bash ~{docker_dir}/reads2svs_impl.sh ~{individual_id} reads.bam reads.fastq ${COVERAGE} ~{individual_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
         rm -f reads.bam reads.bai reads.fastq
     >>>
