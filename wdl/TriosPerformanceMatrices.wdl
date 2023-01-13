@@ -73,15 +73,8 @@ task ChildPerformanceMatrices {
         mkdir -p ~{work_dir}
         cd ~{work_dir}
         
-        GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
-        GSUTIL_DELAY_S="600"
-        TRUVARI_BENCH_FLAGS=" "  # Using the default settings for now
-        
         CALLERS=~{sep='-' callers}
-        CALLERS=$(echo ${CALLERS} | tr '-' ' ')
         SV_LENGTHS=~{sep='-' sv_lengths}
-        SV_LENGTHS=$(echo ${SV_LENGTHS} | tr '-' ' ')
-        
         if [ ~{answer_question1} -eq 1 ]; then
             VALUES=~{sep='-' question1_left_weights}
             bash ~{docker_dir}/triosPerformanceMatrices_impl.sh ~{bucket_dir} ~{child_id} ${CALLERS} ${VALUES} ${SV_LENGTHS} full_coverage w ~{only_pass} ~{reference_fa} ~{work_dir}
