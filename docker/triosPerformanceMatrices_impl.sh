@@ -86,17 +86,16 @@ for caller in ${CALLERS}; do
             break
         fi
     done
-    FILTER_STRING_1="((SVLEN>0 && SVLEN>=${sv_length}) || (SVLEN<0 && SVLEN<=-${sv_length}))"
-    if [ ${ONLY_PASS} -eq 1 ]; then
-        FILTER_STRING_1="(${FILTER_STRING_1}) && FILTER=\"PASS\""
-    fi
-    FILTER_STRING_3="((SVLEN>0 && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN>=-${sv_length}))"
-    if [ ${ONLY_PASS} -eq 1 ]; then
-        FILTER_STRING_3="(${FILTER_STRING_3}) && FILTER=\"PASS\""
-    fi
     PREVIOUS_SV_LENGTH="0"
     for sv_length in ${SV_LENGTHS}; do
-        FILTER_STRING_2="((SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length}))"
+        FILTER_STRING_1="(SVLEN>0 && SVLEN>=${sv_length}) || (SVLEN<0 && SVLEN<=-${sv_length})"
+        FILTER_STRING_2="(SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length})"
+        FILTER_STRING_3="(SVLEN>0 && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN>=-${sv_length})"
+        if [ ${ONLY_PASS} -eq 1 ]; then
+            FILTER_STRING_1="(${FILTER_STRING_1}) && FILTER=\"PASS\""
+            FILTER_STRING_2="(${FILTER_STRING_2}) && FILTER=\"PASS\""
+            FILTER_STRING_3="(${FILTER_STRING_3}) && FILTER=\"PASS\""
+        fi
         bcftools filter --threads 0 --include "${FILTER_STRING_1}" --output-type v ${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz | bcftools sort --output-type z --output truth1_${sv_length}.vcf.gz
         tabix truth1_${sv_length}.vcf.gz
         bcftools filter --threads 0 --include "${FILTER_STRING_2}" --output-type v ${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz | bcftools sort --output-type z --output truth2_${sv_length}.vcf.gz
@@ -142,17 +141,18 @@ for caller in ${CALLERS}; do
         done
         PREVIOUS_SV_LENGTH="0"
         for sv_length in ${SV_LENGTHS}; do
-            # Cumulative length (long)
-            updateMatrices ${caller} "${FILTER_STRING_1}" ${value} ${sv_length} ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
-            # Length bins
-            FILTER_STRING_2="((SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length}))"
+            FILTER_STRING_1="(SVLEN>0 && SVLEN>=${sv_length}) || (SVLEN<0 && SVLEN<=-${sv_length})"
+            FILTER_STRING_2="(SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length})"
+            FILTER_STRING_3="(SVLEN>0 && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN>=-${sv_length})"
             if [ ${ONLY_PASS} -eq 1 ]; then
+                FILTER_STRING_1="(${FILTER_STRING_1}) && FILTER=\"PASS\""
                 FILTER_STRING_2="(${FILTER_STRING_2}) && FILTER=\"PASS\""
+                FILTER_STRING_3="(${FILTER_STRING_3}) && FILTER=\"PASS\""
             fi
+            updateMatrices ${caller} "${FILTER_STRING_1}" ${value} ${sv_length} ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
             updateMatrices ${caller} "${FILTER_STRING_2}" ${value} ${sv_length} ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
-            PREVIOUS_SV_LENGTH=${sv_length}            
-            # Cumulative length (short)
             updateMatrices ${caller} "${FILTER_STRING_3}" ${value} ${sv_length} ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
+            PREVIOUS_SV_LENGTH=${sv_length}
         done
     done
     uploadMatrices long ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
