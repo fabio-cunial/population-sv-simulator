@@ -146,7 +146,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             fi
         done
         while : ; do
-            TEST=$(gsutil cp ${BUCKET_DIR}/reads_c${COVERAGE}/coverage_${COVERAGE}.bam . && echo 0 || echo 1)
+            TEST=$(gsutil cp ${BUCKET_DIR}/reads_c${COVERAGE}/coverage_${COVERAGE}.bam* . && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error downloading <${BUCKET_DIR}/reads_c${COVERAGE}/coverage_${COVERAGE}.bam>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -181,7 +181,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             fi
         done
         while : ; do
-            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp coverage_${COVERAGE}.bam ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp coverage_${COVERAGE}.bam coverage_${COVERAGE}.bam.bai ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading <coverage_${COVERAGE}.bam>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
