@@ -33,6 +33,7 @@ function updateMatrices() {
     local PRECISION_MATRIX=$8
     local RECALL_MATRIX=$9
     local F1_MATRIX=${10}
+    local TRUTH_FILE=${11}
     
     echo -n "${VALUE},${SV_LENGTH}," >> ${TP_MATRIX}
     echo -n "${VALUE},${SV_LENGTH}," >> ${FP_MATRIX}
@@ -42,7 +43,7 @@ function updateMatrices() {
     echo -n "${VALUE},${SV_LENGTH}," >> ${F1_MATRIX}
     bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type v ${CALLER}_${CHILD_ID}.vcf | bcftools sort --output-type z --output measured.vcf.gz
     tabix measured.vcf.gz
-    truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base truth1_${SV_LENGTH}.vcf.gz --comp measured.vcf.gz --reference ${REFERENCE_FA} --output output_dir/
+    truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base ${TRUTH_FILE} --comp measured.vcf.gz --reference ${REFERENCE_FA} --output output_dir/
     rm -f measured.vcf.gz
     grep "\"TP-call\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
     grep "\"FP\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
@@ -149,9 +150,9 @@ for caller in ${CALLERS}; do
                 FILTER_STRING_2="(${FILTER_STRING_2}) && FILTER=\"PASS\""
                 FILTER_STRING_3="(${FILTER_STRING_3}) && FILTER=\"PASS\""
             fi
-            updateMatrices ${caller} "${FILTER_STRING_1}" ${value} ${sv_length} ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
-            updateMatrices ${caller} "${FILTER_STRING_2}" ${value} ${sv_length} ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
-            updateMatrices ${caller} "${FILTER_STRING_3}" ${value} ${sv_length} ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
+            updateMatrices ${caller} "${FILTER_STRING_1}" ${value} ${sv_length} ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1} truth1_${sv_length}.vcf.gz
+            updateMatrices ${caller} "${FILTER_STRING_2}" ${value} ${sv_length} ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2} truth2_${sv_length}.vcf.gz
+            updateMatrices ${caller} "${FILTER_STRING_3}" ${value} ${sv_length} ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3} truth3_${sv_length}.vcf.gz
             PREVIOUS_SV_LENGTH=${sv_length}
         done
     done
