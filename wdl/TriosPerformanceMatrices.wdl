@@ -84,12 +84,10 @@ task ChildPerformanceMatrices {
         
         if [ ~{answer_question1} -eq 1 ]; then
             VALUES=~{sep='-' question1_left_weights}
-            VALUES=$(echo ${VALUES} | tr '-' ' ')
             bash ~{docker_dir}/triosPerformanceMatrices_impl.sh ~{bucket_dir} ~{child_id} ${CALLERS} ${VALUES} ${SV_LENGTHS} full_coverage w ~{only_pass} ~{reference_fa} ~{work_dir}
         fi
         if [ ~{answer_question2} -eq 1 ]; then
             VALUES=~{sep='-' question2_left_coverages}
-            VALUES=$(echo ${VALUES} | tr '-' ' ')
             bash ~{docker_dir}/triosPerformanceMatrices_impl.sh ~{bucket_dir} ~{child_id} ${CALLERS} ${VALUES} ${SV_LENGTHS} long_coverage c ~{only_pass} ~{reference_fa} ~{work_dir}
         fi
     >>>
