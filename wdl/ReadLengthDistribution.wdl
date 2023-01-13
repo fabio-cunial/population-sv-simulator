@@ -294,8 +294,12 @@ task ProcessTrioChild {
                         rm -f reads.fastq.histogram; touch reads.fastq.histogram 
                         rm -f reads.fastq.max; touch reads.fastq.max
                         rm -f reads.fastq; touch reads.fastq
+                        rm -f reads.fastq.coverage; touch reads.fastq.coverage
                         rm -f reads.bam; touch reads.bam
                         rm -f reads.bam.bai; touch reads.bam.bai
+                    else
+                        COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
+                        echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads.fastq.coverage
                     fi
                     while : ; do
                         TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads.fastq*" ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
@@ -375,11 +379,17 @@ task ProcessTrioChild {
                 TEST=$(java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 0 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{question2_max_coverage} reads_maxCoverage_right.fastq && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     rm -f reads_maxCoverage_right.fastq; touch reads_maxCoverage_right.fastq
+                    rm -f reads_maxCoverage_right.fastq.histogram; touch reads_maxCoverage_right.fastq.histogram
+                    rm -f reads_maxCoverage_right.fastq.max; touch reads_maxCoverage_right.fastq.max
+                    rm -f reads_maxCoverage_right.fastq.coverage; touch reads_maxCoverage_right.fastq.coverage
+                else
+                    COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads_maxCoverage_right.fastq | wc -c )
+                    echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads_maxCoverage_right.fastq.coverage
                 fi
                 ls -laht
                 tree
                 while : ; do
-                    TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads_maxCoverage_right.fastq" ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
+                    TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads_maxCoverage_right.fastq*" ~{bucket_dir}/~{child_id}/ && echo 0 || echo 1)
                     if [ ${TEST2} -eq 1 ]; then
                         echo "Error uploading file <~{bucket_dir}/~{child_id}/reads_maxCoverage_right.fastq>. Trying again..."
                         sleep ${GSUTIL_DELAY_S}
@@ -391,9 +401,14 @@ task ProcessTrioChild {
                 while : ; do
                     TEST=$(java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_LEFT} ${STD_LEFT} ${MEAN_RIGHT} ${STD_RIGHT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ${MAX_COVERAGE_LEFT} reads_maxCoverage_left.fastq && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
-                        rm -f reads_maxCoverage_left.fastq;
+                        rm -f reads_maxCoverage_left.fastq; touch reads_maxCoverage_left.fastq;
+                        rm -f reads_maxCoverage_left.fastq.histogram; touch reads_maxCoverage_left.fastq.histogram
+                        rm -f reads_maxCoverage_left.fastq.max; touch reads_maxCoverage_left.fastq.max
+                        rm -f reads_maxCoverage_left.fastq.coverage; touch reads_maxCoverage_left.fastq.coverage
                         MAX_COVERAGE_LEFT=$(echo "scale=8; ${MAX_COVERAGE_LEFT} - ~{question2_coverage_quantum}" | bc)
                     else
+                        COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads_maxCoverage_left.fastq | wc -c )
+                        echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads_maxCoverage_left.fastq.coverage
                         break
                     fi
                 done
@@ -410,7 +425,7 @@ task ProcessTrioChild {
             fi
             if [ -s reads_maxCoverage_left.fastq -a -s reads_maxCoverage_right.fastq ]; then
                 LEFT_COVERAGES=$(java -cp ~{docker_dir} UpdateLeftCoverages ${LEFT_COVERAGES} ${MAX_COVERAGE_LEFT})
-                bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ${MAX_COVERAGE_LEFT} ${LEFT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir} ~{question2_coverage_quantum}
+                bash ~{docker_dir}/readLengthDistribution_impl.sh reads_maxCoverage_left.fastq reads_maxCoverage_right.fastq ~{child_id} ~{question2_min_coverage} ${MAX_COVERAGE_LEFT} ${LEFT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir} ~{question2_coverage_quantum} ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID}
             else
                 echo "Empty <reads_maxCoverage_left.fastq> or <reads_maxCoverage_right.fastq>. Aborting."
             fi

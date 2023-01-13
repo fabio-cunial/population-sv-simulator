@@ -25,6 +25,9 @@ KEEP_ASSEMBLIES=${17}
 WORK_DIR=${18}
 DOCKER_DIR=${19}
 COVERAGE_QUANTUM=${20}  # Of each haplotype. Assumed to be a double <=1.0.
+BIN_LENGTH=${21}
+MAX_READ_LENGTH=${22}
+GENOME_LENGTH_HAPLOID=${23}
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 GSUTIL_DELAY_S="600"
@@ -97,12 +100,12 @@ for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
         done
     else
         mv ${CHUNK} ${CHUNK}.fastq
-    	${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_FA} ${CHUNK}.fastq > ${CHUNK}.sam
+        ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_FA} ${CHUNK}.fastq > ${CHUNK}.sam
         mv ${CHUNK}.fastq ${CHUNK}
         ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM ${CHUNK}.sam > ${CHUNK}.1.bam
         rm -f ${CHUNK}.sam
-    	${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b ${CHUNK}.1.bam ${REFERENCE_FA} > ${CHUNK}.bam
-    	rm -f ${CHUNK}.1.bam
+        ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b ${CHUNK}.1.bam ${REFERENCE_FA} > ${CHUNK}.bam
+        rm -f ${CHUNK}.1.bam
         while : ; do
             TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${CHUNK}.bam ${FILE_NAME} && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
@@ -119,14 +122,19 @@ done
 echo "Starting coverage ${MIN_COVERAGE_LEFT} or each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
 mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
-LAST_CHUNK=$(echo "scale=0; ${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
-LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
-IDS=""
-for i in $(seq -f "%02g" 0 ${LAST_CHUNK}); do
-	IDS="${IDS} chunk-${i}.bam"
-    cat chunk-${i} >> coverage_${MIN_COVERAGE_LEFT}.fastq
-done
-${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE_LEFT}.bam right.bam ${IDS}
+if [ ${MIN_COVERAGE_LEFT} == "0" -o ${MIN_COVERAGE_LEFT} == "0.0" -o ${MIN_COVERAGE_LEFT} == ".0" ]
+    mv right.bam coverage_${MIN_COVERAGE_LEFT}.bam
+else
+    LAST_CHUNK=$(echo "scale=0; ${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
+    LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
+    IDS=""
+    for i in $(seq -f "%02g" 0 ${LAST_CHUNK}); do
+        IDS="${IDS} chunk-${i}.bam"
+        cat chunk-${i} >> coverage_${MIN_COVERAGE_LEFT}.fastq
+    done
+    ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE_LEFT}.bam right.bam ${IDS}
+    rm -f right.bam
+fi
 samtools index -@ ${N_THREADS} coverage_${MIN_COVERAGE_LEFT}.bam
 
 # Iterating over coverages
@@ -156,19 +164,19 @@ for COVERAGE in ${COVERAGES_LEFT}; do
         done
     else
         if [ ${PREVIOUS_COVERAGE} != -1 ]; then
-    		IDS="coverage_${PREVIOUS_COVERAGE}.bam"
+            IDS="coverage_${PREVIOUS_COVERAGE}.bam"
             LAST_CHUNK=$(echo "scale=0; ${COVERAGE} / ${COVERAGE_QUANTUM}" | bc)
             LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
-    		for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK} ); do
-    			IDS="${IDS} chunk-${i}.bam"
-    		done
-    		${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${COVERAGE}.bam ${IDS}
-    		samtools index -@ ${N_THREADS} coverage_${COVERAGE}.bam
+            for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK} ); do
+                IDS="${IDS} chunk-${i}.bam"
+            done
+            ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${COVERAGE}.bam ${IDS}
+            samtools index -@ ${N_THREADS} coverage_${COVERAGE}.bam
             rm -f coverage_${PREVIOUS_COVERAGE}.bam coverage_${PREVIOUS_COVERAGE}.bai
-    		cp coverage_${PREVIOUS_COVERAGE}.fastq coverage_${COVERAGE}.fastq
-    		for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK}); do
+            cp coverage_${PREVIOUS_COVERAGE}.fastq coverage_${COVERAGE}.fastq
+            for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK}); do
                 cat chunk-${i} >> coverage_${COVERAGE}.fastq
-    		done
+            done
             rm -f coverage_${PREVIOUS_COVERAGE}.fastq
         fi
         while : ; do
@@ -190,6 +198,18 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             fi
         done
     fi
+    java -cp ~{docker_dir} Fastq2LengthHistogram coverage_${COVERAGE}.fastq ${BIN_LENGTH} ${MAX_READ_LENGTH} coverage_${COVERAGE}.fastq.histogram coverage_${COVERAGE}.fastq.max
+    COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' coverage_${COVERAGE}.fastq | wc -c )
+    echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > coverage_${COVERAGE}.fastq.coverage
+    while : ; do
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "coverage_${COVERAGE}.fastq.*" ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error uploading <coverage_${COVERAGE}.fastq.histogram>. Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
     bash ${DOCKER_DIR}/reads2svs_impl.sh ${SAMPLE_ID} coverage_${COVERAGE}.bam coverage_${COVERAGE}.fastq ${COVERAGE} ${SAMPLE_ID} ${N_THREADS} ${REFERENCE_FA} ${REFERENCE_FAI} ${REFERENCE_TANDEM_REPEATS} "${BUCKET_DIR}/reads_c${COVERAGE}" ${USE_PBSV} ${USE_SNIFFLES1} ${USE_SNIFFLES2} ${USE_HIFIASM} ${USE_PAV} ${USE_PAFTOOLS} ${KEEP_ASSEMBLIES} ${WORK_DIR} ${DOCKER_DIR}
     
     # Next iteration

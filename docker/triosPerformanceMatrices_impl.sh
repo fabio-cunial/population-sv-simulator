@@ -41,10 +41,11 @@ function updateMatrices() {
     echo -n "${VALUE},${SV_LENGTH}," >> ${PRECISION_MATRIX}
     echo -n "${VALUE},${SV_LENGTH}," >> ${RECALL_MATRIX}
     echo -n "${VALUE},${SV_LENGTH}," >> ${F1_MATRIX}
+    rm -f measured.vcf.gz measured.vcf.gz.tbi
     bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type v ${CALLER}_${CHILD_ID}.vcf | bcftools sort --output-type z --output measured.vcf.gz
     tabix measured.vcf.gz
     truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base ${TRUTH_FILE} --comp measured.vcf.gz --reference ${REFERENCE_FA} --output output_dir/
-    rm -f measured.vcf.gz
+    rm -f measured.vcf.gz measured.vcf.gz.tbi
     grep "\"TP-call\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
     grep "\"FP\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
     grep "\"FN\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX}
