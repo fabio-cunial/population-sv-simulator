@@ -28,8 +28,8 @@ function updateMatrices() {
     local VALUE=$3
     local SV_LENGTH=$4
     local TP_MATRIX=$5
-    local FP_MATIX=$6
-    local FN_MATIX=$7
+    local FP_MATRIX=$6
+    local FN_MATRIX=$7
     local PRECISION_MATRIX=$8
     local RECALL_MATRIX=$9
     local F1_MATRIX=${10}
@@ -58,8 +58,8 @@ function updateMatrices() {
 function uploadMatrices() {
     local TAG=$1
     local TP_MATRIX=$2
-    local FP_MATIX=$3
-    local FN_MATIX=$4
+    local FP_MATRIX=$3
+    local FN_MATRIX=$4
     local PRECISION_MATRIX=$5
     local RECALL_MATRIX=$6
     local F1_MATRIX=$7
@@ -126,7 +126,7 @@ for caller in ${CALLERS}; do
     touch ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
     touch ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
     for value in ${VALUES}; do
-        TEST=$(gsutil -q stat "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/${caller}_${CHILD_ID}.vcf" . && echo 0 || echo 1)
+        TEST=$(gsutil -q stat "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/${caller}_${CHILD_ID}.vcf" && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             continue
         fi
