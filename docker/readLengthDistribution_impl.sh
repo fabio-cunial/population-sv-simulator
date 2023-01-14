@@ -102,6 +102,8 @@ for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
         mv ${CHUNK} ${CHUNK}.fastq
         ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_FA} ${CHUNK}.fastq > ${CHUNK}.sam
         mv ${CHUNK}.fastq ${CHUNK}
+        tail -n 16 ${CHUNK}
+        tail -n 16 ${CHUNK}.sam
         ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM ${CHUNK}.sam > ${CHUNK}.1.bam
         rm -f ${CHUNK}.sam
         ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b ${CHUNK}.1.bam ${REFERENCE_FA} > ${CHUNK}.bam
