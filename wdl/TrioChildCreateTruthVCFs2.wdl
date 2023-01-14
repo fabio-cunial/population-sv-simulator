@@ -221,8 +221,11 @@ task CreateLongReadsVCFs {
                 java -cp ~{docker_dir} DeleteLeftMode ${MEAN_RIGHT} bin_ ~{bin_length} ~{max_read_length} reads.fastq
             fi
             rm -f bin_*
+            java -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq ~{bin_length} ~{max_read_length} reads.fastq.histogram reads.fastq.max
+            COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
+            echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads.fastq.coverage
             while : ; do
-                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq" && echo 0 || echo 1)
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads.fastq*" "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/" && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
                     echo "Error uploading file <~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}

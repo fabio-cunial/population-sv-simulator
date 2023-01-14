@@ -165,6 +165,9 @@ task CreateAllReadsVCFs {
                 cat ${FASTQ_FILE_LOCAL} >> reads.fastq
                 rm -f ${FASTQ_FILE_LOCAL}
             done < ~{individual_id}.fastqs
+            COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
+            echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads.fastq.coverage
+            java -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq 500 35000 reads.fastq.histogram reads.fastq.max
             ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
             ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.1.bam
             rm -f reads.sam
@@ -172,9 +175,9 @@ task CreateAllReadsVCFs {
             rm -f reads.1.bam
             samtools index -@ ${N_THREADS} reads.bam
             while : ; do
-                TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp reads.fastq reads.bam reads.bam.bai ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/ && echo 0 || echo 1)
+                TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "reads.fastq*" "reads.bam*" ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/ && echo 0 || echo 1)
                 if [ ${TEST} -eq 1 ]; then
-                    echo "Error uploading file <~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/reads.bam>. Trying again..."
+                    echo "Error uploading files <~{bucket_dir}/~{child_id}/full_coverage_~{individual_id}/reads.*>. Trying again..."
                     sleep ${GSUTIL_DELAY_S}
                 else
                     break
@@ -184,9 +187,11 @@ task CreateAllReadsVCFs {
         if [ ! -f reads.bam.bai ]; then
             samtools index -@ ${N_THREADS} reads.bam
         fi
-        COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
-        COVERAGE=$(echo "scale=8; ${COVERAGE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc)  # Of each haplotype
-        bash ~{docker_dir}/reads2svs_impl.sh ~{individual_id} reads.bam reads.fastq ${COVERAGE} ~{individual_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
+        if [ -z ${COVERAGE_EACH_HAPLOTYPE} ]; then
+            COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
+            COVERAGE_EACH_HAPLOTYPE=$(echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc)  # Of each haplotype
+        fi
+        bash ~{docker_dir}/reads2svs_impl.sh ~{individual_id} reads.bam reads.fastq ${COVERAGE_EACH_HAPLOTYPE} ~{individual_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/full_coverage_~{individual_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir}
         rm -f reads.bam reads.bai reads.fastq
     >>>
     
