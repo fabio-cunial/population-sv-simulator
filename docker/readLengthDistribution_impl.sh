@@ -200,7 +200,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             fi
         done
     fi
-    java -cp ~{docker_dir} Fastq2LengthHistogram coverage_${COVERAGE}.fastq ${BIN_LENGTH} ${MAX_READ_LENGTH} coverage_${COVERAGE}.fastq.histogram coverage_${COVERAGE}.fastq.max
+    java -cp ${DOCKER_DIR} Fastq2LengthHistogram coverage_${COVERAGE}.fastq ${BIN_LENGTH} ${MAX_READ_LENGTH} coverage_${COVERAGE}.fastq.histogram coverage_${COVERAGE}.fastq.max
     COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' coverage_${COVERAGE}.fastq | wc -c )
     echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > coverage_${COVERAGE}.fastq.coverage
     while : ; do
