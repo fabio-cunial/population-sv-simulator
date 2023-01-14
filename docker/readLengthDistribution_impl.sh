@@ -80,7 +80,7 @@ N_ROWS=$(wc -l < ${READS_FILE_LEFT})
 N_ROWS_ONE_QUANTUM=$(( ${N_ROWS} / ${N_CHUNKS} ))
 if [ $((${N_ROWS_ONE_QUANTUM} % 4)) -ne 0 ]; then
     # Making sure it is a multiple of 4, to make FASTQ files work.
-    N_ROWS_1X=$(( (${N_ROWS_ONE_QUANTUM}/4 + 1)*4 ))
+    N_ROWS_ONE_QUANTUM=$(( (${N_ROWS_ONE_QUANTUM}/4 + 1)*4 ))
 fi
 rm -f chunk-*
 split -d -l ${N_ROWS_ONE_QUANTUM} ${READS_FILE_LEFT} chunk-
