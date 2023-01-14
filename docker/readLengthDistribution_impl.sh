@@ -124,7 +124,7 @@ done
 echo "Starting coverage ${MIN_COVERAGE_LEFT} or each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
 mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
-if [ ${MIN_COVERAGE_LEFT} == "0" -o ${MIN_COVERAGE_LEFT} == "0.0" -o ${MIN_COVERAGE_LEFT} == ".0" ]
+if [ ${MIN_COVERAGE_LEFT} == "0" -o ${MIN_COVERAGE_LEFT} == "0.0" -o ${MIN_COVERAGE_LEFT} == ".0" ]; then
     mv right.bam coverage_${MIN_COVERAGE_LEFT}.bam
 else
     LAST_CHUNK=$(echo "scale=0; ${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
