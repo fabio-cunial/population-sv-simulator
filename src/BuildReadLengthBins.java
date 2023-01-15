@@ -217,11 +217,12 @@ public class BuildReadLengthBins {
      * mixture of Gaussians to the histogram.
      */
     private static final double std(int from, int to, int bin, int[] buffers_last) {
-        int i, k, n;
-        final int mean = bin*BIN_LENGTH+HALF_BIN_LENGTH;
+        int i;
+        double k, n;
+        final double mean = bin*BIN_LENGTH+HALF_BIN_LENGTH;
         double std;
         
-        std=0.0; n=0;
+        std=0.0; n=0.0;
         
         // One side
         for (i=from; i<=to; i++) {
