@@ -121,7 +121,7 @@ for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
 done
 
 # Building the BAM and reads file of the smallest coverage
-echo "Starting coverage ${MIN_COVERAGE_LEFT} or each haplotype..."
+echo "Starting coverage ${MIN_COVERAGE_LEFT} of each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
 mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
 if [ ${MIN_COVERAGE_LEFT} == "0" -o ${MIN_COVERAGE_LEFT} == "0.0" -o ${MIN_COVERAGE_LEFT} == ".0" ]; then
@@ -202,7 +202,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
     fi
     java -cp ${DOCKER_DIR} Fastq2LengthHistogram coverage_${COVERAGE}.fastq ${BIN_LENGTH} ${MAX_READ_LENGTH} coverage_${COVERAGE}.fastq.histogram coverage_${COVERAGE}.fastq.max
     COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' coverage_${COVERAGE}.fastq | wc -c )
-    echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > coverage_${COVERAGE}.fastq.coverage
+    echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > coverage_${COVERAGE}.fastq.coverage
     while : ; do
         TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "coverage_${COVERAGE}.fastq.*" ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
@@ -212,7 +212,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             break
         fi
     done
-    bash ${DOCKER_DIR}/reads2svs_impl.sh ${SAMPLE_ID} coverage_${COVERAGE}.bam coverage_${COVERAGE}.fastq ${COVERAGE} ${SAMPLE_ID} ${N_THREADS} ${REFERENCE_FA} ${REFERENCE_FAI} ${REFERENCE_TANDEM_REPEATS} "${BUCKET_DIR}/reads_c${COVERAGE}" ${USE_PBSV} ${USE_SNIFFLES1} ${USE_SNIFFLES2} ${USE_HIFIASM} ${USE_PAV} ${USE_PAFTOOLS} ${KEEP_ASSEMBLIES} ${WORK_DIR} ${DOCKER_DIR}
+    bash ${DOCKER_DIR}/reads2svs_impl.sh ${SAMPLE_ID} coverage_${COVERAGE}.bam coverage_${COVERAGE}.fastq ${COVERAGE} ${SAMPLE_ID} ${N_THREADS} ${REFERENCE_FA} ${REFERENCE_FAI} ${REFERENCE_TANDEM_REPEATS} "${BUCKET_DIR}/reads_c${COVERAGE}" ${USE_PBSV} ${USE_SNIFFLES1} ${USE_SNIFFLES2} ${USE_HIFIASM} ${USE_PAV} ${USE_PAFTOOLS} ${KEEP_ASSEMBLIES} ${WORK_DIR} ${DOCKER_DIR} 1
     
     # Next iteration
     PREVIOUS_COVERAGE=${COVERAGE}

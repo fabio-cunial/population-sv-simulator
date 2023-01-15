@@ -21,6 +21,7 @@ USE_PAFTOOLS=${16}
 KEEP_ASSEMBLIES=${17}
 WORK_DIR=${18}
 DOCKER_DIR=${19}
+PBSV_PARALLELIZE_BY_CHROMOSOME=${20}
 
 GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 GSUTIL_DELAY_S="600"
@@ -35,10 +36,16 @@ cd ${WORK_DIR}
 # PBSV
 PREFIX_PBSV="pbsv_${DATASET_ID}"
 if [ ${USE_PBSV} -eq 1 ]; then
-    TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz && echo 0 || echo 1)
+    CONTIGS=$(samtools view -H ${READS_BAM} | grep '^@SQ' | cut -f2 | cut -d':' -f2)
+    if [ ${PBSV_PARALLELIZE_BY_CHROMOSOME} -eq 1 ]; then
+        contig=$( echo ${CONTIGS} | head -n 1 )
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.${contig}.svsig.gz && echo 0 || echo 1)
+    else
+        TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz && echo 0 || echo 1)
+    fi
     if [ ${TEST} -eq 0 ]; then
         while : ; do
-            TEST=$(gsutil cp ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz . && echo 0 || echo 1)
+            TEST=$(gsutil -m cp "${BUCKET_DIR}/signatures/${PREFIX_PBSV}*.svsig.gz" . && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error downloading file <${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -48,9 +55,15 @@ if [ ${USE_PBSV} -eq 1 ]; then
         done
     else
         # <discover> is sequential
-    	${TIME_COMMAND} pbsv discover --tandem-repeats ${REFERENCE_TANDEM_REPEATS} ${READS_BAM} ${PREFIX_PBSV}.svsig.gz
+        if [ ${PBSV_PARALLELIZE_BY_CHROMOSOME} -eq 1 ]; then
+            for contig in ${CONTIGS}; do
+                ${TIME_COMMAND} pbsv discover --region ${contig} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} ${READS_BAM} ${PREFIX_PBSV}.${contig}.svsig.gz
+            done
+        else
+        	${TIME_COMMAND} pbsv discover --tandem-repeats ${REFERENCE_TANDEM_REPEATS} ${READS_BAM} ${PREFIX_PBSV}.svsig.gz
+        fi
         while : ; do
-            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_PBSV}.svsig.gz ${BUCKET_DIR}/signatures/ && echo 0 || echo 1)
+            TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "${PREFIX_PBSV}*.svsig.gz" ${BUCKET_DIR}/signatures/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading file <${PREFIX_PBSV}.svsig.gz>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -61,7 +74,7 @@ if [ ${USE_PBSV} -eq 1 ]; then
     fi
     TEST=$(gsutil -q stat ${BUCKET_DIR}/vcfs/${PREFIX_PBSV}.vcf && echo 0 || echo 1)
     if [ ${TEST} -eq 1 ]; then
-    	${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ${REFERENCE_FA} ${PREFIX_PBSV}.svsig.gz ${PREFIX_PBSV}.vcf
+    	${TIME_COMMAND} pbsv call -j ${N_THREADS} --ccs ${REFERENCE_FA} ${PREFIX_PBSV}*.svsig.gz ${PREFIX_PBSV}.vcf
         while : ; do
             TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${PREFIX_PBSV}.vcf ${BUCKET_DIR}/vcfs/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
