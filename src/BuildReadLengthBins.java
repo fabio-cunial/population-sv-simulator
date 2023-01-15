@@ -222,12 +222,18 @@ public class BuildReadLengthBins {
         double std;
         
         std=0.0; n=0;
+        
+        // One side
         for (i=from; i<=to; i++) {
             n+=buffers_last[i]+1;
             k=i*BIN_LENGTH+HALF_BIN_LENGTH-mean;
-            std+=2.0*(buffers_last[i]+1)*k*k;
+            std+=(buffers_last[i]+1)*k*k;
         }
-        n+=buffers_last[bin];
+        
+        // Both sides
+        n=n+(buffers_last[bin]+1)+n;
+        std=std+0+std;
+        
         return Math.sqrt(std/n);
     }
 
