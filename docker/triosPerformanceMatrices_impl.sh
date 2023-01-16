@@ -22,84 +22,26 @@ VALUES=$(echo ${VALUES} | tr '-' ' ')
 SV_LENGTHS=$(echo ${SV_LENGTHS} | tr '-' ' ')
 
 
-# Remark: none of the commands called here supports multiple threads. 
-#
-function updateMatrices() {
-    local CALLER=$1
-    local FILTER_STRING=$2
-    local VALUE=$3
-    local SV_LENGTH=$4
-    local TP_MATRIX=$5
-    local FP_MATRIX=$6
-    local FN_MATRIX=$7
-    local PRECISION_MATRIX=$8
-    local RECALL_MATRIX=$9
-    local F1_MATRIX=${10}
-    local TRUTH_FILE=${11}
-    
-    echo -n "${VALUE},${SV_LENGTH}," >> ${TP_MATRIX}
-    echo -n "${VALUE},${SV_LENGTH}," >> ${FP_MATRIX}
-    echo -n "${VALUE},${SV_LENGTH}," >> ${FN_MATRIX}
-    echo -n "${VALUE},${SV_LENGTH}," >> ${PRECISION_MATRIX}
-    echo -n "${VALUE},${SV_LENGTH}," >> ${RECALL_MATRIX}
-    echo -n "${VALUE},${SV_LENGTH}," >> ${F1_MATRIX}
-    rm -f measured.vcf.gz measured.vcf.gz.tbi
-    bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type v ${CALLER}_${CHILD_ID}.vcf | bcftools sort --output-type z --output measured.vcf.gz
-    tabix measured.vcf.gz
-    truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base ${TRUTH_FILE} --comp measured.vcf.gz --reference ${REFERENCE_FA} --output output_dir/
-    rm -f measured.vcf.gz measured.vcf.gz.tbi
-    grep "\"TP-call\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
-    grep "\"FP\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
-    grep "\"FN\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX}
-    grep "\"precision\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX}
-    grep "\"recall\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX}
-    grep "\"f1\":" output_dir/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX}
-    rm -rf output_dir/
-    echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
-}
-
-
-function uploadMatrices() {
-    local TAG=$1
-    local TP_MATRIX=$2
-    local FP_MATRIX=$3
-    local FN_MATRIX=$4
-    local PRECISION_MATRIX=$5
-    local RECALL_MATRIX=$6
-    local F1_MATRIX=$7
-    
-    while : ; do
-        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
-            echo "Error uploading cumulative length matrices (${TAG}). Trying again..."
-            sleep ${GSUTIL_DELAY_S}
-        else
-            break
-        fi
-    done
-}
-
-
-# We have to use multithreading in the shell because the implementation of 
-# $updateMatrices()$ is sequential.
+# We have to use multithreading at the shell level because the implementation
+# of $updateMatrices()$ is sequential.
 #
 function matrixThread() {
     local CALLER=$1
     local VALUE=$2
     
-    rm -f tp1_${VALUE}.txt fp1_${VALUE}.txt fn1_${VALUE}.txt p1_${VALUE}.txt r1_${VALUE}.txt f1_${VALUE}.txt
-    touch tp1_${VALUE}.txt fp1_${VALUE}.txt fn1_${VALUE}.txt p1_${VALUE}.txt r1_${VALUE}.txt f1_${VALUE}.txt
-    rm -f tp2_${VALUE}.txt fp2_${VALUE}.txt fn2_${VALUE}.txt p2_${VALUE}.txt r2_${VALUE}.txt f2_${VALUE}.txt
-    touch tp2_${VALUE}.txt fp2_${VALUE}.txt fn2_${VALUE}.txt p2_${VALUE}.txt r2_${VALUE}.txt f2_${VALUE}.txt
-    rm -f tp3_${VALUE}.txt fp3_${VALUE}.txt fn3_${VALUE}.txt p3_${VALUE}.txt r3_${VALUE}.txt f3_${VALUE}.txt
-    touch tp3_${VALUE}.txt fp3_${VALUE}.txt fn3_${VALUE}.txt p3_${VALUE}.txt r3_${VALUE}.txt f3_${VALUE}.txt
+    rm -f tp1_${CALLER}_${VALUE}.txt fp1_${CALLER}_${VALUE}.txt fn1_${CALLER}_${VALUE}.txt p1_${CALLER}_${VALUE}.txt r1_${CALLER}_${VALUE}.txt f1_${CALLER}_${VALUE}.txt
+    touch tp1_${CALLER}_${VALUE}.txt fp1_${CALLER}_${VALUE}.txt fn1_${CALLER}_${VALUE}.txt p1_${CALLER}_${VALUE}.txt r1_${CALLER}_${VALUE}.txt f1_${CALLER}_${VALUE}.txt
+    rm -f tp2_${CALLER}_${VALUE}.txt fp2_${CALLER}_${VALUE}.txt fn2_${CALLER}_${VALUE}.txt p2_${CALLER}_${VALUE}.txt r2_${CALLER}_${VALUE}.txt f2_${CALLER}_${VALUE}.txt
+    touch tp2_${CALLER}_${VALUE}.txt fp2_${CALLER}_${VALUE}.txt fn2_${CALLER}_${VALUE}.txt p2_${CALLER}_${VALUE}.txt r2_${CALLER}_${VALUE}.txt f2_${CALLER}_${VALUE}.txt
+    rm -f tp3_${CALLER}_${VALUE}.txt fp3_${CALLER}_${VALUE}.txt fn3_${CALLER}_${VALUE}.txt p3_${CALLER}_${VALUE}.txt r3_${CALLER}_${VALUE}.txt f3_${CALLER}_${VALUE}.txt
+    touch tp3_${CALLER}_${VALUE}.txt fp3_${CALLER}_${VALUE}.txt fn3_${CALLER}_${VALUE}.txt p3_${CALLER}_${VALUE}.txt r3_${CALLER}_${VALUE}.txt f3_${CALLER}_${VALUE}.txt
     
     TEST=$(gsutil -q stat "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" && echo 0 || echo 1)
     if [ ${TEST} -eq 1 ]; then
         return
     fi
     while : ; do
-        TEST=$(gsutil cp "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" . && echo 0 || echo 1)
+        TEST=$(gsutil cp "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" ./${CALLER}_${VALUE}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             echo "Error downloading file <${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf>. Trying again..."
             sleep ${GSUTIL_DELAY_S}
@@ -125,7 +67,69 @@ function matrixThread() {
 }
 
 
+# Remark: none of the commands called by this procedure supports multiple
+# threads. 
+#
+function updateMatrices() {
+    local CALLER=$1
+    local FILTER_STRING=$2
+    local VALUE=$3
+    local SV_LENGTH=$4
+    local TP_MATRIX=$5
+    local FP_MATRIX=$6
+    local FN_MATRIX=$7
+    local PRECISION_MATRIX=$8
+    local RECALL_MATRIX=$9
+    local F1_MATRIX=${10}
+    local TRUTH_FILE=${11}
+    
+    echo -n "${VALUE},${SV_LENGTH}," >> ${TP_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${FP_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${FN_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${PRECISION_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${RECALL_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${F1_MATRIX}
+    rm -f measured_${CALLER}_${VALUE}.vcf.gz measured_${CALLER}_${VALUE}.vcf.gz.tbi
+    bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type v ${CALLER}_${VALUE}.vcf | bcftools sort --output-type z --output measured_${CALLER}_${VALUE}.vcf.gz
+    tabix measured_${CALLER}_${VALUE}.vcf.gz
+    truvari bench ${TRUVARI_BENCH_FLAGS} --prog --base ${TRUTH_FILE} --comp measured_${CALLER}_${VALUE}.vcf.gz --reference ${REFERENCE_FA} --output output_dir_${CALLER}_${VALUE}/
+    rm -f measured_${CALLER}_${VALUE}.vcf.gz measured_${CALLER}_${VALUE}.vcf.gz.tbi
+    grep "\"TP-call\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${TP_MATRIX}
+    grep "\"FP\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FP_MATRIX}
+    grep "\"FN\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${FN_MATRIX}
+    grep "\"precision\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX}
+    grep "\"recall\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX}
+    grep "\"f1\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX}
+    rm -rf output_dir_${CALLER}_${VALUE}/
+    echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
+}
+
+
+function uploadMatrices() {
+    local TAG=$1
+    local TP_MATRIX=$2
+    local FP_MATRIX=$3
+    local FN_MATRIX=$4
+    local PRECISION_MATRIX=$5
+    local RECALL_MATRIX=$6
+    local F1_MATRIX=$7
+    
+    while : ; do
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error uploading cumulative length matrices (${TAG}). Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
+}
+
+
+# Main program
+#
 for caller in ${CALLERS}; do
+    # Building filtered truth VCFs
     while : ; do
         TEST=$(gsutil -m cp "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" . && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
@@ -153,6 +157,10 @@ for caller in ${CALLERS}; do
         tabix truth3_${sv_length}.vcf.gz
         PREVIOUS_SV_LENGTH=${sv_length}
     done
+    
+    # Building matrices in parallel
+    # We launch a thread for each value, regardless of the available cores.
+    # This should be implemented better.
     TP_MATRIX_1="${TRUTH_VCF_PREFIX}_${caller}_matrix1_tp.txt"
     FP_MATRIX_1="${TRUTH_VCF_PREFIX}_${caller}_matrix1_fp.txt"
     FN_MATRIX_1="${TRUTH_VCF_PREFIX}_${caller}_matrix1_fn.txt"
@@ -171,8 +179,6 @@ for caller in ${CALLERS}; do
     PRECISION_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_precision.txt"
     RECALL_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_recall.txt"
     F1_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_f1.txt"
-    # We launch a thread for each value, regardless of the available cores.
-    # This should be implemented better.
     for value in ${VALUES}; do
         matrixThread ${caller} ${value} &
     done

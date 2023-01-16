@@ -89,7 +89,7 @@ task ChildPerformanceMatrices {
     }
     runtime {
         docker: "fcunial/simulation"
-        cpu: 10
+        cpu: 10  # Arbitrary
         memory: "16GB"  # Arbitrary
         disks: "local-disk 50 HDD"  # Arbitrary
         preemptible: 0  # The double loop to create a single matrix can take hours and there is no checkpointing in the middle
