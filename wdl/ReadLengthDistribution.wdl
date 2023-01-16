@@ -299,7 +299,7 @@ task ProcessTrioChild {
                         rm -f reads.bam.bai; touch reads.bam.bai
                     else
                         COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
-                        echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads.fastq.coverage
+                        echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > reads.fastq.coverage
                     fi
                     while : ; do
                         TEST2=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads.fastq*" ~{bucket_dir}/~{child_id}/reads_w${WEIGHT_LEFT}/ && echo 0 || echo 1)
@@ -384,7 +384,7 @@ task ProcessTrioChild {
                     rm -f reads_maxCoverage_right.fastq.coverage; touch reads_maxCoverage_right.fastq.coverage
                 else
                     COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads_maxCoverage_right.fastq | wc -c )
-                    echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads_maxCoverage_right.fastq.coverage
+                    echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > reads_maxCoverage_right.fastq.coverage
                 fi
                 ls -laht
                 tree
@@ -408,7 +408,7 @@ task ProcessTrioChild {
                         MAX_COVERAGE_LEFT=$(echo "scale=8; ${MAX_COVERAGE_LEFT} - ~{question2_coverage_quantum}" | bc)
                     else
                         COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads_maxCoverage_left.fastq | wc -c )
-                        echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads_maxCoverage_left.fastq.coverage
+                        echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > reads_maxCoverage_left.fastq.coverage
                         break
                     fi
                 done

@@ -22,6 +22,8 @@ VALUES=$(echo ${VALUES} | tr '-' ' ')
 SV_LENGTHS=$(echo ${SV_LENGTHS} | tr '-' ' ')
 
 
+# Remark: none of the commands called here supports multiple threads. 
+#
 function updateMatrices() {
     local CALLER=$1
     local FILTER_STRING=$2
@@ -78,6 +80,51 @@ function uploadMatrices() {
 }
 
 
+# We have to use multithreading in the shell because the implementation of 
+# $updateMatrices()$ is sequential.
+#
+function matrixThread() {
+    local CALLER=$1
+    local VALUE=$2
+    
+    rm -f tp1_${VALUE}.txt fp1_${VALUE}.txt fn1_${VALUE}.txt p1_${VALUE}.txt r1_${VALUE}.txt f1_${VALUE}.txt
+    touch tp1_${VALUE}.txt fp1_${VALUE}.txt fn1_${VALUE}.txt p1_${VALUE}.txt r1_${VALUE}.txt f1_${VALUE}.txt
+    rm -f tp2_${VALUE}.txt fp2_${VALUE}.txt fn2_${VALUE}.txt p2_${VALUE}.txt r2_${VALUE}.txt f2_${VALUE}.txt
+    touch tp2_${VALUE}.txt fp2_${VALUE}.txt fn2_${VALUE}.txt p2_${VALUE}.txt r2_${VALUE}.txt f2_${VALUE}.txt
+    rm -f tp3_${VALUE}.txt fp3_${VALUE}.txt fn3_${VALUE}.txt p3_${VALUE}.txt r3_${VALUE}.txt f3_${VALUE}.txt
+    touch tp3_${VALUE}.txt fp3_${VALUE}.txt fn3_${VALUE}.txt p3_${VALUE}.txt r3_${VALUE}.txt f3_${VALUE}.txt
+    
+    TEST=$(gsutil -q stat "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" && echo 0 || echo 1)
+    if [ ${TEST} -eq 1 ]; then
+        return
+    fi
+    while : ; do
+        TEST=$(gsutil cp "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" . && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error downloading file <${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf>. Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
+    PREVIOUS_SV_LENGTH="0"
+    for sv_length in ${SV_LENGTHS}; do
+        FILTER_STRING_1="(SVLEN>0 && SVLEN>=${sv_length}) || (SVLEN<0 && SVLEN<=-${sv_length})"
+        FILTER_STRING_2="(SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length})"
+        FILTER_STRING_3="(SVLEN>0 && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN>=-${sv_length})"
+        if [ ${ONLY_PASS} -eq 1 ]; then
+            FILTER_STRING_1="(${FILTER_STRING_1}) && FILTER=\"PASS\""
+            FILTER_STRING_2="(${FILTER_STRING_2}) && FILTER=\"PASS\""
+            FILTER_STRING_3="(${FILTER_STRING_3}) && FILTER=\"PASS\""
+        fi
+        updateMatrices ${CALLER} "${FILTER_STRING_1}" ${VALUE} ${sv_length} tp1_${VALUE}.txt fp1_${VALUE}.txt fn1_${VALUE}.txt p1_${VALUE}.txt r1_${VALUE}.txt f1_${VALUE}.txt truth1_${sv_length}.vcf.gz
+        updateMatrices ${CALLER} "${FILTER_STRING_2}" ${VALUE} ${sv_length} tp2_${VALUE}.txt fp2_${VALUE}.txt fn2_${VALUE}.txt p2_${VALUE}.txt r2_${VALUE}.txt f2_${VALUE}.txt truth2_${sv_length}.vcf.gz
+        updateMatrices ${CALLER} "${FILTER_STRING_3}" ${VALUE} ${sv_length} tp3_${VALUE}.txt fp3_${VALUE}.txt fn3_${VALUE}.txt p3_${VALUE}.txt r3_${VALUE}.txt f3_${VALUE}.txt truth3_${sv_length}.vcf.gz
+        PREVIOUS_SV_LENGTH=${sv_length}
+    done
+}
+
+
 for caller in ${CALLERS}; do
     while : ; do
         TEST=$(gsutil -m cp "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" . && echo 0 || echo 1)
@@ -124,39 +171,33 @@ for caller in ${CALLERS}; do
     PRECISION_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_precision.txt"
     RECALL_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_recall.txt"
     F1_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_f1.txt"
-    touch ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
-    touch ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
-    touch ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
+    # We launch a thread for each value, regardless of the available cores.
+    # This should be implemented better.
     for value in ${VALUES}; do
-        TEST=$(gsutil -q stat "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${caller}_${CHILD_ID}.vcf" && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
-            continue
-        fi
-        while : ; do
-            TEST=$(gsutil cp "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${caller}_${CHILD_ID}.vcf" . && echo 0 || echo 1)
-            if [ ${TEST} -eq 1 ]; then
-                echo "Error downloading file <${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${caller}_${CHILD_ID}.vcf>. Trying again..."
-                sleep ${GSUTIL_DELAY_S}
-            else
-                break
-            fi
-        done
-        PREVIOUS_SV_LENGTH="0"
-        for sv_length in ${SV_LENGTHS}; do
-            FILTER_STRING_1="(SVLEN>0 && SVLEN>=${sv_length}) || (SVLEN<0 && SVLEN<=-${sv_length})"
-            FILTER_STRING_2="(SVLEN>0 && SVLEN>${PREVIOUS_SV_LENGTH} && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN<-${PREVIOUS_SV_LENGTH} && SVLEN>=-${sv_length})"
-            FILTER_STRING_3="(SVLEN>0 && SVLEN<=${sv_length}) || (SVLEN<0 && SVLEN>=-${sv_length})"
-            if [ ${ONLY_PASS} -eq 1 ]; then
-                FILTER_STRING_1="(${FILTER_STRING_1}) && FILTER=\"PASS\""
-                FILTER_STRING_2="(${FILTER_STRING_2}) && FILTER=\"PASS\""
-                FILTER_STRING_3="(${FILTER_STRING_3}) && FILTER=\"PASS\""
-            fi
-            updateMatrices ${caller} "${FILTER_STRING_1}" ${value} ${sv_length} ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1} truth1_${sv_length}.vcf.gz
-            updateMatrices ${caller} "${FILTER_STRING_2}" ${value} ${sv_length} ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2} truth2_${sv_length}.vcf.gz
-            updateMatrices ${caller} "${FILTER_STRING_3}" ${value} ${sv_length} ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3} truth3_${sv_length}.vcf.gz
-            PREVIOUS_SV_LENGTH=${sv_length}
-        done
+        matrixThread ${caller} ${value} &
     done
+    wait
+    # 1
+    cat tp1_*.txt > ${TP_MATRIX_1}
+    cat fp1_*.txt > ${FP_MATRIX_1}
+    cat fn1_*.txt > ${FN_MATRIX_1}
+    cat p1_*.txt > ${PRECISION_MATRIX_1}
+    cat r1_*.txt > ${RECALL_MATRIX_1}
+    cat f1_*.txt > ${F1_MATRIX_1}
+    # 2
+    cat tp2_*.txt > ${TP_MATRIX_2}
+    cat fp2_*.txt > ${FP_MATRIX_2}
+    cat fn2_*.txt > ${FN_MATRIX_2}
+    cat p2_*.txt > ${PRECISION_MATRIX_2}
+    cat r2_*.txt > ${RECALL_MATRIX_2}
+    cat f2_*.txt > ${F1_MATRIX_2}
+    # 3
+    cat tp3_*.txt > ${TP_MATRIX_3}
+    cat fp3_*.txt > ${FP_MATRIX_3}
+    cat fn3_*.txt > ${FN_MATRIX_3}
+    cat p3_*.txt > ${PRECISION_MATRIX_3}
+    cat r3_*.txt > ${RECALL_MATRIX_3}
+    cat f3_*.txt > ${F1_MATRIX_3}
     uploadMatrices long ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
     uploadMatrices binned ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
     uploadMatrices short ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
