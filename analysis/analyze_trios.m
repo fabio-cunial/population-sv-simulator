@@ -1,11 +1,12 @@
 function analyze_trios(MATRIX_DIR)
-    CALLERS={'pbsv', 'sniffles1', 'sniffles2'};
+    CALLERS={'sniffles1', 'sniffles2'};
     MEASURES={'precision', 'recall', 'f1'};
-	QUESTION2_LEFT_COVERAGES=[0.25, 0.50, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 4.0];
-	LEGEND={'0.25', '0.50', '0.75', '1.0', '1.25', '1.5', '1.75', '2.0', '3.0', '4.0'};
-	SV_LENGTHS=[500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000];
+	TITLES={'Precision', 'Recall', 'F1'};
+	QUESTION2_LEFT_COVERAGES=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 2.0, 3.0, 4.0];
+	LEGEND={'0.0', '0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '2.0', '3.0', '4.0'};
+	SV_LENGTHS=[0, 100, 200, 300, 400, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000];
     FONTSIZE=12;
-	COVERAGE_LINES={'-.b','-.c','-.y','-.m','-.r','-.b','-.c','-.y','-.m','-.r'};
+	COVERAGE_LINES={'-k','-r','-g','-b','-y','-m','-c', '--k','--r','--g','--b','--y','--m','--c', '-.k','-.r','-.g','-.b','-.y','-.m','-.c', ':k',':r',':g',':b',':y',':m',':c'};
 	
     for clr = [1:length(CALLERS)]
 		for matrix = [1:3]
@@ -39,7 +40,7 @@ function analyze_trios(MATRIX_DIR)
 				elseif (matrix == 2)
 					string='=';
 				else
-					string='<='
+					string='<=';
 				endif
                 title({MEASURES{ms},CALLERS{clr},string}, 'fontsize', FONTSIZE);
 				legend(LEGEND,'location','eastoutside');

@@ -139,18 +139,23 @@ task CreateLongReadsVCFs {
                 fi
             done
         else
-            TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0.bin && echo 0 || echo 1)
-            if [ ${TEST} -eq 0 ]; then
-                while : ; do
-                    TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/bins/*" . && echo 0 || echo 1)
-                    if [ ${TEST} -eq 1 ]; then
-                        echo "Error downloading files from <~{bucket_dir}/~{child_id}/bins/>. Trying again..."
-                        sleep ${GSUTIL_DELAY_S}
-                    else
-                        break
-                    fi
-                done
-            else
+            BINS_DOWNLOADED=0
+            if [ ~{individual_id} = ~{child_id} ]; then
+                TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/bins/bin_0.bin && echo 0 || echo 1)
+                if [ ${TEST} -eq 0 ]; then
+                    while : ; do
+                        TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/bins/*" . && echo 0 || echo 1)
+                        if [ ${TEST} -eq 1 ]; then
+                            echo "Error downloading files from <~{bucket_dir}/~{child_id}/bins/>. Trying again..."
+                            sleep ${GSUTIL_DELAY_S}
+                        else
+                            break
+                        fi
+                    done
+                    BINS_DOWNLOADED=1
+                fi
+            fi
+            if [ ${BINS_DOWNLOADED} -eq 0 ]; then
                 while : ; do
                     TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{individual_id}.fastqs . && echo 0 || echo 1)
                     if [ ${TEST} -eq 1 ]; then
@@ -178,15 +183,17 @@ task CreateLongReadsVCFs {
                 done < ~{individual_id}.fastqs
                 java -cp ~{docker_dir} BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
                 rm -f *.fastq
-                while : ; do
-                    TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/bins/ && echo 0 || echo 1)
-                    if [ ${TEST} -eq 1 ]; then
-                        echo "Error uploading bin files to <~{bucket_dir}/~{child_id}/bins/>. Trying again..."
-                        sleep ${GSUTIL_DELAY_S}
-                    else
-                        break
-                    fi
-                done
+                if [ ~{individual_id} = ~{child_id} ]; then
+                    while : ; do
+                        TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/bins/ && echo 0 || echo 1)
+                        if [ ${TEST} -eq 1 ]; then
+                            echo "Error uploading bin files to <~{bucket_dir}/~{child_id}/bins/>. Trying again..."
+                            sleep ${GSUTIL_DELAY_S}
+                        else
+                            break
+                        fi
+                    done
+                fi
             fi
             N_MAXIMA=0
             MEAN_LEFT=0
