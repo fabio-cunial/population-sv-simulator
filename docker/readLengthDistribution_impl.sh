@@ -179,7 +179,6 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK}); do
                 cat chunk-${i} >> coverage_${COVERAGE}.fastq
             done
-            rm -f coverage_${PREVIOUS_COVERAGE}.fastq
         fi
         while : ; do
             TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp coverage_${COVERAGE}.fastq ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
@@ -213,6 +212,7 @@ for COVERAGE in ${COVERAGES_LEFT}; do
         fi
     done
     bash ${DOCKER_DIR}/reads2svs_impl.sh ${SAMPLE_ID} coverage_${COVERAGE}.bam coverage_${COVERAGE}.fastq ${COVERAGE} ${SAMPLE_ID} ${N_THREADS} ${REFERENCE_FA} ${REFERENCE_FAI} ${REFERENCE_TANDEM_REPEATS} "${BUCKET_DIR}/reads_c${COVERAGE}" ${USE_PBSV} ${USE_SNIFFLES1} ${USE_SNIFFLES2} ${USE_HIFIASM} ${USE_PAV} ${USE_PAFTOOLS} ${KEEP_ASSEMBLIES} ${WORK_DIR} ${DOCKER_DIR} 1
+    rm -f coverage_${PREVIOUS_COVERAGE}.bam coverage_${PREVIOUS_COVERAGE}.fastq
     
     # Next iteration
     PREVIOUS_COVERAGE=${COVERAGE}

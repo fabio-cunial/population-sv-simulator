@@ -127,7 +127,7 @@ task CreateLongReadsVCFs {
         GENOME_LENGTH_HAPLOID=$(cut -f 2 ~{reference_fai} | awk '{s+=$1} END {printf "%lu", s}')
         
         echo 1 > ~{work_dir}/force_sequentiality.txt
-        TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq . && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
             while : ; do
                 TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq . && echo 0 || echo 1)
@@ -241,7 +241,7 @@ task CreateLongReadsVCFs {
                 fi
             done
         fi
-        TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam . && echo 0 || echo 1)
+        TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
             while : ; do
                 TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam*" . && echo 0 || echo 1)
