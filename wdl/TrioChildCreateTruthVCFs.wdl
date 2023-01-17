@@ -166,7 +166,7 @@ task CreateAllReadsVCFs {
                 rm -f ${FASTQ_FILE_LOCAL}
             done < ~{individual_id}.fastqs
             COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
-            echo 'scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})' | bc > reads.fastq.coverage
+            echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > reads.fastq.coverage
             java -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq 500 35000 reads.fastq.histogram reads.fastq.max
             ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
             ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.1.bam
