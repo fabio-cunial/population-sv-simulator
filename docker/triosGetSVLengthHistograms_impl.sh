@@ -109,6 +109,9 @@ for caller in ${CALLERS}; do
     rm -f ${caller}_svLengths.histogram
     cat truth.histogram precursor_*.histogram > ${caller}_svLengths.histogram
     for value in ${VALUES}; do
+        if [ ! -e measured_${value}.histogram ]; then
+            break
+        fi
         cat measured_${value}.histogram > ${caller}_svLengths.histogram
     done
     while : ; do
