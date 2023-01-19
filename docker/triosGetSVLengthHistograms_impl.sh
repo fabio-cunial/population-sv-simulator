@@ -105,6 +105,7 @@ for caller in ${CALLERS}; do
         vcfThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${CALLER}_${CHILD_ID}.vcf" measured_${value} 0 &
     done
     wait
+    tree
     rm -f ${caller}_svLengths.histogram
     cat truth.histogram precursor_*.histogram > ${caller}_svLengths.histogram
     for value in ${VALUES}; do
