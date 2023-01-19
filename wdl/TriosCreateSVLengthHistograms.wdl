@@ -24,6 +24,7 @@ workflow TriosCreateSVLengthHistograms {
     }
     parameter_meta {
         n_cpus: "In a single compute node"
+        sv_lengths: "Increasing. Must not include zero."
     }
     
     scatter(child in read_lines(children_ids)) {

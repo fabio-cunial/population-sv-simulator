@@ -7,7 +7,7 @@ PRECURSOR_VCF_PREFIX=$4  # Of the individuals used to build the ground truth
 MEASURED_CHARACTER_CODE=$5  # Single character after <reads_>
 CALLERS=$6
 VALUES=$7  # Separated by -
-SV_LENGTHS=$8  # Separated by -
+SV_LENGTHS=$8  # Separated by -. Increasing. Must not include zero.
 ONLY_PASS=$9
 WORK_DIR=${10}
 
@@ -97,12 +97,12 @@ for caller in ${CALLERS}; do
     done
     i=0
     while read PARENT_ID; do
-        histogramThread "${BUCKET_DIR}/${CHILD_ID}/${PRECURSOR_VCF_PREFIX}_${PARENT_ID}/vcfs/${caller}_${PARENT_ID}.vcf" precursor_${i} &
+        histogramThread "${BUCKET_DIR}/${CHILD_ID}/${PRECURSOR_VCF_PREFIX}_${PARENT_ID}/vcfs/${caller}_${PARENT_ID}.vcf" precursor_${i} 0 &
         i=$(( $i + 1 ))
     done < ${CHILD_ID}.parents
-    histogramThread "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" truth &
+    histogramThread "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" truth 1 &
     for value in ${VALUES}; do
-        vcfThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" measured_${VALUE} &
+        vcfThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" measured_${value} 0 &
     done
     wait
     rm -f ${caller}_svLengths.histogram
