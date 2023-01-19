@@ -102,13 +102,13 @@ for caller in ${CALLERS}; do
     done < ${CHILD_ID}.parents
     histogramThread "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" truth 1 &
     for value in ${VALUES}; do
-        vcfThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" measured_${value} 0 &
+        vcfThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${CALLER}_${CHILD_ID}.vcf" measured_${value} 0 &
     done
     wait
     rm -f ${caller}_svLengths.histogram
     cat truth.histogram precursor_*.histogram > ${caller}_svLengths.histogram
     for value in ${VALUES}; do
-        cat measured_${VALUE}.histogram > ${caller}_svLengths.histogram
+        cat measured_${value}.histogram > ${caller}_svLengths.histogram
     done
     while : ; do
         TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${caller}_svLengths.histogram ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
