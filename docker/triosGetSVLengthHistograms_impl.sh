@@ -100,7 +100,7 @@ for caller in ${CALLERS}; do
         histogramThread "${BUCKET_DIR}/${CHILD_ID}/${PRECURSOR_VCF_PREFIX}_${PARENT_ID}/vcfs/${caller}_${PARENT_ID}.vcf" precursor_${i} 0 &
         i=$(( $i + 1 ))
     done < ${CHILD_ID}.parents
-    histogramThread "${BUCKET_DIR}/${CHILD_ID}/${PRECURSOR_VCF_PREFIX}_${PARENT_ID}/vcfs/${caller}_${CHILD_ID}.vcf" precursor_0 0 &
+    histogramThread "${BUCKET_DIR}/${CHILD_ID}/${PRECURSOR_VCF_PREFIX}_${CHILD_ID}/vcfs/${caller}_${CHILD_ID}.vcf" precursor_0 0 &
     histogramThread "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" truth 1 &
     for value in ${VALUES}; do
         histogramThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${caller}_${CHILD_ID}.vcf" measured_${value} 0 &
