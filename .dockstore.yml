@@ -40,3 +40,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TriosPerformanceMatrices.wdl
   testParameterFiles:
+- name: TriosCreateSVLengthHistograms
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/TriosCreateSVLengthHistograms.wdl
+  testParameterFiles:

@@ -241,5 +241,6 @@ COPY pav_checkpointDaemon.sh .
 COPY performance_matrices_impl.sh .
 COPY readLengthDistribution_impl.sh .
 COPY triosPerformanceMatrices_impl.sh .
+COPY triosGetSVLengthHistograms_impl.sh .
 COPY *.java .
 RUN javac -cp commons-math3.jar *.java

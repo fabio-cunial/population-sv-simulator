@@ -12,3 +12,4 @@ java -jar ${WOMTOOL_PATH} validate -l ReadLengthDistribution.wdl -i inputs/priva
 java -jar ${WOMTOOL_PATH} validate -l TriosCreateTruthVCFs.wdl -i inputs/private_TriosCreateTruthVCFs.json
 java -jar ${WOMTOOL_PATH} validate -l TriosCreateTruthVCFs2.wdl -i inputs/private_TriosCreateTruthVCFs2.json
 java -jar ${WOMTOOL_PATH} validate -l TriosPerformanceMatrices.wdl -i inputs/private_TriosPerformanceMatrices.json
+java -jar ${WOMTOOL_PATH} validate -l TriosCreateSVLengthHistograms.wdl -i inputs/private_TriosCreateSVLengthHistograms.json

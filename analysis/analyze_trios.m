@@ -1,5 +1,5 @@
 function analyze_trios(MATRIX_DIR)
-    CALLERS={'sniffles1', 'sniffles2'};
+    CALLERS={'pbsv', 'sniffles1', 'sniffles2'};
     MEASURES={'precision', 'recall', 'f1'};
 	TITLES={'Precision', 'Recall', 'F1'};
 	QUESTION2_LEFT_COVERAGES=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 2.0, 3.0, 4.0];
@@ -8,9 +8,9 @@ function analyze_trios(MATRIX_DIR)
     FONTSIZE=12;
 	COVERAGE_LINES={'-k','-r','-g','-b','-y','-m','-c', '--k','--r','--g','--b','--y','--m','--c', '-.k','-.r','-.g','-.b','-.y','-.m','-.c', ':k',':r',':g',':b',':y',':m',':c'};
 	
+	totalRecall=zeros(length(CALLERS),length(QUESTION2_LEFT_COVERAGES));
     for clr = [1:length(CALLERS)]
 		for matrix = [1:3]
-			figure(clr*3+matrix);
 			for ms = [1:length(MEASURES)]
 				B=zeros(length(QUESTION2_LEFT_COVERAGES),length(SV_LENGTHS));
 	            try
@@ -30,6 +30,9 @@ function analyze_trios(MATRIX_DIR)
                     endwhile
                     fclose(fid);
                 endif
+				
+				% SV length analysis
+				figure(clr*3+matrix);
                 subplot(1,length(MEASURES),ms); hold on;
                 for coverage = [1:length(QUESTION2_LEFT_COVERAGES)]
                     plot(SV_LENGTHS,B(coverage,:), COVERAGE_LINES{coverage});
@@ -42,9 +45,29 @@ function analyze_trios(MATRIX_DIR)
 				else
 					string='<=';
 				endif
-                title({MEASURES{ms},CALLERS{clr},string}, 'fontsize', FONTSIZE);
+                title({TITLES{ms},CALLERS{clr},string}, 'fontsize', FONTSIZE);
 				legend(LEGEND,'location','eastoutside');
+				
+				% Global analysis
+				if (ms == 2 && matrix == 1)  % Only recall for now
+					totalRecall(clr,:)=B(:,1)';
+				endif
 			endfor
 		endfor
     endfor
+	
+	% Global analysis
+	figure(100);
+	for clr = [1:length(CALLERS)]
+		subplot(1,length(CALLERS),clr);
+		plot(QUESTION2_LEFT_COVERAGES,totalRecall(clr,:),'.-');
+		axis([0,1,min(totalRecall(clr,:)),max(totalRecall(clr,:))]);
+		axis square; grid on;
+		xlabel('Short-read coverage of each haplotype'); ylabel('Recall');
+		title(sprintf('%s, all SVs',CALLERS{clr}));
+		set(gca, 'fontsize', FONTSIZE);
+		maximum=totalRecall(clr,10);
+		minimum=totalRecall(clr,1);
+		printf('%s delta: %f',CALLERS{clr}, 100*(maximum-minimum)/minimum );
+	endfor
 endfunction
