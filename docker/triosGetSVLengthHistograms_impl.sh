@@ -95,11 +95,12 @@ for caller in ${CALLERS}; do
             break
         fi
     done
-    i=0
+    i=1
     while read PARENT_ID; do
         histogramThread "${BUCKET_DIR}/${CHILD_ID}/${PRECURSOR_VCF_PREFIX}_${PARENT_ID}/vcfs/${caller}_${PARENT_ID}.vcf" precursor_${i} 0 &
         i=$(( $i + 1 ))
     done < ${CHILD_ID}.parents
+    histogramThread "${BUCKET_DIR}/${CHILD_ID}/${PRECURSOR_VCF_PREFIX}_${PARENT_ID}/vcfs/${caller}_${CHILD_ID}.vcf" precursor_0 0 &
     histogramThread "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" truth 1 &
     for value in ${VALUES}; do
         histogramThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${caller}_${CHILD_ID}.vcf" measured_${value} 0 &
@@ -107,7 +108,7 @@ for caller in ${CALLERS}; do
     wait
     tree
     rm -f ${caller}_svLengths.histogram
-    cat truth.histogram precursor_*.histogram > ${caller}_svLengths.histogram
+    cat truth.histogram precursor_0.histogram precursor_1.histogram precursor_2.histogram > ${caller}_svLengths.histogram
     for value in ${VALUES}; do
         if [ ! -e measured_${value}.histogram ]; then
             break

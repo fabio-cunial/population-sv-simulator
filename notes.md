@@ -361,6 +361,10 @@ docker run -dit fcunial/assemblybased
 
 
 
+
+- according to Kiran there is a joint version of sniffles2, but the authors recommend no to use it.
+
+
 ------------------------------- KIRAN NOV 18 -----------------------------------
 
 - read lengths [5k, 6, 7, 8, 9]. like in the critical length paper.
