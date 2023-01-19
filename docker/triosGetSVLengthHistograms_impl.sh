@@ -102,7 +102,7 @@ for caller in ${CALLERS}; do
     done < ${CHILD_ID}.parents
     histogramThread "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" truth 1 &
     for value in ${VALUES}; do
-        histogramThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${CALLER}_${CHILD_ID}.vcf" measured_${value} 0 &
+        histogramThread "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${value}/vcfs/${caller}_${CHILD_ID}.vcf" measured_${value} 0 &
     done
     wait
     tree
