@@ -112,7 +112,7 @@ for caller in ${CALLERS}; do
         if [ ! -e measured_${value}.histogram ]; then
             break
         fi
-        cat measured_${value}.histogram > ${caller}_svLengths.histogram
+        cat measured_${value}.histogram >> ${caller}_svLengths.histogram
     done
     while : ; do
         TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${caller}_svLengths.histogram ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
