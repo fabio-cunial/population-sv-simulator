@@ -181,7 +181,7 @@ task CreateLongReadsVCFs {
                     FASTQ_FILE_LOCAL=${FASTQ_FILE_LOCAL%.gz}
                     echo ${FASTQ_FILE_LOCAL} >> list.txt
                 done < ~{individual_id}.fastqs
-                java -cp ~{docker_dir} BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
+                java -cp ~{docker_dir} -Xmx~{ram_size_gb_effective}G BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
                 rm -f *.fastq
                 if [ ~{individual_id} = ~{child_id} ]; then
                     while : ; do
