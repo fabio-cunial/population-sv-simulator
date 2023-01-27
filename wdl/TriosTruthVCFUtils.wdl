@@ -9,6 +9,8 @@ task Child2Family {
         String bucket_dir
     }
     command <<<
+        GSUTIL_DELAY_S="600"
+        
         while : ; do
             TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{child_id}.parents . && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then

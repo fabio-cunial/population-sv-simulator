@@ -13,3 +13,4 @@ java -jar ${WOMTOOL_PATH} validate -l TriosCreateTruthVCFs.wdl -i inputs/private
 java -jar ${WOMTOOL_PATH} validate -l TriosCreateTruthVCFs2.wdl -i inputs/private_TriosCreateTruthVCFs2.json
 java -jar ${WOMTOOL_PATH} validate -l TriosPerformanceMatrices.wdl -i inputs/private_TriosPerformanceMatrices.json
 java -jar ${WOMTOOL_PATH} validate -l TriosCreateSVLengthHistograms.wdl -i inputs/private_TriosCreateSVLengthHistograms.json
+java -jar ${WOMTOOL_PATH} validate -l TriosDeleteLargeFiles.wdl -i inputs/private_TriosDeleteLargeFiles.json

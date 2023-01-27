@@ -45,3 +45,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TriosCreateSVLengthHistograms.wdl
   testParameterFiles:
+- name: TriosDeleteLargeFiles
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/TriosDeleteLargeFiles.wdl
+  testParameterFiles:
