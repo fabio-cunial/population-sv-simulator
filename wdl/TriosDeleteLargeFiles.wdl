@@ -44,7 +44,7 @@ task TriosDeleteLargeFilesImpl {
     }
     
     command <<<
-        set -euxo pipefail
+        set -ux
         
         GSUTIL_DELAY_S="600"
         
@@ -59,7 +59,7 @@ task TriosDeleteLargeFilesImpl {
                 fi
             done  
             if [ ~{answer_question1} -eq 1 ]; then
-                :
+                :  # To be implemented...
             fi
             if [ ~{answer_question2} -eq 1 ]; then
                 VALUES=~{sep='-' question2_left_coverages}
@@ -67,10 +67,10 @@ task TriosDeleteLargeFilesImpl {
                 gsutil -m rm "~{bucket_dir}/${CHILD_ID}/bins/bin_*.bin"
                 while read PARENT; do
                     DIRECTORY="~{bucket_dir}/${CHILD_ID}/long_coverage_${PARENT}"
-                    gsutil -m rm ${DIRECTORY}/reads.bam ${DIRECTORY}/reads.bai ${DIRECTORY}/reads.fastq
+                    gsutil -m rm ${DIRECTORY}/reads.bam ${DIRECTORY}/reads.bam.bai ${DIRECTORY}/reads.fastq
                 done < ${CHILD_ID}.parents
                 DIRECTORY="~{bucket_dir}/${CHILD_ID}/long_coverage_${CHILD_ID}"
-                gsutil -m rm ${DIRECTORY}/reads.bam ${DIRECTORY}/reads.bai ${DIRECTORY}/reads.fastq
+                gsutil -m rm ${DIRECTORY}/reads.bam ${DIRECTORY}/reads.bam.bai ${DIRECTORY}/reads.fastq
                 for VALUE in ${VALUES}; do
                     DIRECTORY="~{bucket_dir}/${CHILD_ID}/reads_c${VALUE}"
                     TEST=$(gsutil -q stat ${DIRECTORY}/coverage_${VALUE}.bam && echo 0 || echo 1)
