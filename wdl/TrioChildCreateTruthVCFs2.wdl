@@ -180,8 +180,10 @@ task CreateLongReadsVCFs {
                     gunzip ${FASTQ_FILE_LOCAL}
                     FASTQ_FILE_LOCAL=${FASTQ_FILE_LOCAL%.gz}
                     echo ${FASTQ_FILE_LOCAL} >> list.txt
+                    head -n 40 ${FASTQ_FILE_LOCAL}
                 done < ~{individual_id}.fastqs
                 java -cp ~{docker_dir} -Xmx~{ram_size_gb_effective}G BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
+                head -n 40 bin_0.bin
                 rm -f *.fastq
                 if [ ~{individual_id} = ~{child_id} ]; then
                     while : ; do
@@ -222,12 +224,12 @@ task CreateLongReadsVCFs {
                 # Using all reads.
                 # Replacing the original name with a short one, to avoid
                 # samtools' "query name too long" error.
-                cat bin_* | paste - - - - | awk 'BEGIN { FS="\t"; OFS="\n" } { print "@read"NR,$2,$3,$4 }' > reads.fastq
+                cat bin_*.bin | paste - - - - | awk 'BEGIN { FS="\t"; OFS="\n" } { print "@read"NR,$2,$3,$4 }' > reads.fastq
             else
                 # Cleaning the distribution
                 java -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir} DeleteLeftMode ${MEAN_RIGHT} bin_ ~{bin_length} ~{max_read_length} reads.fastq
             fi
-            rm -f bin_*
+            rm -f bin_*.bin
             java -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq ~{bin_length} ~{max_read_length} reads.fastq.histogram reads.fastq.max
             COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
             echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > reads.fastq.coverage

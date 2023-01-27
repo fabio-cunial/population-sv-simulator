@@ -36,9 +36,9 @@ cd ${WORK_DIR}
 # PBSV
 PREFIX_PBSV="pbsv_${DATASET_ID}"
 if [ ${USE_PBSV} -eq 1 ]; then
-    CONTIGS=$(samtools view -H ${READS_BAM} | grep '^@SQ' | cut -f2 | cut -d':' -f2)
+    samtools view -H ${READS_BAM} | grep '^@SQ' | cut -f2 | cut -d':' -f2 > contigs.txt
     if [ ${PBSV_PARALLELIZE_BY_CHROMOSOME} -eq 1 ]; then
-        contig=$( echo ${CONTIGS} | head -n 1 )
+        contig=$(read contigs.txt)
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.${contig}.svsig.gz && echo 0 || echo 1)
     else
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz && echo 0 || echo 1)
@@ -47,7 +47,7 @@ if [ ${USE_PBSV} -eq 1 ]; then
         while : ; do
             TEST=$(gsutil -m cp "${BUCKET_DIR}/signatures/${PREFIX_PBSV}*.svsig.gz" . && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
-                echo "Error downloading file <${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz>. Trying again..."
+                echo "Error downloading files <${BUCKET_DIR}/signatures/${PREFIX_PBSV}*.svsig.gz>. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
             else
                 break
