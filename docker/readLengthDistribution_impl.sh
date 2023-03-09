@@ -6,11 +6,11 @@
 # coverage. For every such dataset, the program runs several callers.
 #
 READS_FILE_LEFT=$1
-READS_FILE_RIGHT=$2
+READS_FILE_RIGHT=$2  # -1=no such file exists.
 SAMPLE_ID=$3  # SM field in the .sam file (needed later for joint calling)
 MIN_COVERAGE_LEFT=$4  # Min value in $COVERAGES_LEFT$.
-MAX_COVERAGE_LEFT=$5    # Max value in $COVERAGES_LEFT$.
-COVERAGES_LEFT=$6  # Of each haplotype. Sorted in increasing order. Assumed to be doubles and multiples of COVERAGE_QUANTUM. String separated by "-".
+MAX_COVERAGE_LEFT=$5    # Max value in $COVERAGES_LEFT$. It is assumed to be equal to the total coverage of $READS_FILE_LEFT$.
+COVERAGES_LEFT=$6  # Of each haplotype. Sorted in increasing order. Assumed to be floats and multiples of $COVERAGE_QUANTUM$. String separated by "-".
 REFERENCE_FA=$7
 REFERENCE_FAI=$8
 REFERENCE_TANDEM_REPEATS=$9
@@ -43,33 +43,35 @@ export LC_NUMERIC="en_US.UTF-8"
 set -euxo pipefail
 cd ${WORK_DIR}
 
-# Aligning the right reads to the reference
-TEST=$(gsutil -q stat ${BUCKET_DIR}/reads_question2_chunks/right.bam && echo 0 || echo 1)
-if [ ${TEST} -eq 0 ]; then
-    while : ; do
-        TEST=$(gsutil cp ${BUCKET_DIR}/reads_question2_chunks/right.bam . && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
-            echo "Error downloading <${BUCKET_DIR}/reads_question2_chunks/right.bam>. Trying again..."
-            sleep ${GSUTIL_DELAY_S}
-        else
-            break
-        fi
-    done
-else
-    ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_FA} ${READS_FILE_RIGHT} > right.sam
-    ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM right.sam > right.1.bam
-    rm -f right.sam
-    ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b right.1.bam ${REFERENCE_FA} > right.bam
-    rm -f right.1.bam
-    while : ; do
-        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp right.bam ${BUCKET_DIR}/reads_question2_chunks/ && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
-            echo "Error uploading <${BUCKET_DIR}/reads_question2_chunks/right.bam>. Trying again..."
-            sleep ${GSUTIL_DELAY_S}
-        else
-            break
-        fi
-    done
+# Aligning the right reads to the reference (if any).
+if [ ${READS_FILE_RIGHT} != "-1" ]; then
+    TEST=$(gsutil -q stat ${BUCKET_DIR}/reads_question2_chunks/right.bam && echo 0 || echo 1)
+    if [ ${TEST} -eq 0 ]; then
+        while : ; do
+            TEST=$(gsutil cp ${BUCKET_DIR}/reads_question2_chunks/right.bam . && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error downloading <${BUCKET_DIR}/reads_question2_chunks/right.bam>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
+    else
+        ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_FA} ${READS_FILE_RIGHT} > right.sam
+        ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM right.sam > right.1.bam
+        rm -f right.sam
+        ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b right.1.bam ${REFERENCE_FA} > right.bam
+        rm -f right.1.bam
+        while : ; do
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp right.bam ${BUCKET_DIR}/reads_question2_chunks/ && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error uploading <${BUCKET_DIR}/reads_question2_chunks/right.bam>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
+    fi
 fi
 
 # Splitting the left reads into chunks equal to a fractional quantum of
@@ -125,7 +127,9 @@ echo "Starting coverage ${MIN_COVERAGE_LEFT} of each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
 mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
 if [ ${MIN_COVERAGE_LEFT} == "0" -o ${MIN_COVERAGE_LEFT} == "0.0" -o ${MIN_COVERAGE_LEFT} == ".0" ]; then
-    mv right.bam coverage_${MIN_COVERAGE_LEFT}.bam
+    if [ ${READS_FILE_RIGHT} != "-1" ]; then
+        mv right.bam coverage_${MIN_COVERAGE_LEFT}.bam
+    fi
 else
     LAST_CHUNK=$(echo "scale=0; ${MIN_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
     LAST_CHUNK=$(( ${LAST_CHUNK}-1 ))
@@ -134,8 +138,12 @@ else
         IDS="${IDS} chunk-${i}.bam"
         cat chunk-${i} >> coverage_${MIN_COVERAGE_LEFT}.fastq
     done
-    ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE_LEFT}.bam right.bam ${IDS}
-    rm -f right.bam
+    if [ ${READS_FILE_RIGHT} != "-1" ]; then
+        ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE_LEFT}.bam right.bam ${IDS}
+        rm -f right.bam
+    else
+        ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE_LEFT}.bam ${IDS}
+    fi
 fi
 samtools index -@ ${N_THREADS} coverage_${MIN_COVERAGE_LEFT}.bam
 

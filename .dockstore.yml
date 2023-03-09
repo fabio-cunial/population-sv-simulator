@@ -50,3 +50,9 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TriosDeleteLargeFiles.wdl
   testParameterFiles:
+- name: TriosCoverageEffect
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/TriosCoverageEffect.wdl
+  testParameterFiles:
+      
