@@ -15,3 +15,4 @@ java -jar ${WOMTOOL_PATH} validate -l TriosPerformanceMatrices.wdl -i inputs/pri
 java -jar ${WOMTOOL_PATH} validate -l TriosCreateSVLengthHistograms.wdl -i inputs/private_TriosCreateSVLengthHistograms.json
 java -jar ${WOMTOOL_PATH} validate -l TriosDeleteLargeFiles.wdl -i inputs/private_TriosDeleteLargeFiles.json
 java -jar ${WOMTOOL_PATH} validate -l TriosCoverageEffect.wdl -i inputs/private_TriosCoverageEffect.json
+java -jar ${WOMTOOL_PATH} validate -l TriosCoverageEffectPerformanceMatrices.wdl -i inputs/private_TriosCoverageEffectPerformanceMatrices.json
