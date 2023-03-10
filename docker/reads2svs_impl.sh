@@ -38,7 +38,7 @@ PREFIX_PBSV="pbsv_${DATASET_ID}"
 if [ ${USE_PBSV} -eq 1 ]; then
     samtools view -H ${READS_BAM} | grep '^@SQ' | cut -f2 | cut -d':' -f2 > contigs.txt
     if [ ${PBSV_PARALLELIZE_BY_CHROMOSOME} -eq 1 ]; then
-        contig=$(read contigs.txt)
+        contig=$(head -n 1 contigs.txt)
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.${contig}.svsig.gz && echo 0 || echo 1)
     else
         TEST=$(gsutil -q stat ${BUCKET_DIR}/signatures/${PREFIX_PBSV}.svsig.gz && echo 0 || echo 1)
@@ -56,9 +56,9 @@ if [ ${USE_PBSV} -eq 1 ]; then
     else
         # <discover> is sequential
         if [ ${PBSV_PARALLELIZE_BY_CHROMOSOME} -eq 1 ]; then
-            for contig in ${CONTIGS}; do
-                ${TIME_COMMAND} pbsv discover --region ${contig} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} ${READS_BAM} ${PREFIX_PBSV}.${contig}.svsig.gz
-            done
+            while read CONTIG; do
+                ${TIME_COMMAND} pbsv discover --region ${CONTIG} --tandem-repeats ${REFERENCE_TANDEM_REPEATS} ${READS_BAM} ${PREFIX_PBSV}.${CONTIG}.svsig.gz
+            done < contigs.txt
         else
         	${TIME_COMMAND} pbsv discover --tandem-repeats ${REFERENCE_TANDEM_REPEATS} ${READS_BAM} ${PREFIX_PBSV}.svsig.gz
         fi

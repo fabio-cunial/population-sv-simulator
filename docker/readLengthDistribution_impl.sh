@@ -77,30 +77,30 @@ fi
 # Splitting the left reads into chunks equal to a fractional quantum of
 # coverage of each haplotype, and aligning each chunk to the reference in
 # isolation.
-N_CHUNKS=$(echo "scale=0; ${MAX_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
-N_ROWS=$(wc -l < ${READS_FILE_LEFT})
-N_ROWS_ONE_QUANTUM=$(( ${N_ROWS} / ${N_CHUNKS} ))
-if [ $((${N_ROWS_ONE_QUANTUM} % 4)) -ne 0 ]; then
-    # Making sure it is a multiple of 4, to make FASTQ files work.
-    N_ROWS_ONE_QUANTUM=$(( (${N_ROWS_ONE_QUANTUM}/4 + 1)*4 ))
-fi
-rm -f chunk-*
-split -d -l ${N_ROWS_ONE_QUANTUM} ${READS_FILE_LEFT} chunk-
-rm -f ${READS_FILE_LEFT}
-for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
-    FILE_NAME="${BUCKET_DIR}/reads_question2_chunks/$(basename ${CHUNK}).bam"
-    TEST=$(gsutil -q stat ${FILE_NAME} && echo 0 || echo 1)
-    if [ ${TEST} -eq 0 ]; then
-        while : ; do
-            TEST=$(gsutil cp ${FILE_NAME} . && echo 0 || echo 1)
-            if [ ${TEST} -eq 1 ]; then
-                echo "Error downloading <${FILE_NAME}>. Trying again..."
-                sleep ${GSUTIL_DELAY_S}
-            else
-                break
-            fi
-        done
-    else
+FILE_NAME="${BUCKET_DIR}/reads_question2_chunks/chunk-00.bam"
+TEST=$(gsutil -q stat ${FILE_NAME} && echo 0 || echo 1)
+if [ ${TEST} -eq 0 ]; then
+    while : ; do
+        TEST=$(gsutil cp '${BUCKET_DIR}/reads_question2_chunks/chunk-*' . && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error downloading <${FILE_NAME}>. Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
+else
+    N_CHUNKS=$(echo "scale=0; ${MAX_COVERAGE_LEFT} / ${COVERAGE_QUANTUM}" | bc)
+    N_ROWS=$(wc -l < ${READS_FILE_LEFT})
+    N_ROWS_ONE_QUANTUM=$(( ${N_ROWS} / ${N_CHUNKS} ))
+    if [ $((${N_ROWS_ONE_QUANTUM} % 4)) -ne 0 ]; then
+        # Making sure it is a multiple of 4, to make FASTQ files work.
+        N_ROWS_ONE_QUANTUM=$(( (${N_ROWS_ONE_QUANTUM}/4 + 1)*4 ))
+    fi
+    rm -f chunk-*
+    split -d -l ${N_ROWS_ONE_QUANTUM} ${READS_FILE_LEFT} chunk-
+    rm -f ${N_ROWS_ONE_QUANTUM}    
+    for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
         mv ${CHUNK} ${CHUNK}.fastq
         ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ${REFERENCE_FA} ${CHUNK}.fastq > ${CHUNK}.sam
         mv ${CHUNK}.fastq ${CHUNK}
@@ -110,17 +110,17 @@ for CHUNK in $( find . -maxdepth 1 -name 'chunk-*' ); do
         rm -f ${CHUNK}.sam
         ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} -b ${CHUNK}.1.bam ${REFERENCE_FA} > ${CHUNK}.bam
         rm -f ${CHUNK}.1.bam
-        while : ; do
-            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${CHUNK}.bam ${FILE_NAME} && echo 0 || echo 1)
-            if [ ${TEST} -eq 1 ]; then
-                echo "Error uploading <${FILE_NAME}>. Trying again..."
-                sleep ${GSUTIL_DELAY_S}
-            else
-                break
-            fi
-        done
-    fi
-done
+    done
+    while : ; do
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp 'chunk-*' ${BUCKET_DIR}/reads_question2_chunks/ && echo 0 || echo 1)
+        if [ ${TEST} -eq 1 ]; then
+            echo "Error uploading chunks. Trying again..."
+            sleep ${GSUTIL_DELAY_S}
+        else
+            break
+        fi
+    done
+fi
 
 # Building the BAM and reads file of the smallest coverage
 echo "Starting coverage ${MIN_COVERAGE_LEFT} of each haplotype..."
