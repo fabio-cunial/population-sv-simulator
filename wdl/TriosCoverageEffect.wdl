@@ -140,6 +140,7 @@ task ProcessTrioChild {
         echo "Running <ProcessTrioChild> on ${N_THREADS} cores on the following node:"
         cat /proc/meminfo
         df -h
+        RIGHT_COVERAGES=~{sep='-' right_coverages}
 
         # Building the bin files needed for sampling reads from the distribution
 #         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/coverage_effect/bins/bin_0.bin && echo 0 || echo 1)
@@ -230,7 +231,6 @@ task ProcessTrioChild {
 #         done < bin_.stats
         
         # Creating readsets with no left coverage and multiple right coverages
-#         RIGHT_COVERAGES=~{sep='-' right_coverages}
 #         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq && echo 0 || echo 1)
 #         if [ ${TEST} -eq 0 ]; then
 #             while : ; do
