@@ -29,12 +29,12 @@ function matrixThread() {
     local CALLER=$1
     local VALUE=$2
     
-    rm -f tp1_${CALLER}_${VALUE}.txt fp1_${CALLER}_${VALUE}.txt fn1_${CALLER}_${VALUE}.txt p1_${CALLER}_${VALUE}.txt r1_${CALLER}_${VALUE}.txt f1_${CALLER}_${VALUE}.txt
-    touch tp1_${CALLER}_${VALUE}.txt fp1_${CALLER}_${VALUE}.txt fn1_${CALLER}_${VALUE}.txt p1_${CALLER}_${VALUE}.txt r1_${CALLER}_${VALUE}.txt f1_${CALLER}_${VALUE}.txt
-    rm -f tp2_${CALLER}_${VALUE}.txt fp2_${CALLER}_${VALUE}.txt fn2_${CALLER}_${VALUE}.txt p2_${CALLER}_${VALUE}.txt r2_${CALLER}_${VALUE}.txt f2_${CALLER}_${VALUE}.txt
-    touch tp2_${CALLER}_${VALUE}.txt fp2_${CALLER}_${VALUE}.txt fn2_${CALLER}_${VALUE}.txt p2_${CALLER}_${VALUE}.txt r2_${CALLER}_${VALUE}.txt f2_${CALLER}_${VALUE}.txt
-    rm -f tp3_${CALLER}_${VALUE}.txt fp3_${CALLER}_${VALUE}.txt fn3_${CALLER}_${VALUE}.txt p3_${CALLER}_${VALUE}.txt r3_${CALLER}_${VALUE}.txt f3_${CALLER}_${VALUE}.txt
-    touch tp3_${CALLER}_${VALUE}.txt fp3_${CALLER}_${VALUE}.txt fn3_${CALLER}_${VALUE}.txt p3_${CALLER}_${VALUE}.txt r3_${CALLER}_${VALUE}.txt f3_${CALLER}_${VALUE}.txt
+    rm -f tp1_${CALLER}_${VALUE}.txt fp1_${CALLER}_${VALUE}.txt fn1_${CALLER}_${VALUE}.txt p1_${CALLER}_${VALUE}.txt r1_${CALLER}_${VALUE}.txt f1_${CALLER}_${VALUE}.txt g1_${CALLER}_${VALUE}.txt
+    touch tp1_${CALLER}_${VALUE}.txt fp1_${CALLER}_${VALUE}.txt fn1_${CALLER}_${VALUE}.txt p1_${CALLER}_${VALUE}.txt r1_${CALLER}_${VALUE}.txt f1_${CALLER}_${VALUE}.txt g1_${CALLER}_${VALUE}.txt
+    rm -f tp2_${CALLER}_${VALUE}.txt fp2_${CALLER}_${VALUE}.txt fn2_${CALLER}_${VALUE}.txt p2_${CALLER}_${VALUE}.txt r2_${CALLER}_${VALUE}.txt f2_${CALLER}_${VALUE}.txt g2_${CALLER}_${VALUE}.txt
+    touch tp2_${CALLER}_${VALUE}.txt fp2_${CALLER}_${VALUE}.txt fn2_${CALLER}_${VALUE}.txt p2_${CALLER}_${VALUE}.txt r2_${CALLER}_${VALUE}.txt f2_${CALLER}_${VALUE}.txt g2_${CALLER}_${VALUE}.txt
+    rm -f tp3_${CALLER}_${VALUE}.txt fp3_${CALLER}_${VALUE}.txt fn3_${CALLER}_${VALUE}.txt p3_${CALLER}_${VALUE}.txt r3_${CALLER}_${VALUE}.txt f3_${CALLER}_${VALUE}.txt g3_${CALLER}_${VALUE}.txt
+    touch tp3_${CALLER}_${VALUE}.txt fp3_${CALLER}_${VALUE}.txt fn3_${CALLER}_${VALUE}.txt p3_${CALLER}_${VALUE}.txt r3_${CALLER}_${VALUE}.txt f3_${CALLER}_${VALUE}.txt g3_${CALLER}_${VALUE}.txt
     
     TEST=$(gsutil -q stat "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" && echo 0 || echo 1)
     if [ ${TEST} -eq 1 ]; then
@@ -59,9 +59,9 @@ function matrixThread() {
             FILTER_STRING_2="(${FILTER_STRING_2}) && FILTER=\"PASS\""
             FILTER_STRING_3="(${FILTER_STRING_3}) && FILTER=\"PASS\""
         fi
-        updateMatrices ${CALLER} "${FILTER_STRING_1}" ${VALUE} ${sv_length} tp1_${VALUE}.txt fp1_${VALUE}.txt fn1_${VALUE}.txt p1_${VALUE}.txt r1_${VALUE}.txt f1_${VALUE}.txt truth1_${sv_length}.vcf.gz
-        updateMatrices ${CALLER} "${FILTER_STRING_2}" ${VALUE} ${sv_length} tp2_${VALUE}.txt fp2_${VALUE}.txt fn2_${VALUE}.txt p2_${VALUE}.txt r2_${VALUE}.txt f2_${VALUE}.txt truth2_${sv_length}.vcf.gz
-        updateMatrices ${CALLER} "${FILTER_STRING_3}" ${VALUE} ${sv_length} tp3_${VALUE}.txt fp3_${VALUE}.txt fn3_${VALUE}.txt p3_${VALUE}.txt r3_${VALUE}.txt f3_${VALUE}.txt truth3_${sv_length}.vcf.gz
+        updateMatrices ${CALLER} "${FILTER_STRING_1}" ${VALUE} ${sv_length} tp1_${VALUE}.txt fp1_${VALUE}.txt fn1_${VALUE}.txt p1_${VALUE}.txt r1_${VALUE}.txt f1_${VALUE}.txt g1_${CALLER}_${VALUE}.txt truth1_${sv_length}.vcf.gz
+        updateMatrices ${CALLER} "${FILTER_STRING_2}" ${VALUE} ${sv_length} tp2_${VALUE}.txt fp2_${VALUE}.txt fn2_${VALUE}.txt p2_${VALUE}.txt r2_${VALUE}.txt f2_${VALUE}.txt g2_${CALLER}_${VALUE}.txt truth2_${sv_length}.vcf.gz
+        updateMatrices ${CALLER} "${FILTER_STRING_3}" ${VALUE} ${sv_length} tp3_${VALUE}.txt fp3_${VALUE}.txt fn3_${VALUE}.txt p3_${VALUE}.txt r3_${VALUE}.txt f3_${VALUE}.txt g3_${CALLER}_${VALUE}.txt truth3_${sv_length}.vcf.gz
         PREVIOUS_SV_LENGTH=${sv_length}
     done
 }
@@ -81,7 +81,8 @@ function updateMatrices() {
     local PRECISION_MATRIX=$8
     local RECALL_MATRIX=$9
     local F1_MATRIX=${10}
-    local TRUTH_FILE=${11}
+    local GT_MATRIX=${11}
+    local TRUTH_FILE=${12}
     
     echo -n "${VALUE},${SV_LENGTH}," >> ${TP_MATRIX}
     echo -n "${VALUE},${SV_LENGTH}," >> ${FP_MATRIX}
@@ -89,6 +90,7 @@ function updateMatrices() {
     echo -n "${VALUE},${SV_LENGTH}," >> ${PRECISION_MATRIX}
     echo -n "${VALUE},${SV_LENGTH}," >> ${RECALL_MATRIX}
     echo -n "${VALUE},${SV_LENGTH}," >> ${F1_MATRIX}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${TP_MATRIX_GT_TP}
     rm -f measured_${CALLER}_${VALUE}.vcf.gz measured_${CALLER}_${VALUE}.vcf.gz.tbi
     bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type v ${CALLER}_${VALUE}.vcf | bcftools sort --output-type z --output measured_${CALLER}_${VALUE}.vcf.gz
     tabix measured_${CALLER}_${VALUE}.vcf.gz
@@ -100,8 +102,9 @@ function updateMatrices() {
     grep "\"precision\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX}
     grep "\"recall\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX}
     grep "\"f1\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX}
+    grep "\"TP-comp_TP-gt\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${GT_MATRIX}
     rm -rf output_dir_${CALLER}_${VALUE}/
-    echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}
+    echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}; echo "" >> ${GT_MATRIX}
 }
 
 
@@ -113,9 +116,10 @@ function uploadMatrices() {
     local PRECISION_MATRIX=$5
     local RECALL_MATRIX=$6
     local F1_MATRIX=$7
+    local GT_MATRIX=$8
     
     while : ; do
-        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ${GT_MATRIX} ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             echo "Error uploading cumulative length matrices (${TAG}). Trying again..."
             sleep ${GSUTIL_DELAY_S}
@@ -167,18 +171,21 @@ for caller in ${CALLERS}; do
     PRECISION_MATRIX_1="${TRUTH_VCF_PREFIX}_${caller}_matrix1_precision.txt"
     RECALL_MATRIX_1="${TRUTH_VCF_PREFIX}_${caller}_matrix1_recall.txt"
     F1_MATRIX_1="${TRUTH_VCF_PREFIX}_${caller}_matrix1_f1.txt"
+    GT_MATRIX_1="${TRUTH_VCF_PREFIX}_${caller}_matrix1_gt.txt"
     TP_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_tp.txt"
     FP_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_fp.txt"
     FN_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_fn.txt"
     PRECISION_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_precision.txt"
     RECALL_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_recall.txt"
     F1_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_f1.txt"
+    GT_MATRIX_2="${TRUTH_VCF_PREFIX}_${caller}_matrix2_gt.txt"
     TP_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_tp.txt"
     FP_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_fp.txt"
     FN_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_fn.txt"
     PRECISION_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_precision.txt"
     RECALL_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_recall.txt"
     F1_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_f1.txt"
+    GT_MATRIX_3="${TRUTH_VCF_PREFIX}_${caller}_matrix3_gt.txt"
     for value in ${VALUES}; do
         matrixThread ${caller} ${value} &
     done
@@ -190,6 +197,7 @@ for caller in ${CALLERS}; do
     cat p1_*.txt > ${PRECISION_MATRIX_1}
     cat r1_*.txt > ${RECALL_MATRIX_1}
     cat f1_*.txt > ${F1_MATRIX_1}
+    cat g1_*.txt > ${GT_MATRIX_1}
     # 2
     cat tp2_*.txt > ${TP_MATRIX_2}
     cat fp2_*.txt > ${FP_MATRIX_2}
@@ -197,6 +205,7 @@ for caller in ${CALLERS}; do
     cat p2_*.txt > ${PRECISION_MATRIX_2}
     cat r2_*.txt > ${RECALL_MATRIX_2}
     cat f2_*.txt > ${F1_MATRIX_2}
+    cat g2_*.txt > ${GT_MATRIX_2}
     # 3
     cat tp3_*.txt > ${TP_MATRIX_3}
     cat fp3_*.txt > ${FP_MATRIX_3}
@@ -204,7 +213,8 @@ for caller in ${CALLERS}; do
     cat p3_*.txt > ${PRECISION_MATRIX_3}
     cat r3_*.txt > ${RECALL_MATRIX_3}
     cat f3_*.txt > ${F1_MATRIX_3}
-    uploadMatrices long ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1}
-    uploadMatrices binned ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2}
-    uploadMatrices short ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3}
+    cat g3_*.txt > ${GT_MATRIX_3}
+    uploadMatrices long ${TP_MATRIX_1} ${FP_MATRIX_1} ${FN_MATRIX_1} ${PRECISION_MATRIX_1} ${RECALL_MATRIX_1} ${F1_MATRIX_1} ${GT_MATRIX_1}
+    uploadMatrices binned ${TP_MATRIX_2} ${FP_MATRIX_2} ${FN_MATRIX_2} ${PRECISION_MATRIX_2} ${RECALL_MATRIX_2} ${F1_MATRIX_2} ${GT_MATRIX_2}
+    uploadMatrices short ${TP_MATRIX_3} ${FP_MATRIX_3} ${FN_MATRIX_3} ${PRECISION_MATRIX_3} ${RECALL_MATRIX_3} ${F1_MATRIX_3} ${GT_MATRIX_3}
 done
