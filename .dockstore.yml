@@ -55,4 +55,9 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TriosCoverageEffect.wdl
   testParameterFiles:
+- name: TriosCoverageEffectPerformanceMatrices
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/TriosCoverageEffectPerformanceMatrices.wdl
+  testParameterFiles:
       

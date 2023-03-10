@@ -1,15 +1,16 @@
 #!/bin/bash
 #
-BUCKET_DIR=$1
-CHILD_ID=$2
-CALLERS=$3
-VALUES=$4  # Separated by -
-SV_LENGTHS=$5  # Separated by -
-TRUTH_VCF_PREFIX=$6  # String before <_caller>
-MEASURED_CHARACTER_CODE=$7  # Single character after <reads_>
-ONLY_PASS=$8
-REFERENCE_FA=$9
-WORK_DIR=${10}
+BUCKET_DIR_MEASURED=$1
+MEASURED_CHARACTER_CODE=$2  # Single character after <reads_>
+BUCKET_DIR_TRUTH=$3
+TRUTH_VCF_PREFIX=$4  # String before <_caller>
+CHILD_ID=$5
+CALLERS=$6
+VALUES=$7  # Separated by -
+SV_LENGTHS=$8  # Separated by -
+ONLY_PASS=$9
+REFERENCE_FA=${10}
+WORK_DIR=${11}
 
 set -euxo pipefail
 cd ${WORK_DIR}
@@ -36,14 +37,14 @@ function matrixThread() {
     rm -f tp3_${CALLER}_${VALUE}.txt fp3_${CALLER}_${VALUE}.txt fn3_${CALLER}_${VALUE}.txt p3_${CALLER}_${VALUE}.txt r3_${CALLER}_${VALUE}.txt f3_${CALLER}_${VALUE}.txt g3_${CALLER}_${VALUE}.txt
     touch tp3_${CALLER}_${VALUE}.txt fp3_${CALLER}_${VALUE}.txt fn3_${CALLER}_${VALUE}.txt p3_${CALLER}_${VALUE}.txt r3_${CALLER}_${VALUE}.txt f3_${CALLER}_${VALUE}.txt g3_${CALLER}_${VALUE}.txt
     
-    TEST=$(gsutil -q stat "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" && echo 0 || echo 1)
+    TEST=$(gsutil -q stat "${BUCKET_DIR_MEASURED}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" && echo 0 || echo 1)
     if [ ${TEST} -eq 1 ]; then
         return
     fi
     while : ; do
-        TEST=$(gsutil cp "${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" ./${CALLER}_${VALUE}.vcf && echo 0 || echo 1)
+        TEST=$(gsutil cp "${BUCKET_DIR_MEASURED}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf" ./${CALLER}_${VALUE}.vcf && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
-            echo "Error downloading file <${BUCKET_DIR}/${CHILD_ID}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf>. Trying again..."
+            echo "Error downloading file <${BUCKET_DIR_MEASURED}/reads_${MEASURED_CHARACTER_CODE}${VALUE}/vcfs/${CALLER}_${CHILD_ID}.vcf>. Trying again..."
             sleep ${GSUTIL_DELAY_S}
         else
             break
@@ -90,7 +91,7 @@ function updateMatrices() {
     echo -n "${VALUE},${SV_LENGTH}," >> ${PRECISION_MATRIX}
     echo -n "${VALUE},${SV_LENGTH}," >> ${RECALL_MATRIX}
     echo -n "${VALUE},${SV_LENGTH}," >> ${F1_MATRIX}
-    echo -n "${VALUE},${SV_LENGTH}," >> ${TP_MATRIX_GT_TP}
+    echo -n "${VALUE},${SV_LENGTH}," >> ${GT_MATRIX}
     rm -f measured_${CALLER}_${VALUE}.vcf.gz measured_${CALLER}_${VALUE}.vcf.gz.tbi
     bcftools filter --threads 0 --include "${FILTER_STRING}" --output-type v ${CALLER}_${VALUE}.vcf | bcftools sort --output-type z --output measured_${CALLER}_${VALUE}.vcf.gz
     tabix measured_${CALLER}_${VALUE}.vcf.gz
@@ -102,7 +103,7 @@ function updateMatrices() {
     grep "\"precision\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${PRECISION_MATRIX}
     grep "\"recall\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${RECALL_MATRIX}
     grep "\"f1\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${F1_MATRIX}
-    grep "\"TP-comp_TP-gt\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${GT_MATRIX}
+    grep "\"TP-call_TP-gt\":" output_dir_${CALLER}_${VALUE}/summary.txt | awk 'BEGIN {ORS=""} {print $2}' >> ${GT_MATRIX}
     rm -rf output_dir_${CALLER}_${VALUE}/
     echo "" >> ${TP_MATRIX}; echo "" >> ${FP_MATRIX}; echo "" >> ${FN_MATRIX}; echo "" >> ${PRECISION_MATRIX}; echo "" >> ${RECALL_MATRIX}; echo "" >> ${F1_MATRIX}; echo "" >> ${GT_MATRIX}
 }
@@ -119,7 +120,7 @@ function uploadMatrices() {
     local GT_MATRIX=$8
     
     while : ; do
-        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ${GT_MATRIX} ${BUCKET_DIR}/${CHILD_ID}/ && echo 0 || echo 1)
+        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${TP_MATRIX} ${FP_MATRIX} ${FN_MATRIX} ${PRECISION_MATRIX} ${RECALL_MATRIX} ${F1_MATRIX} ${GT_MATRIX} ${BUCKET_DIR_MEASURED}/ && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             echo "Error uploading cumulative length matrices (${TAG}). Trying again..."
             sleep ${GSUTIL_DELAY_S}
@@ -135,9 +136,9 @@ function uploadMatrices() {
 for caller in ${CALLERS}; do
     # Building filtered truth VCFs
     while : ; do
-        TEST=$(gsutil -m cp "${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" . && echo 0 || echo 1)
+        TEST=$(gsutil -m cp "${BUCKET_DIR_TRUTH}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz" . && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
-            echo "Error downloading file <${BUCKET_DIR}/${CHILD_ID}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz>. Trying again..."
+            echo "Error downloading file <${BUCKET_DIR_TRUTH}/${TRUTH_VCF_PREFIX}_${caller}_truth.vcf.gz>. Trying again..."
             sleep ${GSUTIL_DELAY_S}
         else
             break

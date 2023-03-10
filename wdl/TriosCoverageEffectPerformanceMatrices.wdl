@@ -1,23 +1,17 @@
 version 1.0
 
-import "AnnotateVCFs.wdl"
-
 
 # The program compares the VCF file for each tuple (trio child, value, caller)
 # to its corresponding "truth" file created by a <TrioChildCreateTruthVCFs*>
 # script. SVs of different lengths are analyzed separately. The results are
 # collected in a matrix for every child and caller, whose lines follow the
-# format <value, svLength, metric>. By <value> we mean a left weight in
-# Question 1 and a left coverage in Question 2.
+# format <coverage, svLength, metric>.
 #
-workflow TriosPerformanceMatrices {
+workflow TriosCoverageEffectPerformanceMatrices {
     input {
         File children_ids
         String bucket_dir
-        Int answer_question1
-        Array[Float] question1_left_weights
-        Int answer_question2
-        Array[Float] question2_left_coverages
+        Array[Float] right_coverages
         Array[String] callers
         Array[Int] sv_lengths
         Int only_pass
@@ -33,10 +27,7 @@ workflow TriosPerformanceMatrices {
             input:
                 child_id = child_id,
                 bucket_dir = bucket_dir,
-                answer_question1 = answer_question1,
-                question1_left_weights = question1_left_weights,
-                answer_question2 = answer_question2,
-                question2_left_coverages = question2_left_coverages,
+                right_coverages = right_coverages,
                 callers = callers,
                 sv_lengths = sv_lengths,
                 only_pass = only_pass,
@@ -52,10 +43,7 @@ task ChildPerformanceMatrices {
     input {
         String child_id
         String bucket_dir
-        Int answer_question1
-        Array[Float] question1_left_weights
-        Int answer_question2
-        Array[Float] question2_left_coverages
+        Array[Float] right_coverages
         Array[String] callers
         Array[Int] sv_lengths
         Int only_pass
@@ -75,14 +63,8 @@ task ChildPerformanceMatrices {
         
         CALLERS=~{sep='-' callers}
         SV_LENGTHS=~{sep='-' sv_lengths}
-        if [ ~{answer_question1} -eq 1 ]; then
-            VALUES=~{sep='-' question1_left_weights}
-            bash ~{docker_dir}/triosPerformanceMatrices_impl.sh ~{bucket_dir}/~{child_id} w ~{bucket_dir}/~{child_id} full_coverage ~{child_id} ${CALLERS} ${VALUES} ${SV_LENGTHS} ~{only_pass} ~{reference_fa} ~{work_dir}
-        fi
-        if [ ~{answer_question2} -eq 1 ]; then
-            VALUES=~{sep='-' question2_left_coverages}
-            bash ~{docker_dir}/triosPerformanceMatrices_impl.sh ~{bucket_dir}/~{child_id} c ~{bucket_dir}/~{child_id} long_coverage ~{child_id} ${CALLERS} ${VALUES} ${SV_LENGTHS} ~{only_pass} ~{reference_fa} ~{work_dir}
-        fi
+        VALUES=~{sep='-' right_coverages}
+        bash ~{docker_dir}/triosPerformanceMatrices_impl.sh ~{bucket_dir}/~{child_id}/coverage_effect c ~{bucket_dir}/~{child_id} long_coverage ~{child_id} ${CALLERS} ${VALUES} ${SV_LENGTHS} ~{only_pass} ~{reference_fa} ~{work_dir}
     >>>
     
     output {
