@@ -125,7 +125,9 @@ done
 # Building the BAM and reads file of the smallest coverage
 echo "Starting coverage ${MIN_COVERAGE_LEFT} of each haplotype..."
 rm -f coverage_${MIN_COVERAGE_LEFT}.bam coverage_${MIN_COVERAGE_LEFT}.fastq
-mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
+if [ ${READS_FILE_RIGHT} != "-1" ]; then
+    mv ${READS_FILE_RIGHT} coverage_${MIN_COVERAGE_LEFT}.fastq
+fi
 if [ ${MIN_COVERAGE_LEFT} == "0" -o ${MIN_COVERAGE_LEFT} == "0.0" -o ${MIN_COVERAGE_LEFT} == ".0" ]; then
     if [ ${READS_FILE_RIGHT} != "-1" ]; then
         mv right.bam coverage_${MIN_COVERAGE_LEFT}.bam
