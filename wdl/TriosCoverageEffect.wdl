@@ -143,124 +143,124 @@ task ProcessTrioChild {
         RIGHT_COVERAGES=~{sep='-' right_coverages}
 
         # Building the bin files needed for sampling reads from the distribution
-#         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/coverage_effect/bins/bin_0.bin && echo 0 || echo 1)
-#         if [ ${TEST} -eq 0 ]; then
-#             while : ; do
-#                 TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/coverage_effect/bins/*" . && echo 0 || echo 1)
-#                 if [ ${TEST} -eq 1 ]; then
-#                     echo "Error downloading files from <~{bucket_dir}/~{child_id}/coverage_effect/bins/>. Trying again..."
-#                     sleep ${GSUTIL_DELAY_S}
-#                 else
-#                     break
-#                 fi
-#             done
-#         else
-#             while : ; do
-#                 TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{child_id}.fastqs . && echo 0 || echo 1)
-#                 if [ ${TEST} -eq 1 ]; then
-#                     echo "Error downloading file <~{bucket_dir}/trios_info/~{child_id}.fastqs>. Trying again..."
-#                     sleep ${GSUTIL_DELAY_S}
-#                 else
-#                     break
-#                 fi
-#             done
-#             rm -f list.txt
-#             while read FASTQ_FILE; do
-#                 while : ; do
-#                     TEST=$(gsutil cp ${FASTQ_FILE} . && echo 0 || echo 1)
-#                     if [ ${TEST} -eq 1 ]; then
-#                         echo "Error downloading file <${FASTQ_FILE}>. Trying again..."
-#                         sleep ${GSUTIL_DELAY_S}
-#                     else
-#                         break
-#                     fi
-#                 done
-#                 FASTQ_FILE_LOCAL=$(basename ${FASTQ_FILE})
-#                 gunzip ${FASTQ_FILE_LOCAL}
-#                 FASTQ_FILE_LOCAL=${FASTQ_FILE_LOCAL%.gz}
-#                 echo ${FASTQ_FILE_LOCAL} >> list.txt
-#                 java -cp ~{docker_dir} Fastq2LengthHistogram ${FASTQ_FILE_LOCAL} ~{bin_length} ~{max_read_length} ${FASTQ_FILE_LOCAL}.histogram ${FASTQ_FILE_LOCAL}.max
-#                 echo "File: ${FASTQ_FILE_LOCAL}"
-#                 echo "Local maxima:"
-#                 cat ${FASTQ_FILE_LOCAL}.max
-#                 echo "Histogram:"
-#                 cat ${FASTQ_FILE_LOCAL}.histogram
-#                 while : ; do
-#                     TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${FASTQ_FILE_LOCAL}.histogram ${FASTQ_FILE_LOCAL}.max ~{bucket_dir}/~{child_id}/coverage_effect/histograms/ && echo 0 || echo 1)
-#                     if [ ${TEST} -eq 1 ]; then
-#                         echo "Error uploading file <~{bucket_dir}/~{child_id}/coverage_effect/histograms/${FASTQ_FILE_LOCAL}.histogram>. Trying again..."
-#                         sleep ${GSUTIL_DELAY_S}
-#                     else
-#                         break
-#                     fi
-#                 done
-#             done < ~{child_id}.fastqs
-#             java -cp ~{docker_dir} -Xmx~{ram_size_gb_effective}G BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
-#             head -n 40 bin_0.bin
-#             rm -f *.fq
-#             while : ; do
-#                 TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/coverage_effect/bins/ && echo 0 || echo 1)
-#                 if [ ${TEST} -eq 1 ]; then
-#                     echo "Error uploading bin files to <~{bucket_dir}/~{child_id}/coverage_effect/bins/>. Trying again..."
-#                     sleep ${GSUTIL_DELAY_S}
-#                 else
-#                     break
-#                 fi
-#             done
-#         fi
+         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/coverage_effect/bins/bin_0.bin && echo 0 || echo 1)
+         if [ ${TEST} -eq 0 ]; then
+             while : ; do
+                 TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/coverage_effect/bins/*" . && echo 0 || echo 1)
+                 if [ ${TEST} -eq 1 ]; then
+                     echo "Error downloading files from <~{bucket_dir}/~{child_id}/coverage_effect/bins/>. Trying again..."
+                     sleep ${GSUTIL_DELAY_S}
+                 else
+                     break
+                 fi
+             done
+         else
+             while : ; do
+                 TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{child_id}.fastqs . && echo 0 || echo 1)
+                 if [ ${TEST} -eq 1 ]; then
+                     echo "Error downloading file <~{bucket_dir}/trios_info/~{child_id}.fastqs>. Trying again..."
+                     sleep ${GSUTIL_DELAY_S}
+                 else
+                     break
+                 fi
+             done
+             rm -f list.txt
+             while read FASTQ_FILE; do
+                 while : ; do
+                     TEST=$(gsutil cp ${FASTQ_FILE} . && echo 0 || echo 1)
+                     if [ ${TEST} -eq 1 ]; then
+                         echo "Error downloading file <${FASTQ_FILE}>. Trying again..."
+                         sleep ${GSUTIL_DELAY_S}
+                     else
+                         break
+                     fi
+                 done
+                 FASTQ_FILE_LOCAL=$(basename ${FASTQ_FILE})
+                 gunzip ${FASTQ_FILE_LOCAL}
+                 FASTQ_FILE_LOCAL=${FASTQ_FILE_LOCAL%.gz}
+                 echo ${FASTQ_FILE_LOCAL} >> list.txt
+                 java -cp ~{docker_dir} Fastq2LengthHistogram ${FASTQ_FILE_LOCAL} ~{bin_length} ~{max_read_length} ${FASTQ_FILE_LOCAL}.histogram ${FASTQ_FILE_LOCAL}.max
+                 echo "File: ${FASTQ_FILE_LOCAL}"
+                 echo "Local maxima:"
+                 cat ${FASTQ_FILE_LOCAL}.max
+                 echo "Histogram:"
+                 cat ${FASTQ_FILE_LOCAL}.histogram
+                 while : ; do
+                     TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp ${FASTQ_FILE_LOCAL}.histogram ${FASTQ_FILE_LOCAL}.max ~{bucket_dir}/~{child_id}/coverage_effect/histograms/ && echo 0 || echo 1)
+                     if [ ${TEST} -eq 1 ]; then
+                         echo "Error uploading file <~{bucket_dir}/~{child_id}/coverage_effect/histograms/${FASTQ_FILE_LOCAL}.histogram>. Trying again..."
+                         sleep ${GSUTIL_DELAY_S}
+                     else
+                         break
+                     fi
+                 done
+             done < ~{child_id}.fastqs
+             java -cp ~{docker_dir} -Xmx~{ram_size_gb_effective}G BuildReadLengthBins list.txt ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID} bin_
+             head -n 40 bin_0.bin
+             rm -f *.fq
+             while : ; do
+                 TEST=$(gsutil -m ${GSUTIL_UPLOAD_THRESHOLD} cp "bin_*" ~{bucket_dir}/~{child_id}/coverage_effect/bins/ && echo 0 || echo 1)
+                 if [ ${TEST} -eq 1 ]; then
+                     echo "Error uploading bin files to <~{bucket_dir}/~{child_id}/coverage_effect/bins/>. Trying again..."
+                     sleep ${GSUTIL_DELAY_S}
+                 else
+                     break
+                 fi
+             done
+         fi
 
-        # Computing properties of the distribution
-#         N_MAXIMA=0; MEAN_LEFT=0; STD_LEFT=0; MEAN_RIGHT=0; STD_RIGHT=0
-#         i=0
-#         while read line; do
-#             if [ $i -eq 0 ]; then
-#                 N_MAXIMA=${line}
-#                 if [ ${N_MAXIMA} -lt 2 ]; then
-#                     break
-#                 fi
-#             elif [ $i -eq 1 ]; then
-#                 MEAN_LEFT=${line}
-#             elif [ $i -eq 2 ]; then
-#                 STD_LEFT=${line}
-#             elif [ $i -eq 3 ]; then
-#                 MEAN_RIGHT=${line}
-#             elif [ $i -eq 4 ]; then
-#                 STD_RIGHT=${line}
-#             fi
-#             i=$(( $i + 1 ))
-#         done < bin_.stats
+         # Computing properties of the distribution
+         N_MAXIMA=0; MEAN_LEFT=0; STD_LEFT=0; MEAN_RIGHT=0; STD_RIGHT=0
+         i=0
+         while read line; do
+             if [ $i -eq 0 ]; then
+                 N_MAXIMA=${line}
+                 if [ ${N_MAXIMA} -lt 2 ]; then
+                     break
+                 fi
+             elif [ $i -eq 1 ]; then
+                 MEAN_LEFT=${line}
+             elif [ $i -eq 2 ]; then
+                 STD_LEFT=${line}
+             elif [ $i -eq 3 ]; then
+                 MEAN_RIGHT=${line}
+             elif [ $i -eq 4 ]; then
+                 STD_RIGHT=${line}
+             fi
+             i=$(( $i + 1 ))
+         done < bin_.stats
         
-        # Creating readsets with no left coverage and multiple right coverages
-#         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq && echo 0 || echo 1)
-#         if [ ${TEST} -eq 0 ]; then
-#             while : ; do
-#                 TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq . && echo 0 || echo 1)
-#                 if [ ${TEST} -eq 1 ]; then
-#                     echo "Error downloading file <~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq>. Trying again..."
-#                     sleep ${GSUTIL_DELAY_S}
-#                 else
-#                     break
-#                 fi
-#             done
-#         else            
-#             # Sampling from the right distribution only                
-#             java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_RIGHT} ${STD_RIGHT} ${MEAN_LEFT} ${STD_LEFT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{max_right_coverage} reads.fastq
-#             rm -f bin_*.bin
-#             java -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq ~{bin_length} ~{max_read_length} reads.fastq.histogram reads.fastq.max
-#             COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
-#             echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > reads.fastq.coverage
-#             while : ; do
-#                 TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads.fastq*" "~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/" && echo 0 || echo 1)
-#                 if [ ${TEST} -eq 1 ]; then
-#                     echo "Error uploading file <~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq>. Trying again..."
-#                     sleep ${GSUTIL_DELAY_S}
-#                 else
-#                     break
-#                 fi
-#             done
-#         fi
-        bash ~{docker_dir}/readLengthDistribution_impl.sh reads.fastq -1 ~{child_id} ~{min_right_coverage} ~{max_right_coverage} ${RIGHT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/coverage_effect ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir} ~{coverage_quantum} ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID}
-#         rm -f reads.fastq
+         # Creating readsets with no left coverage and multiple right coverages
+         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq && echo 0 || echo 1)
+         if [ ${TEST} -eq 0 ]; then
+             while : ; do
+                 TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq . && echo 0 || echo 1)
+                 if [ ${TEST} -eq 1 ]; then
+                     echo "Error downloading file <~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq>. Trying again..."
+                     sleep ${GSUTIL_DELAY_S}
+                 else
+                     break
+                 fi
+             done
+         else            
+             # Sampling from the right distribution only                
+             java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_RIGHT} ${STD_RIGHT} ${MEAN_LEFT} ${STD_LEFT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{max_right_coverage} reads.fastq
+             rm -f bin_*.bin
+             java -Xmx~{ram_size_gb_effective}G -cp ~{docker_dir} Fastq2LengthHistogram reads.fastq ~{bin_length} ~{max_read_length} reads.fastq.histogram reads.fastq.max
+             COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' reads.fastq | wc -c )
+             echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > reads.fastq.coverage
+             while : ; do
+                 TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "reads.fastq*" "~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/" && echo 0 || echo 1)
+                 if [ ${TEST} -eq 1 ]; then
+                     echo "Error uploading file <~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq>. Trying again..."
+                     sleep ${GSUTIL_DELAY_S}
+                 else
+                     break
+                 fi
+             done
+         fi
+         bash ~{docker_dir}/readLengthDistribution_impl.sh reads.fastq -1 ~{child_id} ~{min_right_coverage} ~{max_right_coverage} ${RIGHT_COVERAGES} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/coverage_effect ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir} ~{coverage_quantum} ~{bin_length} ~{max_read_length} ${GENOME_LENGTH_HAPLOID}
+         rm -f reads.fastq
     >>>
     
     output {
