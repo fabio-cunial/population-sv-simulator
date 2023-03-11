@@ -81,7 +81,7 @@ FILE_NAME="${BUCKET_DIR}/reads_question2_chunks/chunk-00.bam"
 TEST=$(gsutil -q stat ${FILE_NAME} && echo 0 || echo 1)
 if [ ${TEST} -eq 0 ]; then
     while : ; do
-        TEST=$(gsutil cp '${BUCKET_DIR}/reads_question2_chunks/chunk-*' . && echo 0 || echo 1)
+        TEST=$(gsutil cp ${BUCKET_DIR}/reads_question2_chunks/'chunk-*' . && echo 0 || echo 1)
         if [ ${TEST} -eq 1 ]; then
             echo "Error downloading <${FILE_NAME}>. Trying again..."
             sleep ${GSUTIL_DELAY_S}
@@ -138,7 +138,9 @@ else
     IDS=""
     for i in $(seq -f "%02g" 0 ${LAST_CHUNK}); do
         IDS="${IDS} chunk-${i}.bam"
-        cat chunk-${i} >> coverage_${MIN_COVERAGE_LEFT}.fastq
+        if [ -e chunk-${i} ]; then 
+            cat chunk-${i} >> coverage_${MIN_COVERAGE_LEFT}.fastq
+        fi
     done
     if [ ${READS_FILE_RIGHT} != "-1" ]; then
         ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${MIN_COVERAGE_LEFT}.bam right.bam ${IDS}
@@ -185,20 +187,26 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             ${TIME_COMMAND} samtools merge -@ ${N_THREADS} -o coverage_${COVERAGE}.bam ${IDS}
             samtools index -@ ${N_THREADS} coverage_${COVERAGE}.bam
             rm -f coverage_${PREVIOUS_COVERAGE}.bam coverage_${PREVIOUS_COVERAGE}.bai
-            cp coverage_${PREVIOUS_COVERAGE}.fastq coverage_${COVERAGE}.fastq
+            if [ -e coverage_${PREVIOUS_COVERAGE}.fastq ]; then 
+                cp coverage_${PREVIOUS_COVERAGE}.fastq coverage_${COVERAGE}.fastq
+            fi
             for i in $(seq -f "%02g" $((${PREVIOUS_LAST_CHUNK} + 1)) ${LAST_CHUNK}); do
-                cat chunk-${i} >> coverage_${COVERAGE}.fastq
+                if [ -e chunk-${i} ]; then
+                    cat chunk-${i} >> coverage_${COVERAGE}.fastq
+                fi
             done
         fi
-        while : ; do
-            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp coverage_${COVERAGE}.fastq ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
-            if [ ${TEST} -eq 1 ]; then
-                echo "Error uploading <coverage_${COVERAGE}.fastq>. Trying again..."
-                sleep ${GSUTIL_DELAY_S}
-            else
-                break
-            fi
-        done
+        if [ -e coverage_${COVERAGE}.fastq ]; then
+            while : ; do
+                TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp coverage_${COVERAGE}.fastq ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
+                if [ ${TEST} -eq 1 ]; then
+                    echo "Error uploading <coverage_${COVERAGE}.fastq>. Trying again..."
+                    sleep ${GSUTIL_DELAY_S}
+                else
+                    break
+                fi
+            done
+        fi
         while : ; do
             TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp coverage_${COVERAGE}.bam coverage_${COVERAGE}.bam.bai ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
@@ -209,18 +217,20 @@ for COVERAGE in ${COVERAGES_LEFT}; do
             fi
         done
     fi
-    java -cp ${DOCKER_DIR} Fastq2LengthHistogram coverage_${COVERAGE}.fastq ${BIN_LENGTH} ${MAX_READ_LENGTH} coverage_${COVERAGE}.fastq.histogram coverage_${COVERAGE}.fastq.max
-    COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' coverage_${COVERAGE}.fastq | wc -c )
-    echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > coverage_${COVERAGE}.fastq.coverage
-    while : ; do
-        TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "coverage_${COVERAGE}.fastq.*" ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
-        if [ ${TEST} -eq 1 ]; then
-            echo "Error uploading <coverage_${COVERAGE}.fastq.histogram>. Trying again..."
-            sleep ${GSUTIL_DELAY_S}
-        else
-            break
-        fi
-    done
+    if [ -e coverage_${COVERAGE}.fastq ]; then
+        java -cp ${DOCKER_DIR} Fastq2LengthHistogram coverage_${COVERAGE}.fastq ${BIN_LENGTH} ${MAX_READ_LENGTH} coverage_${COVERAGE}.fastq.histogram coverage_${COVERAGE}.fastq.max
+        COVERAGE_EACH_HAPLOTYPE=$( sed -n '2~4p' coverage_${COVERAGE}.fastq | wc -c )
+        echo "scale=8; ${COVERAGE_EACH_HAPLOTYPE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc > coverage_${COVERAGE}.fastq.coverage
+        while : ; do
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} cp "coverage_${COVERAGE}.fastq.*" ${BUCKET_DIR}/reads_c${COVERAGE}/ && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error uploading <coverage_${COVERAGE}.fastq.histogram>. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
+    fi
     bash ${DOCKER_DIR}/reads2svs_impl.sh ${SAMPLE_ID} coverage_${COVERAGE}.bam coverage_${COVERAGE}.fastq ${COVERAGE} ${SAMPLE_ID} ${N_THREADS} ${REFERENCE_FA} ${REFERENCE_FAI} ${REFERENCE_TANDEM_REPEATS} "${BUCKET_DIR}/reads_c${COVERAGE}" ${USE_PBSV} ${USE_SNIFFLES1} ${USE_SNIFFLES2} ${USE_HIFIASM} ${USE_PAV} ${USE_PAFTOOLS} ${KEEP_ASSEMBLIES} ${WORK_DIR} ${DOCKER_DIR} 1
     rm -f coverage_${PREVIOUS_COVERAGE}.bam coverage_${PREVIOUS_COVERAGE}.fastq
     
