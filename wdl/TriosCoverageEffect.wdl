@@ -145,15 +145,16 @@ task ProcessTrioChild {
         # Building the bin files needed for sampling reads from the distribution
          TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/coverage_effect/bins/bin_0.bin && echo 0 || echo 1)
          if [ ${TEST} -eq 0 ]; then
-             while : ; do
-                 TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/coverage_effect/bins/*" . && echo 0 || echo 1)
-                 if [ ${TEST} -eq 1 ]; then
-                     echo "Error downloading files from <~{bucket_dir}/~{child_id}/coverage_effect/bins/>. Trying again..."
-                     sleep ${GSUTIL_DELAY_S}
-                 else
-                     break
-                 fi
-             done
+             :
+#             while : ; do
+#                 TEST=$(gsutil -m cp "~{bucket_dir}/~{child_id}/coverage_effect/bins/*" . && echo 0 || echo 1)
+#                 if [ ${TEST} -eq 1 ]; then
+#                     echo "Error downloading files from <~{bucket_dir}/~{child_id}/coverage_effect/bins/>. Trying again..."
+#                     sleep ${GSUTIL_DELAY_S}
+#                 else
+#                     break
+#                 fi
+#             done
          else
              while : ; do
                  TEST=$(gsutil cp ~{bucket_dir}/trios_info/~{child_id}.fastqs . && echo 0 || echo 1)
@@ -210,38 +211,39 @@ task ProcessTrioChild {
          fi
 
          # Computing properties of the distribution
-         N_MAXIMA=0; MEAN_LEFT=0; STD_LEFT=0; MEAN_RIGHT=0; STD_RIGHT=0
-         i=0
-         while read line; do
-             if [ $i -eq 0 ]; then
-                 N_MAXIMA=${line}
-                 if [ ${N_MAXIMA} -lt 2 ]; then
-                     break
-                 fi
-             elif [ $i -eq 1 ]; then
-                 MEAN_LEFT=${line}
-             elif [ $i -eq 2 ]; then
-                 STD_LEFT=${line}
-             elif [ $i -eq 3 ]; then
-                 MEAN_RIGHT=${line}
-             elif [ $i -eq 4 ]; then
-                 STD_RIGHT=${line}
-             fi
-             i=$(( $i + 1 ))
-         done < bin_.stats
+#         N_MAXIMA=0; MEAN_LEFT=0; STD_LEFT=0; MEAN_RIGHT=0; STD_RIGHT=0
+#         i=0
+#         while read line; do
+#             if [ $i -eq 0 ]; then
+#                 N_MAXIMA=${line}
+#                 if [ ${N_MAXIMA} -lt 2 ]; then
+#                     break
+#                 fi
+#             elif [ $i -eq 1 ]; then
+#                 MEAN_LEFT=${line}
+#             elif [ $i -eq 2 ]; then
+#                 STD_LEFT=${line}
+#             elif [ $i -eq 3 ]; then
+#                 MEAN_RIGHT=${line}
+#             elif [ $i -eq 4 ]; then
+#                 STD_RIGHT=${line}
+#             fi
+#             i=$(( $i + 1 ))
+#         done < bin_.stats
         
          # Creating readsets with no left coverage and multiple right coverages
          TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq && echo 0 || echo 1)
          if [ ${TEST} -eq 0 ]; then
-             while : ; do
-                 TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq . && echo 0 || echo 1)
-                 if [ ${TEST} -eq 1 ]; then
-                     echo "Error downloading file <~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq>. Trying again..."
-                     sleep ${GSUTIL_DELAY_S}
-                 else
-                     break
-                 fi
-             done
+             :
+#             while : ; do
+#                 TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq . && echo 0 || echo 1)
+#                 if [ ${TEST} -eq 1 ]; then
+#                     echo "Error downloading file <~{bucket_dir}/~{child_id}/coverage_effect/long_coverage_~{child_id}/reads.fastq>. Trying again..."
+#                     sleep ${GSUTIL_DELAY_S}
+#                 else
+#                     break
+#                 fi
+#             done
          else            
              # Sampling from the right distribution only                
              java -cp ~{docker_dir}:~{docker_dir}/commons-math3.jar SampleReadsFromLengthBins ${MEAN_RIGHT} ${STD_RIGHT} ${MEAN_LEFT} ${STD_LEFT} 1 ~{bin_length} ~{max_read_length} bin_ ${GENOME_LENGTH_HAPLOID} ~{max_right_coverage} reads.fastq
