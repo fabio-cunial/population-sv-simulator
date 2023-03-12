@@ -27,6 +27,7 @@ GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
 GSUTIL_DELAY_S="600"
 TIME_COMMAND="/usr/bin/time --verbose"
 REFERENCE_LENGTH=$(cut -f 2 ${REFERENCE_FAI} | awk '{s+=$1} END {print s}')
+REFERENCE_LENGTH=$(printf '%d' ${REFERENCE_LENGTH})
 MINIMAP2_ASM_FLAG="asm5"  # asm5/asm10/asm20 for ~0.1/1/5% sequence divergence
 PAFTOOLS_MIN_SV_LENGTH="40"
 

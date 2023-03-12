@@ -129,15 +129,16 @@ task CreateLongReadsVCFs {
         echo 1 > ~{work_dir}/force_sequentiality.txt
         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
-            while : ; do
-                TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq . && echo 0 || echo 1)
-                if [ ${TEST} -eq 1 ]; then
-                    echo "Error downloading file <~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq>. Trying again..."
-                    sleep ${GSUTIL_DELAY_S}
-                else
-                    break
-                fi
-            done
+            :
+#            while : ; do
+#                TEST=$(gsutil cp ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq . && echo 0 || echo 1)
+#                if [ ${TEST} -eq 1 ]; then
+#                    echo "Error downloading file <~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.fastq>. Trying again..."
+#                    sleep ${GSUTIL_DELAY_S}
+#                else
+#                    break
+#                fi
+#            done
         else
             BINS_DOWNLOADED=0
             if [ ~{individual_id} = ~{child_id} ]; then
@@ -245,15 +246,16 @@ task CreateLongReadsVCFs {
         fi
         TEST=$(gsutil -q stat ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam && echo 0 || echo 1)
         if [ ${TEST} -eq 0 ]; then
-            while : ; do
-                TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam*" . && echo 0 || echo 1)
-                if [ ${TEST} -eq 1 ]; then
-                    echo "Error downloading file <~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam>. Trying again..."
-                    sleep ${GSUTIL_DELAY_S}
-                else
-                    break
-                fi
-            done
+            :
+#            while : ; do
+#                TEST=$(gsutil cp "~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam*" . && echo 0 || echo 1)
+#                if [ ${TEST} -eq 1 ]; then
+#                    echo "Error downloading file <~{bucket_dir}/~{child_id}/long_coverage_~{individual_id}/reads.bam>. Trying again..."
+#                    sleep ${GSUTIL_DELAY_S}
+#                else
+#                    break
+#                fi
+#            done
         else
             ${TIME_COMMAND} ${MINIMAP_COMMAND} -R ${READ_GROUP} ~{reference_fa} reads.fastq > reads.sam
             ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --output-fmt BAM reads.sam > reads.1.bam
@@ -274,8 +276,13 @@ task CreateLongReadsVCFs {
         if [ ! -f reads.bam.bai ]; then
             samtools index -@ ${N_THREADS} reads.bam
         fi
-        COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
-        COVERAGE=$(echo "scale=8; ${COVERAGE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc)  # Of each haplotype
+        
+        
+#        COVERAGE=$( sed -n '2~4p' reads.fastq | wc -c )
+#        COVERAGE=$(echo "scale=8; ${COVERAGE} / (2.0*${GENOME_LENGTH_HAPLOID})" | bc)  # Of each haplotype
+        COVERAGE=12
+        
+        
         bash ~{docker_dir}/reads2svs_impl.sh ~{individual_id} reads.bam reads.fastq ${COVERAGE} ~{individual_id} ${N_THREADS} ~{reference_fa} ~{reference_fai} ~{reference_tandem_repeats} ~{bucket_dir}/~{child_id}/long_coverage_~{individual_id} ~{use_pbsv} ~{use_sniffles1} ~{use_sniffles2} ~{use_hifiasm} ~{use_pav} ~{use_paftools} ~{keep_assemblies} ~{work_dir} ~{docker_dir} 1
         rm -f reads.bam reads.bai reads.fastq
     >>>
